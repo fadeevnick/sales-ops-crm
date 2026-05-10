@@ -1,0 +1,60 @@
+name: Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release tag override
+        required: false
+        type: string
+      push_images:
+        description: Push built images to the configured registry
+        required: false
+        default: false
+        type: boolean
+  push:
+    tags:
+      - "v*"
+  pull_request:
+    paths:
+      - ".github/workflows/release-build.yml"
+      - "codebase/backend/Dockerfile"
+      - "codebase/frontend/Dockerfile"
+      - "codebase/frontend/nginx.conf"
+      - "codebase/docker-compose.production.yml"
+      - "codebase/scripts/ci-release-build.sh"
+      - "codebase/scripts/ci-registry-push.sh"
+      - "codebase/scripts/validate-deploy-env.sh"
+      - "codebase/scripts/validate-image-promotion.sh"
+      - "codebase/deploy/IMAGE_REGISTRY_PROMOTION.md"
+      - "codebase/deploy/CI_RELEASE_AUTOMATION.md"
+      - "codebase/deploy/REGISTRY_PUSH_AUTOMATION.md"
+
+jobs:
+  release-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    env:
+      CI_RELEASE_OUTPUT_DIR: /tmp/salesops-release
+      CI_RELEASE_TAG: ${{ inputs.release_tag || '' }}
+      CI_REGISTRY_PUSH_ENABLED: ${{ inputs.push_images && '1' || '0' }}
+      CI_REGISTRY_USERNAME: ${{ secrets.CI_REGISTRY_USERNAME || '' }}
+      CI_REGISTRY_PASSWORD: ${{ secrets.CI_REGISTRY_PASSWORD || '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build production release images
+        run: codebase/scripts/ci-release-build.sh
+
+      - name: Validate or push release images
+        run: codebase/scripts/ci-registry-push.sh /tmp/salesops-release/image-promotion.manifest
+
+      - name: Upload release manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: salesops-image-promotion-manifest
+          path: /tmp/salesops-release/image-promotion.manifest
+          if-no-files-found: error

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Process Config Prototype</title>
+    <style>
+      :root {
+        --ink: #1f2627;
+        --pine: #28484b;
+        --sage: #67807a;
+        --clay: #bf7658;
+        --sun: #d2a14d;
+        --bg: #f2eadf;
+        --paper: #fffaf4;
+        --line: #d8cab7;
+        --muted: #6d655b;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at top left, rgba(103, 128, 122, 0.18), transparent 30%),
+          linear-gradient(180deg, #f8f2e9 0%, var(--bg) 100%);
+        color: var(--ink);
+        font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+        padding: 24px;
+      }
+
+      .shell {
+        max-width: 1380px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 22px;
+      }
+
+      .panel {
+        background: rgba(255, 250, 244, 0.92);
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        padding: 24px;
+        box-shadow: 0 18px 36px rgba(48, 41, 32, 0.08);
+      }
+
+      h1, h2, h3, p { margin-top: 0; }
+      p { color: var(--muted); }
+
+      .nav,
+      .stage-list,
+      .warnings,
+      .field-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .nav-item,
+      .stage,
+      .warning,
+      .field,
+      .preview {
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 16px;
+        background: var(--paper);
+      }
+
+      .nav-item.active {
+        border-color: rgba(40, 72, 75, 0.44);
+        box-shadow: 0 10px 22px rgba(40, 72, 75, 0.08);
+      }
+
+      .header {
+        margin-bottom: 18px;
+        padding: 18px;
+        border-radius: 22px;
+        background: linear-gradient(135deg, rgba(40, 72, 75, 0.94), rgba(92, 104, 86, 0.94));
+        color: #fffaf4;
+      }
+
+      .header p { color: rgba(255, 250, 244, 0.78); }
+
+      .row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        background: #eef2ef;
+        color: var(--pine);
+      }
+
+      .warning strong { color: var(--clay); }
+
+      .button {
+        border: none;
+        border-radius: 16px;
+        padding: 13px 16px;
+        font: inherit;
+      }
+
+      .primary { background: var(--pine); color: #fffaf4; }
+      .secondary { background: transparent; border: 1px solid var(--line); }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      @media (max-width: 1100px) {
+        .shell { grid-template-columns: 1fr; }
+        .grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="panel">
+        <h2>Configuration Areas</h2>
+        <div class="nav">
+          <div class="nav-item active">
+            <strong>Opportunity Fields</strong>
+            <p>Manage standard and custom fields for the sales process.</p>
+          </div>
+          <div class="nav-item">
+            <strong>Pipeline Stages</strong>
+            <p>Control stage order, labels and entry requirements.</p>
+          </div>
+          <div class="nav-item">
+            <strong>Saved Views</strong>
+            <p>Publish role-relevant workspace defaults.</p>
+          </div>
+          <div class="nav-item">
+            <strong>Approval Policies</strong>
+            <p>Referenced here, but edited in a separate policy boundary.</p>
+          </div>
+        </div>
+      </aside>
+
+      <main class="panel">
+        <div class="header">
+          <h1>Tenant Process Configuration</h1>
+          <p>
+            Прототип показывает, что admin configuration должна быть publish-driven,
+            а не "каждое изменение сразу live". Иначе metadata легко ломает формы,
+            views, approvals и reporting.
+          </p>
+          <div class="row">
+            <div class="badge">Draft Config v13</div>
+            <div class="badge">Published Config v12</div>
+            <div class="badge">Role: RevOps Admin</div>
+          </div>
+        </div>
+
+        <section class="preview" style="margin-bottom: 18px">
+          <h2>Custom Fields</h2>
+          <div class="field-list">
+            <div class="field">
+              <strong>Payment Risk Level</strong>
+              Type: select • entity: Opportunity • required from stage: Negotiation
+            </div>
+            <div class="field">
+              <strong>Deal Region</strong>
+              Type: taxonomy • entity: Opportunity • used in manager views and approval policy
+            </div>
+            <div class="field">
+              <strong>Quarterly Volume Commitment</strong>
+              Type: number • entity: Opportunity • visible to rep and manager only
+            </div>
+          </div>
+        </section>
+
+        <div class="grid">
+          <section class="preview">
+            <h2>Pipeline Draft</h2>
+            <div class="stage-list">
+              <div class="stage">
+                <strong>Qualification</strong>
+                Required: account, contact, expected amount
+              </div>
+              <div class="stage">
+                <strong>Negotiation</strong>
+                Required: payment risk level, next step, competitor pressure
+              </div>
+              <div class="stage">
+                <strong>Pending Approval</strong>
+                Requires active approval request
+              </div>
+            </div>
+          </section>
+
+          <section class="preview">
+            <h2>Validation Warnings</h2>
+            <div class="warnings">
+              <div class="warning">
+                <strong>Potential break:</strong> deleting field "Deal Region" will invalidate 2 saved views and 1 approval policy scope.
+              </div>
+              <div class="warning">
+                <strong>Potential break:</strong> renaming "Pending Approval" stage affects 18 existing opportunities.
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="row" style="margin-top: 20px">
+          <button class="button secondary">Save Draft</button>
+          <button class="button secondary">Run Validation</button>
+          <button class="button primary">Publish Configuration</button>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
