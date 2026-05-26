@@ -1,0 +1,1944 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sales Ops CRM — Opportunity Detail</title>
+<meta name="viewport" content="width=1440" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --paper:#F4F1EB;
+    --paper-2:#EEEAE0;
+    --paper-3:#E6E1D4;
+    --ink:#17150F;
+    --ink-2:#3A372E;
+    --muted:#6E6A5C;
+    --muted-2:#8C8779;
+    --line:#D6D0BF;
+    --line-2:#C4BDA8;
+    --hairline:#E4DFD0;
+    --accent:#B57321;
+    --accent-2:#8A5616;
+    --accent-soft:#F2E3C8;
+    --pos:#3F6B3A;
+    --pos-soft:#E2EAD6;
+    --neg:#9A3A2F;
+    --neg-soft:#F0DAD3;
+    --warn:#A36A11;
+    --warn-soft:#F4E3C1;
+    --info:#2D5B6B;
+    --info-soft:#D6E1E4;
+    --white:#FBFAF6;
+    --select:#FBF1DC;
+    font-family:"Geist","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-feature-settings:"ss01","cv11","tnum";
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);}
+  body{font-size:13px;line-height:1.4;-webkit-font-smoothing:antialiased}
+  .mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-feature-settings:"tnum","ss02";}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+  a{color:inherit;text-decoration:none}
+  input,select,textarea{font:inherit;color:inherit}
+  ::selection{background:var(--accent-soft);color:var(--ink)}
+
+  /* App grid */
+  .app{display:grid;grid-template-columns:244px 1fr;min-height:100vh}
+  .sidebar{background:var(--paper-2);border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .main{display:flex;flex-direction:column;min-width:0}
+
+  /* ─── Sidebar (matches shell) ─── */
+  .brand{padding:18px 18px 14px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px}
+  .brand-mark{width:22px;height:22px;flex:0 0 22px;position:relative}
+  .brand-mark::before,.brand-mark::after{content:"";position:absolute;inset:0;border:1.5px solid var(--ink)}
+  .brand-mark::after{inset:5px;background:var(--accent);border-color:var(--accent-2)}
+  .brand-name{font-weight:600;letter-spacing:.02em;font-size:14px}
+  .brand-name span{color:var(--muted);font-weight:400;margin-left:6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+  .tenant{padding:12px 18px;border-bottom:1px solid var(--hairline);display:flex;flex-direction:column;gap:4px}
+  .tenant-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .tenant-row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .tenant-name{font-weight:600;font-size:13.5px}
+  .tenant-env{font-family:"JetBrains Mono",monospace;font-size:10px;padding:2px 6px;border:1px solid #D9BFA0;border-radius:2px;color:var(--accent-2);background:var(--warn-soft);letter-spacing:.04em}
+  .tenant-meta{display:flex;gap:8px;font-size:11px;color:var(--muted)}
+  .tenant-meta .dot{color:var(--line-2)}
+  .nav{flex:1;overflow:auto;padding:10px 0 12px}
+  .nav-section{margin-top:14px}
+  .nav-section:first-child{margin-top:8px}
+  .nav-title{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-2);padding:6px 18px 4px;display:flex;justify-content:space-between;align-items:center}
+  .nav-title em{font-style:normal;font-family:"JetBrains Mono",monospace;color:var(--line-2);letter-spacing:.05em}
+  .nav-item{display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:10px;padding:7px 18px 7px 14px;border-left:2px solid transparent;color:var(--ink-2);font-size:13px;cursor:pointer;position:relative}
+  .nav-item:hover{background:var(--paper-3);color:var(--ink)}
+  .nav-item.active{background:var(--paper-3);border-left-color:var(--accent);color:var(--ink);font-weight:500}
+  .nav-mark{width:22px;height:22px;display:grid;place-items:center;border:1px solid var(--line-2);background:var(--white);font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:600;letter-spacing:.04em;color:var(--ink-2)}
+  .nav-item.active .nav-mark{border-color:var(--accent);color:var(--accent-2);background:var(--accent-soft)}
+  .nav-count{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);min-width:18px;text-align:right}
+  .nav-count.alert{color:var(--accent-2);font-weight:600}
+  .nav-item.disabled{opacity:.35;pointer-events:none}
+  .user-block{border-top:1px solid var(--line);padding:12px 14px;display:flex;align-items:center;gap:10px;background:var(--paper-2)}
+  .avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--paper);font-size:11px;font-weight:600;letter-spacing:.04em;flex:0 0 30px;border:1px solid var(--ink)}
+  .avatar.bg-c{background:#2A4655;border-color:#2A4655}
+  .avatar.bg-b{background:#5C3A1E;border-color:#5C3A1E}
+  .avatar.bg-a{background:#2D3E2C;border-color:#2D3E2C}
+  .avatar.bg-d{background:#6B2E2E;border-color:#6B2E2E}
+  .user-meta{display:flex;flex-direction:column;min-width:0;flex:1}
+  .user-name{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .user-role{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .switch-btn{border:1px solid var(--line-2);padding:5px 8px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);background:var(--paper);border-radius:2px;font-family:"JetBrains Mono",monospace}
+  .switch-btn:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  /* ─── Top bar ─── */
+  .topbar{height:56px;border-bottom:1px solid var(--line);background:var(--paper);display:grid;grid-template-columns:1fr minmax(280px,440px) auto;align-items:center;gap:20px;padding:0 22px;position:sticky;top:0;z-index:5}
+  .crumb{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;flex-wrap:wrap}
+  .crumb strong{color:var(--ink);font-weight:600;font-size:13.5px}
+  .crumb .sep{color:var(--line-2)}
+  .crumb .pulse{display:inline-flex;align-items:center;gap:6px;font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--accent-2);padding:3px 7px;border:1px solid #D9BFA0;border-radius:2px;background:var(--warn-soft);letter-spacing:.04em}
+  .pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .search{display:flex;align-items:center;gap:8px;background:var(--paper-2);border:1px solid var(--line);border-radius:3px;padding:7px 10px;font-size:12.5px;color:var(--muted)}
+  .search:focus-within{border-color:var(--ink);background:var(--white)}
+  .search svg{flex:0 0 14px;color:var(--muted)}
+  .search input{border:0;background:transparent;outline:none;flex:1;font:inherit;color:var(--ink)}
+  .search kbd{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted);border:1px solid var(--line-2);border-radius:2px;padding:1px 5px;background:var(--paper)}
+  .top-actions{display:flex;align-items:center;gap:10px}
+  .icon-btn{width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line);border-radius:3px;background:var(--paper);color:var(--ink-2);position:relative}
+  .icon-btn:hover{border-color:var(--ink);color:var(--ink)}
+  .icon-btn .dot-badge{position:absolute;top:-3px;right:-3px;min-width:14px;height:14px;padding:0 3px;background:var(--accent);color:var(--white);font-family:"JetBrains Mono",monospace;font-size:9px;font-weight:600;border-radius:7px;display:grid;place-items:center;border:1.5px solid var(--paper)}
+  .role-pill{display:flex;align-items:center;gap:10px;padding:4px 10px 4px 4px;border:1px solid var(--line);border-radius:18px;background:var(--paper)}
+  .role-pill:hover{border-color:var(--ink)}
+  .role-pill .avatar{width:26px;height:26px;flex:0 0 26px;font-size:10px}
+  .role-pill .who{display:flex;flex-direction:column;line-height:1.15;text-align:left}
+  .role-pill .who b{font-size:12px;font-weight:600}
+  .role-pill .who span{font-size:10.5px;color:var(--muted)}
+  .role-pill .chev{color:var(--muted);margin-left:2px}
+
+  /* ─── Page content ─── */
+  .content{padding:18px 24px 60px}
+
+  /* ─── Opportunity header ─── */
+  .opp-head{
+    background:var(--white);border:1px solid var(--line);
+    display:grid;grid-template-columns:1fr auto;gap:18px;
+    padding:16px 18px 14px;margin-bottom:14px;
+  }
+  .opp-title-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+  .opp-title{font-size:22px;font-weight:600;letter-spacing:-.01em;margin:0;line-height:1.2}
+  .opp-id{
+    font-family:"JetBrains Mono",monospace;font-size:11.5px;letter-spacing:.04em;
+    padding:3px 8px;border:1px solid var(--line-2);background:var(--paper-2);color:var(--ink-2);
+    border-radius:2px;
+  }
+  .opp-kind{
+    font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 6px;border:1px solid #D9BFA0;background:var(--warn-soft);color:var(--accent-2);border-radius:2px;
+  }
+  .opp-facts{
+    display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;
+    border-top:1px solid var(--hairline);margin-top:12px;
+  }
+  .fact{padding:10px 14px 4px 0;border-right:1px solid var(--hairline);min-width:0}
+  .fact:last-child{border-right:0;padding-right:0}
+  .fact .l{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+  .fact .v{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap}
+  .fact .v small{color:var(--muted);font-weight:400;font-size:11.5px}
+  .fact .v.num{font-family:"JetBrains Mono",monospace;font-size:18px;font-weight:500;letter-spacing:-.01em}
+  .opp-aside{
+    display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:280px;
+  }
+  .opp-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .opp-meta{
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--muted);
+    display:flex;gap:8px;align-items:center;letter-spacing:.04em;
+  }
+  .opp-meta .pulse-dot{background:var(--warn);box-shadow:0 0 0 2px var(--warn-soft)}
+
+  /* Buttons */
+  .btn{border:1px solid var(--line-2);background:var(--paper);padding:7px 12px;font-size:12px;color:var(--ink);border-radius:3px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  .btn:hover{border-color:var(--ink)}
+  .btn-primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .btn-primary:hover{background:var(--accent-2);border-color:var(--accent-2)}
+  .btn-disabled{opacity:.45;cursor:not-allowed;color:var(--muted)}
+  .btn-disabled:hover{border-color:var(--line-2)}
+  .btn-ghost{border-color:transparent;background:transparent;color:var(--muted)}
+  .btn-ghost:hover{color:var(--ink);border-color:var(--line-2)}
+  .btn .kbd{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted)}
+  .btn-primary .kbd{color:var(--paper-3)}
+  .btn-sm{padding:5px 9px;font-size:11.5px}
+  .btn-warn{border-color:#D9BFA0;background:var(--warn-soft);color:var(--accent-2)}
+  .btn-warn:hover{border-color:var(--accent);color:var(--accent-2)}
+
+  /* Pills */
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-family:"JetBrains Mono",monospace;letter-spacing:.04em;padding:2px 7px;border-radius:2px;border:1px solid var(--line-2);background:var(--paper);text-transform:uppercase}
+  .pill .pdot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+  .pill.p-pending{color:var(--warn);border-color:#E2C887;background:var(--warn-soft)}
+  .pill.p-pending .pdot{background:var(--warn)}
+  .pill.p-approved{color:var(--pos);border-color:#B2C8A8;background:var(--pos-soft)}
+  .pill.p-approved .pdot{background:var(--pos)}
+  .pill.p-rejected{color:var(--neg);border-color:#D6B0A8;background:var(--neg-soft)}
+  .pill.p-rejected .pdot{background:var(--neg)}
+  .pill.p-sentback{color:var(--info);border-color:#A4C0C8;background:var(--info-soft)}
+  .pill.p-sentback .pdot{background:var(--info)}
+  .pill.p-none{color:var(--muted)}
+  .pill.p-overdue{color:var(--neg);border-color:#D6B0A8;background:var(--neg-soft)}
+  .pill.p-overdue .pdot{background:var(--neg)}
+  .pill.p-today{color:var(--accent-2);border-color:#D9BFA0;background:var(--warn-soft)}
+  .pill.p-today .pdot{background:var(--accent)}
+  .pill.p-running{color:var(--info);border-color:#A4C0C8;background:var(--info-soft)}
+  .pill.p-running .pdot{background:var(--info);animation:bp 1.6s infinite}
+  @keyframes bp{50%{opacity:.3}}
+  .pill-lg{font-size:12px;padding:4px 9px}
+
+  /* ─── Stage path ─── */
+  .stagepath{
+    background:var(--white);border:1px solid var(--line);
+    margin-bottom:14px;
+    position:relative;
+  }
+  .stagepath-head{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 14px;border-bottom:1px solid var(--hairline);
+  }
+  .stagepath-title{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;display:flex;gap:10px;align-items:center}
+  .stagepath-title em{font-style:normal;font-family:"JetBrains Mono",monospace;color:var(--muted);font-weight:400;font-size:11px;text-transform:none;letter-spacing:.02em}
+  .stagepath-meta{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:10px}
+  .stagepath-meta a{border-bottom:1px dotted var(--line-2);cursor:pointer}
+  .stagepath-meta a:hover{color:var(--ink);border-color:var(--ink)}
+
+  .stages{
+    display:grid;grid-template-columns:repeat(6,minmax(0,1fr));
+  }
+  .stage-cell{
+    position:relative;padding:14px 14px 14px 28px;border-right:1px solid var(--hairline);
+    cursor:pointer;background:var(--white);min-width:0;
+  }
+  .stage-cell:last-child{border-right:0}
+  .stage-cell::before{
+    /* arrow shape on the right */
+    content:"";position:absolute;top:0;right:-14px;width:28px;height:100%;
+    background:inherit;clip-path:polygon(0 0, 50% 50%, 0 100%);
+    z-index:2;border-right:1px solid var(--hairline);
+  }
+  .stage-cell:last-child::before{display:none}
+  .stage-cell::after{
+    /* notch on the left */
+    content:"";position:absolute;top:0;left:0;width:14px;height:100%;
+    background:var(--white);clip-path:polygon(0 0, 100% 50%, 0 100%);
+    z-index:1;
+  }
+  .stage-cell.done{background:var(--paper-2)}
+  .stage-cell.done::after{background:var(--paper-2)}
+  .stage-cell.done::before{background:var(--paper-2)}
+  .stage-cell.current{background:var(--accent-soft);color:var(--ink)}
+  .stage-cell.current::after{background:var(--accent-soft)}
+  .stage-cell.current::before{background:var(--accent-soft)}
+  .stage-cell.future{background:var(--white);color:var(--muted)}
+  .stage-cell.lost{background:var(--white)}
+  .stage-cell.lost.future{color:var(--muted)}
+  .stage-cell:hover{outline:1px solid var(--ink);outline-offset:-1px;z-index:5}
+  .stage-cell:first-child::after{display:none}
+  .stage-cell:first-child{padding-left:18px}
+
+  .stage-num{
+    font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.1em;
+    color:var(--muted);position:relative;z-index:3;
+  }
+  .stage-cell.current .stage-num{color:var(--accent-2)}
+  .stage-cell.done .stage-num{color:var(--muted-2)}
+  .stage-label{font-size:13px;font-weight:500;margin-top:3px;position:relative;z-index:3;display:flex;align-items:center;gap:6px}
+  .stage-cell.current .stage-label{font-weight:600;color:var(--ink)}
+  .stage-cell.done .stage-label{color:var(--ink-2)}
+  .stage-cell.future .stage-label{color:var(--muted)}
+  .stage-flag{
+    font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+    padding:1px 4px;border:1px solid #D9BFA0;background:var(--warn-soft);color:var(--accent-2);border-radius:2px;
+  }
+  .stage-foot{
+    font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted);
+    margin-top:6px;letter-spacing:.04em;position:relative;z-index:3;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .stage-cell.current .stage-foot{color:var(--accent-2)}
+  .stage-cell.done .stage-foot{color:var(--pos)}
+
+  /* Inline stage-move validation panel */
+  .stagepop{
+    background:var(--white);border-top:1px solid var(--line);
+    padding:14px 18px;display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:flex-start;
+    animation:fade .15s ease both;
+  }
+  .stagepop.blocked{background:#FBEFE8;border-top:1px solid var(--line);border-left:3px solid var(--neg)}
+  .stagepop.warn{background:var(--warn-soft);border-top:1px solid var(--line);border-left:3px solid var(--accent)}
+  .stagepop.ok{background:var(--pos-soft);border-top:1px solid var(--line);border-left:3px solid var(--pos)}
+  .stagepop-mark{
+    width:34px;height:34px;display:grid;place-items:center;border-radius:50%;
+    background:var(--white);border:1px solid var(--line-2);
+    font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600;
+  }
+  .stagepop.blocked .stagepop-mark{border-color:var(--neg);color:var(--neg)}
+  .stagepop.warn .stagepop-mark{border-color:var(--accent);color:var(--accent-2)}
+  .stagepop.ok .stagepop-mark{border-color:var(--pos);color:var(--pos)}
+  .stagepop-body{min-width:0}
+  .stagepop-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .stagepop-title small{font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--muted);font-weight:400;letter-spacing:.04em}
+  .stagepop-desc{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+  .stagepop-list{margin:6px 0 0;padding-left:18px;font-size:12px;color:var(--ink-2)}
+  .stagepop-list li{margin:3px 0}
+  .stagepop-actions{display:flex;gap:8px;align-items:flex-start;flex-shrink:0}
+  .stagepop-close{
+    width:24px;height:24px;display:grid;place-items:center;
+    border:1px solid var(--line-2);background:var(--paper);border-radius:3px;color:var(--ink-2);
+  }
+  .stagepop-close:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  /* ─── Workspace 2-col ─── */
+  .work{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:14px;align-items:flex-start}
+
+  /* Panel */
+  .panel{background:var(--white);border:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+  .panel + .panel{margin-top:14px}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--hairline);gap:10px}
+  .panel-title{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;display:flex;gap:10px;align-items:center}
+  .panel-title em{font-style:normal;font-family:"JetBrains Mono",monospace;color:var(--muted);font-weight:400;font-size:11px;letter-spacing:.02em;text-transform:none}
+  .panel-actions{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:11.5px}
+  .panel-actions a{border-bottom:1px dotted var(--line-2);cursor:pointer}
+  .panel-actions a:hover{color:var(--ink);border-color:var(--ink)}
+  .filterchip{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.04em;border:1px solid var(--line-2);padding:2px 6px;border-radius:2px;color:var(--ink-2);background:var(--paper)}
+  .filterchip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  /* Field grid */
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .field{
+    padding:10px 14px;border-bottom:1px solid var(--hairline);border-right:1px solid var(--hairline);
+    min-width:0;position:relative;
+  }
+  .field:nth-child(2n){border-right:0}
+  .field-l{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:6px;margin-bottom:4px}
+  .field-tag{
+    font-family:"JetBrains Mono",monospace;font-size:8.5px;letter-spacing:.06em;
+    border:1px solid var(--line-2);padding:0 4px;border-radius:2px;
+    color:var(--muted-2);background:var(--paper);
+  }
+  .field-tag.cust{color:var(--accent-2);border-color:#D9BFA0;background:var(--warn-soft)}
+  .field-tag.req{color:var(--neg);border-color:#D6B0A8;background:var(--neg-soft)}
+  .field-v{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+  .field-v small{color:var(--muted);font-weight:400;font-size:11.5px}
+  .field-v.num{font-family:"JetBrains Mono",monospace;font-size:14px}
+  .field-v .mono{font-weight:500}
+  .field.missing .field-v{color:var(--neg)}
+  .field.missing{background:#FBEFE8}
+  .field-hint{font-size:10.5px;color:var(--muted);margin-top:3px;font-family:"JetBrains Mono",monospace;letter-spacing:.02em}
+  .field.editing{background:var(--select)}
+  .field.editing .field-l{color:var(--accent-2)}
+  .field-input{
+    width:100%;background:var(--white);border:1px solid var(--ink);border-radius:2px;
+    padding:5px 8px;font:inherit;color:var(--ink);outline:none;font-size:13px;
+  }
+  .fields-foot{
+    padding:8px 14px;font-size:11.5px;color:var(--muted);background:var(--paper-2);
+    border-top:1px solid var(--hairline);display:flex;justify-content:space-between;align-items:center;
+  }
+  .legend{display:inline-flex;align-items:center;gap:6px;margin-right:14px}
+  .legend .field-tag{font-size:8.5px}
+
+  /* Activities */
+  .acts{display:flex;flex-direction:column}
+  .acts-section{padding:8px 14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);background:var(--paper-2);border-bottom:1px solid var(--hairline);display:flex;justify-content:space-between;align-items:center}
+  .acts-section .mono{color:var(--muted-2)}
+  .act{
+    display:grid;grid-template-columns:96px 1fr auto;gap:12px;
+    padding:10px 14px;border-bottom:1px solid var(--hairline);align-items:flex-start;
+  }
+  .act:last-child{border-bottom:0}
+  .act-time{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);padding-top:1px;line-height:1.4}
+  .act-time.today{color:var(--accent-2);font-weight:600}
+  .act-time.over{color:var(--neg);font-weight:600}
+  .act-body{min-width:0}
+  .act-title{font-size:12.5px;font-weight:500;line-height:1.35;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .act-kind{font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line-2);padding:1px 4px;border-radius:2px;color:var(--muted-2)}
+  .act-kind.call{color:var(--info);border-color:#A4C0C8;background:var(--info-soft)}
+  .act-kind.email{color:var(--accent-2);border-color:#D9BFA0;background:var(--warn-soft)}
+  .act-kind.task{color:var(--ink-2)}
+  .act-kind.note{color:var(--muted)}
+  .act-meta{font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:6px;flex-wrap:wrap}
+  .act-meta .sep{color:var(--line-2)}
+  .act-actions{display:flex;align-items:center;gap:6px}
+
+  /* Activity composer */
+  .composer{
+    background:var(--select);border-top:1px solid #E0CC9C;border-bottom:1px solid #E0CC9C;
+    padding:12px 14px;display:grid;grid-template-columns:1fr;gap:8px;
+    animation:fade .15s ease both;
+  }
+  .composer-row{display:grid;grid-template-columns:120px 130px 1fr;gap:8px}
+  .composer .ctl{display:flex;align-items:center;gap:6px;background:var(--white);border:1px solid var(--line);border-radius:3px;padding:6px 8px;font-size:12.5px}
+  .composer .ctl:focus-within{border-color:var(--ink)}
+  .composer .ctl select,.composer .ctl input,.composer textarea.ctl{border:0;background:transparent;outline:none;width:100%;font:inherit;color:var(--ink);appearance:none}
+  .composer textarea.ctl{resize:vertical;min-height:60px;padding:8px 10px;font-size:12.5px}
+  .composer .lbl{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+  .composer-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:2px}
+  .composer-hint{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .composer-hint .mono{color:var(--ink-2)}
+
+  /* Approval panel */
+  .appr-banner{
+    padding:12px 14px;background:var(--warn-soft);border-bottom:1px solid #E2C887;
+    display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;
+  }
+  .appr-banner-mark{
+    width:36px;height:36px;border-radius:50%;border:1.5px solid var(--warn);
+    display:grid;place-items:center;color:var(--accent-2);
+    font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600;
+    background:var(--white);
+  }
+  .appr-banner-body .l{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-2)}
+  .appr-banner-body .v{font-size:13.5px;font-weight:600;margin-top:2px}
+  .appr-banner-body .sub{font-size:11.5px;color:var(--accent-2);margin-top:2px;font-family:"JetBrains Mono",monospace;letter-spacing:.02em}
+
+  .appr-grid{
+    display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;
+    border-bottom:1px solid var(--hairline);
+  }
+  .appr-grid .field{border-right:1px solid var(--hairline)}
+  .appr-grid .field:nth-child(3n){border-right:0}
+  .appr-grid .field:nth-last-child(-n+3){border-bottom:0}
+
+  .chain{padding:12px 14px;background:var(--paper-2);border-bottom:1px solid var(--hairline)}
+  .chain-title{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+  .chain-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;background:var(--white);border:1px solid var(--hairline)}
+  .chain-step{
+    padding:8px 10px;border-right:1px solid var(--hairline);position:relative;min-width:0;
+    display:flex;flex-direction:column;gap:2px;
+  }
+  .chain-step:last-child{border-right:0}
+  .chain-step .num{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.1em;color:var(--muted)}
+  .chain-step .nm{font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px}
+  .chain-step .who{font-size:11px;color:var(--muted);font-family:"JetBrains Mono",monospace;letter-spacing:.02em}
+  .chain-step.done{background:var(--pos-soft)}
+  .chain-step.done .num{color:var(--pos)}
+  .chain-step.current{background:var(--warn-soft)}
+  .chain-step.current .num{color:var(--accent-2)}
+  .chain-step.future{background:var(--white)}
+  .chain-step.future .nm,.chain-step.future .who{color:var(--muted)}
+  .chain-step .dotmark{
+    width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line-2);
+    display:inline-grid;place-items:center;background:var(--white);font-size:8px;color:var(--ink-2);
+    flex-shrink:0;
+  }
+  .chain-step.done .dotmark{border-color:var(--pos);background:var(--pos);color:var(--white)}
+  .chain-step.current .dotmark{border-color:var(--warn);background:var(--warn-soft);animation:bp 1.8s infinite}
+  .chain-step.future .dotmark{border-color:var(--line-2)}
+
+  .just{padding:12px 14px}
+  .just-l{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .just-body{font-size:12.5px;line-height:1.5;color:var(--ink-2);padding:10px 12px;background:var(--paper-2);border-left:2px solid var(--line-2)}
+
+  /* Audit timeline */
+  .timeline{padding:6px 0}
+  .tl-item{
+    display:grid;grid-template-columns:106px 18px 1fr auto;gap:12px;
+    padding:9px 14px;align-items:flex-start;position:relative;
+  }
+  .tl-item::before{
+    content:"";position:absolute;left:128px;top:0;bottom:0;width:1px;background:var(--hairline);
+  }
+  .tl-item:first-child::before{top:18px}
+  .tl-item:last-child::before{bottom:50%}
+  .tl-time{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);line-height:1.4;padding-top:1px}
+  .tl-time small{display:block;font-size:10px;color:var(--muted-2);margin-top:1px}
+  .tl-node{
+    width:12px;height:12px;border-radius:50%;background:var(--white);
+    border:1.5px solid var(--line-2);margin-top:5px;justify-self:center;position:relative;z-index:2;
+  }
+  .tl-node.stage{background:var(--accent);border-color:var(--accent-2)}
+  .tl-node.appr{background:var(--warn);border-color:var(--warn)}
+  .tl-node.field{background:var(--info);border-color:var(--info)}
+  .tl-node.act{background:var(--ink);border-color:var(--ink)}
+  .tl-node.create{background:var(--pos);border-color:var(--pos)}
+  .tl-body{min-width:0}
+  .tl-title{font-size:12.5px;font-weight:500;line-height:1.4;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .tl-code{font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line-2);padding:1px 4px;border-radius:2px;color:var(--muted-2);background:var(--paper)}
+  .tl-desc{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+  .tl-desc .mono{color:var(--ink-2)}
+  .tl-by{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);padding-top:1px;text-align:right;white-space:nowrap}
+
+  /* Right column */
+  .ctx-head{padding:12px 14px;border-bottom:1px solid var(--hairline);background:var(--paper-2)}
+  .ctx-head-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .ctx-head .l{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+  .ctx-head .id{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted)}
+  .ctx-head .nm{font-size:14.5px;font-weight:600;letter-spacing:-.01em;margin-top:2px}
+  .ctx-head .sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+  .ctx-grid{display:grid;grid-template-columns:1fr 1fr}
+  .ctx-grid .field{padding:9px 14px}
+  .ctx-grid .field:nth-last-child(-n+2){border-bottom:0}
+
+  .ctx-link-row{
+    padding:10px 14px;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;
+    border-bottom:1px solid var(--hairline);font-size:12px;
+  }
+  .ctx-link-row:last-child{border-bottom:0}
+  .ctx-link-row .mono{color:var(--muted)}
+  .ctx-link-row .v{font-weight:500}
+  .ctx-link-row .a{font-size:11px;color:var(--muted);border-bottom:1px dotted var(--line-2)}
+
+  .ctx-rel{
+    display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;
+    padding:10px 14px;border-bottom:1px solid var(--hairline);font-size:12px;
+  }
+  .ctx-rel .mark{
+    width:24px;height:24px;display:grid;place-items:center;
+    border:1px solid var(--line-2);background:var(--paper);
+    font-family:"JetBrains Mono",monospace;font-size:9px;font-weight:600;color:var(--muted);
+  }
+  .ctx-rel.current .mark{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-2)}
+  .ctx-rel .body .l{font-family:"JetBrains Mono",monospace;font-size:9.5px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+  .ctx-rel .body .v{font-size:12.5px;font-weight:500}
+  .ctx-rel.current .body .v{color:var(--accent-2)}
+  .ctx-rel .arrow{color:var(--muted-2);font-family:"JetBrains Mono",monospace;font-size:13px}
+
+  .ctx-stats{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .ctx-stat{
+    padding:10px 14px;border-right:1px solid var(--hairline);border-bottom:1px solid var(--hairline);
+  }
+  .ctx-stat:nth-child(2n){border-right:0}
+  .ctx-stat:nth-last-child(-n+2){border-bottom:0}
+  .ctx-stat .l{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .ctx-stat .v{font-family:"JetBrains Mono",monospace;font-size:18px;font-weight:500;margin-top:2px}
+  .ctx-stat .s{font-size:11px;color:var(--muted);margin-top:2px}
+
+  /* Manager-only block */
+  .mgr-block{
+    background:var(--white);border:1px solid var(--line);position:relative;
+  }
+  .mgr-head{padding:10px 14px;border-bottom:1px solid var(--hairline);display:flex;justify-content:space-between;align-items:center}
+  .mgr-locked-banner{
+    padding:10px 14px;background:var(--paper-2);border-bottom:1px dashed var(--line-2);
+    display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;
+  }
+  .mgr-lock-mark{width:24px;height:24px;display:grid;place-items:center;border:1px solid var(--line-2);background:var(--paper);color:var(--muted-2);border-radius:50%}
+  .mgr-locked-banner .t{font-size:11.5px;color:var(--ink-2);font-weight:500}
+  .mgr-locked-banner .s{font-size:10.5px;color:var(--muted);margin-top:1px}
+  .mgr-actions{display:flex;flex-direction:column}
+  .mgr-action{
+    display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;
+    padding:10px 14px;border-bottom:1px solid var(--hairline);opacity:.55;cursor:not-allowed;
+  }
+  .mgr-action:last-child{border-bottom:0}
+  .mgr-action .mark{width:24px;height:24px;border:1px solid var(--line-2);background:var(--paper);display:grid;place-items:center;font-family:"JetBrains Mono",monospace;font-size:9px;color:var(--muted-2);font-weight:600}
+  .mgr-action .nm{font-size:12.5px;font-weight:500}
+  .mgr-action .ds{font-size:11px;color:var(--muted);margin-top:2px}
+  .mgr-action .lock{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.08em;color:var(--muted-2)}
+
+  /* States banner row */
+  .states{
+    background:var(--white);border:1px solid var(--line);margin-bottom:14px;
+    display:grid;grid-template-columns:repeat(4,1fr);gap:0;
+  }
+  .state-tile{padding:10px 14px;border-right:1px solid var(--hairline);min-width:0;display:flex;flex-direction:column;gap:4px}
+  .state-tile:last-child{border-right:0}
+  .state-tile .l{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+  .state-tile .v{font-size:12.5px;font-weight:500;display:flex;align-items:center;gap:6px}
+  .state-tile .s{font-size:11px;color:var(--muted);font-family:"JetBrains Mono",monospace;letter-spacing:.02em}
+  .state-tile.warn{background:var(--warn-soft);border-right-color:#E2C887}
+  .state-tile.neg{background:var(--neg-soft)}
+  .state-tile.info{background:var(--info-soft)}
+
+  /* Drawer */
+  .scrim{position:fixed;inset:0;background:rgba(20,18,12,.32);z-index:50;backdrop-filter:blur(2px);animation:fade .15s ease both}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .drawer{position:fixed;top:0;right:0;bottom:0;width:560px;background:var(--paper);z-index:51;display:flex;flex-direction:column;box-shadow:-12px 0 28px rgba(20,18,12,.16);animation:slide .2s ease both}
+  @keyframes slide{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+  .drawer-head{padding:16px 20px 14px;border-bottom:1px solid var(--hairline);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;background:var(--paper-2)}
+  .drawer-head .h-title{font-size:16px;font-weight:600;letter-spacing:-.01em}
+  .drawer-head .h-sub{font-size:11.5px;color:var(--muted);margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .drawer-head .h-sub .mono{color:var(--ink-2)}
+  .drawer-close{width:28px;height:28px;display:grid;place-items:center;border:1px solid var(--line-2);background:var(--paper);border-radius:3px;color:var(--ink-2)}
+  .drawer-close:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .drawer-body{flex:1;overflow:auto;padding:18px 20px}
+  .drawer-foot{padding:12px 20px;border-top:1px solid var(--line);background:var(--white);display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .drawer-foot .hint{font-size:11.5px;color:var(--muted)}
+
+  .form-section{margin-bottom:18px}
+  .form-section h4{margin:0 0 8px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500;display:flex;justify-content:space-between;align-items:center}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .form-grid .full{grid-column:1/-1}
+  .form-field{display:flex;flex-direction:column;gap:4px}
+  .form-field label{font-size:11px;color:var(--muted);font-weight:500;display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .form-field .ctl{display:flex;align-items:center;gap:8px;background:var(--white);border:1px solid var(--line);border-radius:3px;padding:7px 10px;font-size:13px}
+  .form-field .ctl:focus-within{border-color:var(--ink)}
+  .form-field input,.form-field select,.form-field textarea{border:0;background:transparent;outline:none;width:100%;font:inherit;color:var(--ink);appearance:none}
+  .form-field textarea{resize:vertical;min-height:64px}
+  .form-field .req{color:var(--accent-2)}
+  .form-field .hint{font-size:11px;color:var(--muted);margin-top:2px;font-family:"JetBrains Mono",monospace;letter-spacing:.02em}
+
+  .snap{background:var(--paper-2);border:1px solid var(--hairline);padding:10px 12px;display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:12px}
+  .snap dt{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0}
+  .snap dd{margin:0;font-family:"JetBrains Mono",monospace;font-size:12px}
+
+  /* Toast */
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 14px;font-size:12.5px;border-radius:3px;display:flex;align-items:center;gap:10px;z-index:70;box-shadow:0 10px 24px rgba(20,18,12,.2)}
+  .toast .ok{color:#9CC58F}
+
+  /* Foot ruler */
+  .foot-ruler{margin-top:18px;border-top:1px solid var(--hairline);padding-top:10px;display:flex;justify-content:space-between;color:var(--muted);font-size:11px;font-family:"JetBrains Mono",monospace;letter-spacing:.04em;flex-wrap:wrap;gap:10px}
+
+  /* Tablet */
+  @media (max-width:1180px){
+    .work{grid-template-columns:1fr}
+    .opp-facts{grid-template-columns:repeat(3,1fr)}
+    .opp-aside{align-items:flex-start;min-width:0}
+    .states{grid-template-columns:repeat(2,1fr)}
+    .stages{grid-template-columns:repeat(3,1fr)}
+    .chain-steps{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:980px){
+    .app{grid-template-columns:64px 1fr}
+    .sidebar .brand-name,.sidebar .tenant,.sidebar .nav-count,.sidebar .nav-label,.sidebar .user-meta,.sidebar .switch-btn{display:none}
+    .sidebar .nav-item{grid-template-columns:1fr;justify-items:center;padding:8px}
+    .sidebar .brand{justify-content:center;padding:18px 0}
+    .nav-title{display:none}
+    .user-block{justify-content:center;padding:12px 0}
+    .drawer{width:100%}
+  }
+
+  .nav-label{display:flex;align-items:baseline}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useEffect, useRef } = React;
+
+/* ─────────── Config / data ─────────── */
+
+const ANNA = { name:"Anna Petrova", role:"Sales Representative", initials:"AP", color:"bg-c", roleCode:"REP" };
+
+const MODULES = [
+  { key:"dashboard",  code:"DA", label:"Dashboard",      section:"workspace", count:null },
+  { key:"accounts",   code:"AC", label:"Accounts",       section:"workspace", count:412 },
+  { key:"contacts",   code:"CO", label:"Contacts",       section:"workspace", count:1843 },
+  { key:"opps",       code:"OP", label:"Opportunities",  section:"workspace", count:12 },
+  { key:"approvals",  code:"AP", label:"Approvals",      section:"governance",count:3, alert:true },
+  { key:"imports",    code:"IM", label:"Imports",        section:"data",      disabled:true },
+  { key:"duplicates", code:"DU", label:"Duplicates",     section:"data",      disabled:true },
+  { key:"metadata",   code:"MA", label:"Metadata Admin", section:"data",      disabled:true },
+  { key:"reports",    code:"RE", label:"Reports",        section:"insights",  disabled:true },
+  { key:"audit",      code:"AU", label:"Audit",          section:"insights",  disabled:true },
+];
+const SECTIONS = [
+  { key:"workspace",  label:"Workspace",   index:"01" },
+  { key:"governance", label:"Governance",  index:"02" },
+  { key:"data",       label:"Data & Quality", index:"03" },
+  { key:"insights",   label:"Insights",    index:"04" },
+];
+
+const STAGES = [
+  { code:"Q", label:"Qualification", num:"01", note:"Initial qualification" },
+  { code:"D", label:"Discovery",     num:"02", note:"Needs discovered" },
+  { code:"P", label:"Proposal",      num:"03", note:"Proposal sent" },
+  { code:"N", label:"Negotiation",   num:"04", note:"Approvals may apply", flag:true },
+  { code:"W", label:"Closed Won",    num:"05", note:"Booked & active" },
+  { code:"L", label:"Closed Lost",   num:"06", note:"Terminal" },
+];
+
+/* The opportunity in focus */
+const OPP = {
+  id:"OPP-2418",
+  title:"Q3 Equipment Renewal",
+  kind:"renewal",
+  account:{ id:"AC-3318", name:"Acme Manufacturing", industry:"Industrial Equipment", website:"acme-manufacturing.example", owner:"Anna Petrova", openOpps:4, totalPipeline:612000 },
+  contact:{ id:"CT-7421", name:"Taylor Brooks", role:"VP Operations", email:"t.brooks@acme-manufacturing.example", phone:"+1 (216) 555-0148", influence:"Decision maker" },
+  owner:{ name:"Anna Petrova", role:"Sales Representative", initials:"AP", color:"bg-c" },
+  amount:145000,
+  stage:"P",
+  close:"2026-06-28",
+  approval:{ state:"pending", id:"REQ-1182", kind:"Discount Exception 8%", submittedBy:"Anna Petrova", submittedAt:"2026-05-12 09:14",
+             current:"Finance Approver", next:"Legal Approver",
+             justification:"Strategic renewal account. Competitor approached customer with an aggressive 9% rebate on equivalent equipment. 8% discount preserves margin floor and protects FY26 service uplift attached to this contract." },
+  fields:{
+    forecast:"Best Case",
+    probability:60,
+    nextStep:"Send revised pricing sheet · Today 14:00",
+    paymentRisk:"Medium",
+    region:"NA-East",
+    impl:"Q3 2026 · 6 weeks",
+    procurement:"Two-step (purchasing + plant)",
+    legalEntityCode:"",  // intentionally empty → required at stage N
+  },
+  updatedAt:"2026-05-12 09:14",
+};
+
+/* Pipeline stage state, computed from current stage */
+const STAGE_STATES = (current="P") => {
+  const idx = STAGES.findIndex(s=>s.code===current);
+  return STAGES.map((s,i)=>{
+    if(i < idx) return { ...s, state:"done" };
+    if(i === idx) return { ...s, state:"current" };
+    if(s.code==="L") return { ...s, state:"lost" };
+    return { ...s, state:"future" };
+  });
+};
+
+/* Activities sample */
+const ACTIVITIES = [
+  { id:"ACT-001", section:"overdue", kind:"task",  title:"Send revised pricing sheet", meta:["Owner Anna Petrova","Linked OPP-2418"], time:"Today 14:00", state:"today", body:"Updated quote with 8% discount line; pending approval outcome before forwarding to procurement." },
+  { id:"ACT-002", section:"overdue", kind:"call",  title:"Procurement review call",     meta:["Procurement · Acme","With T. Brooks + B. Reyes"], time:"Yesterday 16:00", state:"over",   overdue:true, body:"Walkthrough of revised commercial terms. Reschedule once approval is decided." },
+  { id:"ACT-003", section:"upcoming", kind:"call", title:"Legal terms follow-up",       meta:["Acme legal counsel","30 min"], time:"Thu · May 14", state:"upcoming" },
+  { id:"ACT-004", section:"upcoming", kind:"task", title:"Executive sponsor check-in",   meta:["Internal","M. Chen · sponsor"], time:"Mon · May 18", state:"upcoming" },
+  { id:"ACT-005", section:"done",     kind:"call", title:"Site walk — Cleveland plant",  meta:["Done · May 09","With T. Brooks + plant manager"], time:"May 09 · 11:00", state:"done", body:"Confirmed line-4 retrofit scope. Plant flagged bearing tolerances; need clarification from engineering." },
+  { id:"ACT-006", section:"done",     kind:"note", title:"Inbound email — Procurement RFQ", meta:["From B. Reyes","Attachment: RFQ-Q3-2026.pdf"], time:"May 07 · 09:42", state:"done", body:"Procurement requested formal pricing and terms by May 12. Triggered creation of OPP-2418." },
+];
+
+/* Audit timeline */
+const AUDIT = [
+  { t:"2026-05-12 09:14", date:"Today", who:"Anna Petrova", code:"APPR.SUBMIT", type:"appr",   title:"Approval request submitted", desc:<>Submitted <span className="mono">REQ-1182</span> — Discount Exception 8% — routed to <span className="mono">Finance · D. Smirnova</span>.</> },
+  { t:"2026-05-12 09:14", date:"Today", who:"system",       code:"APPR.ROUTE",  type:"appr",   title:"Routing computed", desc:<>Policy <span className="mono">DISCOUNT-A</span> matched at amount <span className="mono">$145,000</span> and discount <span className="mono">8%</span>. Chain: Finance → Legal.</> },
+  { t:"2026-05-12 09:11", date:"Today", who:"Anna Petrova", code:"OPP.UPDATE",  type:"field",  title:"Amount changed", desc:<>From <span className="mono">$132,000</span> → <span className="mono">$145,000</span>. Field <span className="mono">forecast_category</span> set to <span className="mono">Best Case</span>.</> },
+  { t:"2026-05-10 11:08", date:"May 10",  who:"Anna Petrova", code:"OPP.STAGE",   type:"stage",  title:"Stage moved to Proposal", desc:<>From <span className="mono">Discovery</span> → <span className="mono">Proposal</span>. Validations passed (5/5).</> },
+  { t:"2026-05-09 14:24", date:"May 09",  who:"Anna Petrova", code:"ACT.LOG",     type:"act",    title:"Activity logged", desc:<>Site walk · Cleveland plant. Linked to <span className="mono">OPP-2418</span> and contact <span className="mono">CT-7421</span>.</> },
+  { t:"2026-05-07 09:42", date:"May 07",  who:"Anna Petrova", code:"OPP.CREATE",  type:"create", title:"Opportunity created", desc:<>Created from RFQ email. Initial stage <span className="mono">Discovery</span> · amount <span className="mono">$132,000</span> · owner Anna Petrova.</> },
+];
+
+/* Sample contact list on the account */
+const ACCT_CONTACTS = [
+  { id:"CT-7421", name:"Taylor Brooks", role:"VP Operations",        primary:true },
+  { id:"CT-7430", name:"Beatriz Reyes", role:"Procurement Lead" },
+  { id:"CT-7464", name:"Daniel Hahn",   role:"Plant Manager · Cleveland" },
+  { id:"CT-7492", name:"Sarah Liang",   role:"Legal Counsel" },
+];
+
+/* ─────────── helpers ─────────── */
+function fmtMoney(n){
+  if(n>=1_000_000) return `$${(n/1_000_000).toFixed(2)}M`;
+  if(n>=1_000) return `$${(n/1_000).toFixed(0)}K`;
+  return `$${n}`;
+}
+function Pill({ kind, children }){
+  return <span className={`pill p-${kind}`}><span className="pdot" />{children}</span>;
+}
+
+/* ─────────── Sidebar / Topbar ─────────── */
+
+function BrandMark(){ return <span className="brand-mark" aria-hidden /> }
+
+function Sidebar(){
+  return (
+    <aside className="sidebar">
+      <div className="brand">
+        <BrandMark />
+        <div className="brand-name">Sales Ops CRM<span>v2.4</span></div>
+      </div>
+      <div className="tenant">
+        <div className="tenant-label">Tenant</div>
+        <div className="tenant-row">
+          <div className="tenant-name">Orion Industrial</div>
+          <div className="tenant-env mono">LOCAL PILOT</div>
+        </div>
+        <div className="tenant-meta">
+          <span className="mono">EU-CENTRAL-1</span>
+          <span className="dot">·</span>
+          <span>184 seats</span>
+        </div>
+      </div>
+
+      <nav className="nav">
+        {SECTIONS.map(sec=>{
+          const items = MODULES.filter(m=>m.section===sec.key);
+          return (
+            <div key={sec.key} className="nav-section">
+              <div className="nav-title">{sec.label}<em>{sec.index}</em></div>
+              {items.map(m=>(
+                <div
+                  key={m.key}
+                  className={`nav-item ${m.key==="opps"?"active":""} ${m.disabled?"disabled":""}`}
+                  title={m.disabled ? `${m.label} — not visible to ${ANNA.role}` : m.label}
+                >
+                  <span className="nav-mark mono">{m.code}</span>
+                  <span className="nav-label">{m.label}</span>
+                  <span className={`nav-count mono ${m.alert?"alert":""}`}>{m.count==null?"":m.count}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </nav>
+
+      <div className="user-block">
+        <div className={`avatar ${ANNA.color}`}>{ANNA.initials}</div>
+        <div className="user-meta">
+          <div className="user-name">{ANNA.name}</div>
+          <div className="user-role">{ANNA.role}</div>
+        </div>
+        <button className="switch-btn">Switch</button>
+      </div>
+    </aside>
+  );
+}
+
+function TopBar(){
+  return (
+    <div className="topbar">
+      <div className="crumb">
+        <span className="pulse"><span className="pulse-dot" /> LOCAL PILOT</span>
+        <span>Orion Industrial</span>
+        <span className="sep">/</span>
+        <span>Opportunities</span>
+        <span className="sep">/</span>
+        <span className="mono" style={{color:"var(--ink-2)"}}>OPP-2418</span>
+        <span className="sep">·</span>
+        <strong>Q3 Equipment Renewal</strong>
+      </div>
+
+      <label className="search">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5"/></svg>
+        <input placeholder="Search accounts, opportunities, contacts, activities…" />
+        <kbd>⌘K</kbd>
+      </label>
+
+      <div className="top-actions">
+        <button className="icon-btn" aria-label="Notifications" title="Notifications">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M3.5 12h9l-1-1.5V7a3.5 3.5 0 0 0-7 0v3.5L3.5 12Z"/><path d="M6.5 13.5a1.5 1.5 0 0 0 3 0"/></svg>
+          <span className="dot-badge mono">4</span>
+        </button>
+        <button className="role-pill">
+          <span className={`avatar ${ANNA.color}`}>{ANNA.initials}</span>
+          <span className="who">
+            <b>Anna P.</b>
+            <span>{ANNA.role}</span>
+          </span>
+          <span className="chev">▾</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── Opportunity header ─────────── */
+
+function OppHeader({ opp, onEdit, onMoveStage, onAddActivity, onViewApproval }){
+  const hasPendingAppr = opp.approval.state === "pending" || opp.approval.state === "sentback";
+  return (
+    <section className="opp-head">
+      <div>
+        <div className="opp-title-row">
+          <span className="opp-kind mono">{opp.kind}</span>
+          <h1 className="opp-title">{opp.title}</h1>
+          <span className="opp-id mono">{opp.id}</span>
+          <Pill kind="pending" className="pill-lg">Stage · Proposal</Pill>
+          <Pill kind={opp.approval.state}>Pending Finance Approval</Pill>
+        </div>
+        <div className="opp-meta mono" style={{marginTop:6}}>
+          <span className="pulse-dot" />
+          <span>Last updated {opp.updatedAt}</span>
+          <span style={{color:"var(--line-2)"}}>·</span>
+          <span>by Anna Petrova</span>
+          <span style={{color:"var(--line-2)"}}>·</span>
+          <span>APPR REQ-1182 · 2d 04h pending</span>
+        </div>
+
+        <div className="opp-facts">
+          <div className="fact">
+            <div className="l">Account</div>
+            <div className="v">{opp.account.name}<small>· {opp.account.id}</small></div>
+          </div>
+          <div className="fact">
+            <div className="l">Primary contact</div>
+            <div className="v">{opp.contact.name}<small>· {opp.contact.role}</small></div>
+          </div>
+          <div className="fact">
+            <div className="l">Owner</div>
+            <div className="v" style={{display:"flex",alignItems:"center",gap:6}}>
+              <span className="avatar bg-c" style={{width:20,height:20,fontSize:9,borderRadius:"50%"}}>AP</span>
+              {opp.owner.name}
+            </div>
+          </div>
+          <div className="fact">
+            <div className="l">Amount</div>
+            <div className="v num">${(opp.amount).toLocaleString()}</div>
+          </div>
+          <div className="fact">
+            <div className="l">Close date</div>
+            <div className="v mono" style={{fontFamily:"JetBrains Mono, monospace",fontSize:13.5}}>{opp.close}<small>· 47 days</small></div>
+          </div>
+        </div>
+      </div>
+
+      <div className="opp-aside">
+        <div className="opp-actions">
+          <button className="btn" onClick={onEdit}>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3"><path d="m2 9.5 1-3 5.2-5.2a1 1 0 0 1 1.4 1.4L4.4 8 1.4 9 2 9.5Z"/></svg>
+            Edit Fields
+          </button>
+          <button className="btn" onClick={onMoveStage}>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3"><path d="M2 6h8M7 3l3 3-3 3"/></svg>
+            Move Stage
+          </button>
+          <button className="btn" onClick={onAddActivity}>+ Add Activity</button>
+          {hasPendingAppr
+            ? <button className="btn btn-primary" onClick={onViewApproval}>View Approval Request</button>
+            : <button className="btn btn-primary">Submit for Approval</button>}
+        </div>
+        <div className="opp-meta mono" style={{justifyContent:"flex-end"}}>
+          <span>POLICY v18 · METADATA v42</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────── States banner (key states surfaced in design) ─────────── */
+
+function StatesStrip({ opp }){
+  return (
+    <div className="states">
+      <div className="state-tile warn">
+        <div className="l">Approval <Pill kind="pending">Pending</Pill></div>
+        <div className="v">Finance review in progress</div>
+        <div className="s">REQ-1182 · D. Smirnova · 2d 04h</div>
+      </div>
+      <div className="state-tile">
+        <div className="l">Stage move <span className="mono" style={{color:"var(--neg)"}}>BLOCKED</span></div>
+        <div className="v">Cannot promote to Negotiation</div>
+        <div className="s">Required: legal_entity_code · approval</div>
+      </div>
+      <div className="state-tile neg">
+        <div className="l">Activity <span className="mono" style={{color:"var(--neg)"}}>OVERDUE</span></div>
+        <div className="v">Procurement review call</div>
+        <div className="s">Was due yesterday 16:00</div>
+      </div>
+      <div className="state-tile">
+        <div className="l">Permissions <span className="mono">REP</span></div>
+        <div className="v">Manager actions restricted</div>
+        <div className="s">Reassign, Add Manager Note unavailable</div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── Stage path ─────────── */
+
+function StagePath({ current, pop, onClickStage, onClosePop }){
+  const cells = STAGE_STATES(current);
+  return (
+    <section className="stagepath">
+      <div className="stagepath-head">
+        <div className="stagepath-title">Pipeline stage<em>tenant pipeline · 6 stages</em></div>
+        <div className="stagepath-meta">
+          <span className="mono">CURRENT · PROPOSAL · day 2</span>
+          <a>Stage history ›</a>
+        </div>
+      </div>
+      <div className="stages">
+        {cells.map((s,i)=>(
+          <button
+            key={s.code}
+            className={`stage-cell ${s.state}`}
+            onClick={()=>onClickStage(s)}
+            title={`${s.label} — ${s.state}`}
+          >
+            <div className="stage-num mono">{s.num} · {s.code}</div>
+            <div className="stage-label">
+              {s.label}
+              {s.flag && <span className="stage-flag mono">!</span>}
+            </div>
+            <div className="stage-foot">
+              {s.state==="done" && <>✓ {s.code==="Q"?"May 07":"May 10"}</>}
+              {s.state==="current" && "in progress · 2 days"}
+              {s.state==="future" && (s.flag ? "approval required" : "—")}
+              {s.state==="lost" && "terminal"}
+            </div>
+          </button>
+        ))}
+      </div>
+      {pop && <StagePop pop={pop} onClose={onClosePop} />}
+    </section>
+  );
+}
+
+function StagePop({ pop, onClose }){
+  /* Compose a validation result for each stage click */
+  let cls = "ok", mark = "✓", title = "OK to move", desc = "", list = [], action = null;
+  if(pop.code === "Q"){
+    cls = "warn"; mark = "↺"; title = "Move backward to Qualification?";
+    desc = "Reverting to an earlier stage is allowed but will clear the current pipeline projection and require a stage-change reason.";
+    list = ["Reason required (free text, audit-logged).","Approval REQ-1182 will be auto-cancelled."];
+    action = "Move backward";
+  } else if(pop.code === "D"){
+    cls = "warn"; mark = "↺"; title = "Move backward to Discovery?";
+    desc = "Reverting from Proposal removes pricing artifacts from the deal context and requires a reason.";
+    list = ["Reason required.","Approval REQ-1182 will be auto-cancelled.","Pricing sheet versions remain in document history."];
+    action = "Move backward";
+  } else if(pop.code === "P"){
+    cls = "ok"; mark = "•"; title = "Currently in Proposal";
+    desc = "This is the active stage. No move needed.";
+    action = null;
+  } else if(pop.code === "N"){
+    cls = "blocked"; mark = "!"; title = "Move to Negotiation is blocked";
+    desc = "Tenant policy requires the following before this stage transition can be saved:";
+    list = [
+      "Custom field legal_entity_code is empty — required at stage Negotiation.",
+      "Approval request REQ-1182 must reach a decision (currently Pending Finance).",
+      "Primary contact must have role mapped to a decision-maker level — Taylor Brooks is OK.",
+    ];
+    action = null;
+  } else if(pop.code === "W"){
+    cls = "blocked"; mark = "!"; title = "Move to Closed Won is blocked";
+    desc = "Closed Won requires every prior stage to be cleared and the deal to have a finalized commercial decision.";
+    list = [
+      "Stage Negotiation has not been completed yet.",
+      "Approval request REQ-1182 must be approved or withdrawn.",
+      "Probability must be ≥ 90% — currently 60%.",
+    ];
+    action = null;
+  } else if(pop.code === "L"){
+    cls = "warn"; mark = "✕"; title = "Move to Closed Lost?";
+    desc = "Closing this deal as lost is a terminal stage. A loss reason and competitor field are required.";
+    list = ["Loss reason required.","Approval REQ-1182 will be auto-cancelled.","Reporting will exclude this deal from open pipeline."];
+    action = "Mark as Closed Lost";
+  }
+  return (
+    <div className={`stagepop ${cls}`} role="dialog" aria-label="Stage move validation">
+      <div className="stagepop-mark mono">{mark}</div>
+      <div className="stagepop-body">
+        <div className="stagepop-title">{title}<small className="mono">{pop.num} · {pop.label}</small></div>
+        <div className="stagepop-desc">{desc}</div>
+        {list.length>0 && <ul className="stagepop-list">{list.map((x,i)=><li key={i}>{x}</li>)}</ul>}
+      </div>
+      <div className="stagepop-actions">
+        {action && <button className="btn btn-sm btn-warn">{action}</button>}
+        {cls === "blocked" && <button className="btn btn-sm btn-disabled" aria-disabled="true">Move stage</button>}
+        <button className="stagepop-close" onClick={onClose} aria-label="Close">
+          <svg width="11" height="11" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="1.4" fill="none"><path d="m3 3 6 6M9 3l-6 6"/></svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── Deal fields ─────────── */
+
+function DealFields({ opp, editing, onEdit, onCommit, onCancel, draft, setDraft }){
+  const Row = ({ label, tag, children, missing, hint, editingKey }) => (
+    <div className={`field ${editing===editingKey?"editing":""} ${missing?"missing":""}`}>
+      <div className="field-l">
+        {label}
+        {tag === "custom" && <span className="field-tag cust mono">CUSTOM</span>}
+        {tag === "required" && <span className="field-tag req mono">REQ AT N</span>}
+      </div>
+      <div className="field-v">{children}</div>
+      {hint && <div className="field-hint">{hint}</div>}
+    </div>
+  );
+  return (
+    <section className="panel" id="fields-panel">
+      <div className="panel-head">
+        <div className="panel-title">Deal fields<em>9 standard · 5 tenant custom</em></div>
+        <div className="panel-actions">
+          {editing ? (
+            <>
+              <a onClick={onCancel}>Cancel</a>
+              <button className="btn btn-sm btn-primary" onClick={onCommit}>Save changes</button>
+            </>
+          ) : (
+            <>
+              <span className="filterchip mono">v18</span>
+              <a onClick={()=>onEdit("amount")}>Edit fields ›</a>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="acts-section">Standard fields<span className="mono">9</span></div>
+      <div className="fields">
+        <Row label="Expected amount" editingKey="amount">
+          {editing === "amount" ? (
+            <input className="field-input mono" value={draft.amount} onChange={e=>setDraft(d=>({...d,amount:e.target.value}))} />
+          ) : (
+            <>
+              <span className="mono" style={{fontSize:14}}>${opp.amount.toLocaleString()}</span>
+              <small>USD</small>
+            </>
+          )}
+        </Row>
+        <Row label="Close date" editingKey="close">
+          {editing === "close" ? (
+            <input className="field-input mono" value={draft.close} onChange={e=>setDraft(d=>({...d,close:e.target.value}))} />
+          ) : (
+            <span className="mono">{opp.close}</span>
+          )}
+        </Row>
+        <Row label="Stage">
+          <Pill kind="pending">Proposal</Pill>
+          <small>since May 10</small>
+        </Row>
+        <Row label="Owner">
+          <span className="avatar bg-c" style={{width:18,height:18,fontSize:9,borderRadius:"50%"}}>AP</span>
+          Anna Petrova
+          <small>· Sales Rep</small>
+        </Row>
+        <Row label="Account">
+          <span className="mono" style={{color:"var(--muted)"}}>AC-3318</span>
+          Acme Manufacturing
+        </Row>
+        <Row label="Primary contact">
+          Taylor Brooks
+          <small>· VP Operations</small>
+        </Row>
+        <Row label="Forecast category" editingKey="forecast">
+          {editing === "forecast" ? (
+            <select className="field-input" value={draft.forecast} onChange={e=>setDraft(d=>({...d,forecast:e.target.value}))}>
+              <option>Pipeline</option><option>Best Case</option><option>Commit</option><option>Closed</option>
+            </select>
+          ) : (
+            <>
+              <span className="mono">{opp.fields.forecast}</span>
+              <small>included in weighted forecast</small>
+            </>
+          )}
+        </Row>
+        <Row label="Probability" editingKey="probability">
+          {editing === "probability" ? (
+            <input className="field-input mono" value={draft.probability} onChange={e=>setDraft(d=>({...d,probability:e.target.value}))} />
+          ) : (
+            <>
+              <span className="mono" style={{fontSize:14}}>{opp.fields.probability}%</span>
+              <small>policy default for Proposal</small>
+            </>
+          )}
+        </Row>
+        <Row label="Next step">
+          {opp.fields.nextStep}
+        </Row>
+      </div>
+
+      <div className="acts-section">Tenant custom fields<span className="mono">5 · Orion Industrial</span></div>
+      <div className="fields">
+        <Row label="Payment Risk Level" tag="custom" editingKey="paymentRisk">
+          <Pill kind="pending">Medium</Pill>
+          <small>flagged by RevOps rule</small>
+        </Row>
+        <Row label="Region" tag="custom">
+          <span className="mono">NA-East</span>
+        </Row>
+        <Row label="Implementation Window" tag="custom">
+          {opp.fields.impl}
+        </Row>
+        <Row label="Procurement Process" tag="custom">
+          {opp.fields.procurement}
+        </Row>
+        <Row label="Legal Entity Code" tag="required"
+             missing={!opp.fields.legalEntityCode}
+             hint="Required to move stage → Negotiation. Owner must populate before promote."
+             editingKey="legalEntityCode">
+          {editing === "legalEntityCode" ? (
+            <input className="field-input mono" autoFocus value={draft.legalEntityCode} onChange={e=>setDraft(d=>({...d,legalEntityCode:e.target.value}))} placeholder="e.g. ACME-US-0142" />
+          ) : (
+            opp.fields.legalEntityCode
+              ? <span className="mono">{opp.fields.legalEntityCode}</span>
+              : <span className="mono">— empty</span>
+          )}
+        </Row>
+      </div>
+
+      <div className="fields-foot">
+        <div>
+          <span className="legend"><span className="field-tag cust mono">CUSTOM</span> tenant-defined</span>
+          <span className="legend"><span className="field-tag req mono">REQ AT N</span> required at later stage</span>
+        </div>
+        <span className="mono">metadata schema · orion_industrial · v42</span>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────── Activities panel ─────────── */
+
+function ActivitiesPanel({ acts, composerOpen, onOpenComposer, onCloseComposer, onSubmit }){
+  const overdue = acts.filter(a=>a.state==="over");
+  const upcoming = acts.filter(a=>a.state==="today" || a.state==="upcoming");
+  const done = acts.filter(a=>a.state==="done");
+
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <div className="panel-title">Activities & next steps<em>{acts.length} total · {overdue.length} overdue</em></div>
+        <div className="panel-actions">
+          <span className="filterchip on">ALL</span>
+          <span className="filterchip">CALLS</span>
+          <span className="filterchip">TASKS</span>
+          <span className="filterchip">NOTES</span>
+          <button className="btn btn-sm" onClick={onOpenComposer}>+ Add Activity</button>
+        </div>
+      </div>
+
+      {composerOpen && (
+        <ActivityComposer onSubmit={onSubmit} onClose={onCloseComposer} />
+      )}
+
+      {overdue.length>0 && <div className="acts-section">Overdue<span className="mono">{overdue.length}</span></div>}
+      <div className="acts">
+        {overdue.map(a=>(<ActivityRow key={a.id} a={a} />))}
+      </div>
+
+      <div className="acts-section">Upcoming · Today<span className="mono">{upcoming.length}</span></div>
+      <div className="acts">
+        {upcoming.map(a=>(<ActivityRow key={a.id} a={a} />))}
+      </div>
+
+      <div className="acts-section">Completed<span className="mono">{done.length}</span></div>
+      <div className="acts">
+        {done.map(a=>(<ActivityRow key={a.id} a={a} />))}
+      </div>
+    </section>
+  );
+}
+
+function ActivityRow({ a }){
+  const timeCls = a.state==="over" ? "over" : a.state==="today" ? "today" : "";
+  return (
+    <div className="act">
+      <div className={`act-time mono ${timeCls}`}>
+        {a.state==="over" && <>OVERDUE<br/></>}
+        {a.time}
+      </div>
+      <div className="act-body">
+        <div className="act-title">
+          <span className={`act-kind mono ${a.kind}`}>{a.kind}</span>
+          {a.title}
+          {a.state==="over" && <Pill kind="overdue">overdue</Pill>}
+          {a.state==="today" && <Pill kind="today">today</Pill>}
+        </div>
+        <div className="act-meta">
+          {a.meta.map((m,j)=>(<React.Fragment key={j}>{j>0 && <span className="sep">·</span>}<span>{m}</span></React.Fragment>))}
+        </div>
+        {a.body && <div className="act-meta" style={{marginTop:4,color:"var(--ink-2)",fontSize:11.5}}>{a.body}</div>}
+      </div>
+      <div className="act-actions">
+        {a.state==="done"
+          ? <span className="mono" style={{fontSize:10,color:"var(--pos)",letterSpacing:".08em"}}>✓ DONE</span>
+          : <button className="btn btn-sm">Open</button>}
+      </div>
+    </div>
+  );
+}
+
+function ActivityComposer({ onSubmit, onClose }){
+  const [kind, setKind] = useState("task");
+  const [title, setTitle] = useState("");
+  const [when, setWhen] = useState("Today 17:00");
+  const [body, setBody] = useState("");
+  const ok = title.trim().length > 0;
+  return (
+    <div className="composer">
+      <div className="composer-row">
+        <label className="ctl">
+          <span className="lbl mono">Type</span>
+          <select value={kind} onChange={e=>setKind(e.target.value)}>
+            <option value="task">Task</option>
+            <option value="call">Call</option>
+            <option value="email">Email</option>
+            <option value="note">Note</option>
+          </select>
+        </label>
+        <label className="ctl">
+          <span className="lbl mono">When</span>
+          <input value={when} onChange={e=>setWhen(e.target.value)} />
+        </label>
+        <label className="ctl">
+          <span className="lbl mono">Title</span>
+          <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="e.g. Send revised pricing sheet" autoFocus />
+        </label>
+      </div>
+      <textarea className="ctl" value={body} onChange={e=>setBody(e.target.value)} placeholder="Add context, attendees, link to documents…" />
+      <div className="composer-foot">
+        <div className="composer-hint">
+          <span>Linked to</span>
+          <span className="mono">OPP-2418</span>
+          <span style={{color:"var(--line-2)"}}>·</span>
+          <span className="mono">AC-3318</span>
+          <span style={{color:"var(--line-2)"}}>·</span>
+          <span className="mono">CT-7421</span>
+        </div>
+        <div style={{display:"flex",gap:6}}>
+          <button className="btn btn-sm" onClick={onClose}>Cancel</button>
+          <button className={`btn btn-sm ${ok?"btn-primary":"btn-disabled"}`} onClick={()=>ok && onSubmit({ kind, title, when, body })}>Save activity</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── Approval panel ─────────── */
+
+function ApprovalPanel({ opp, onView }){
+  const a = opp.approval;
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <div className="panel-title">Approval request<em>{a.id} · Discount Exception</em></div>
+        <div className="panel-actions">
+          <span className="mono" style={{color:"var(--muted)",fontSize:11}}>blocks stage → N</span>
+          <button className="btn btn-sm" onClick={onView}>View Approval Request</button>
+        </div>
+      </div>
+
+      <div className="appr-banner">
+        <div className="appr-banner-mark mono">!</div>
+        <div className="appr-banner-body">
+          <div className="l">Status</div>
+          <div className="v">Pending Finance Approval · {a.current}</div>
+          <div className="sub">Submitted {a.submittedAt} by {a.submittedBy} · 2d 04h in review · SLA 3 days</div>
+        </div>
+        <Pill kind="pending">Pending</Pill>
+      </div>
+
+      <div className="appr-grid">
+        <div className="field">
+          <div className="field-l">Request ID</div>
+          <div className="field-v"><span className="mono">{a.id}</span></div>
+        </div>
+        <div className="field">
+          <div className="field-l">Type</div>
+          <div className="field-v">Discount Exception<small>policy DISCOUNT-A</small></div>
+        </div>
+        <div className="field">
+          <div className="field-l">Requested discount</div>
+          <div className="field-v num">8.0%</div>
+        </div>
+        <div className="field">
+          <div className="field-l">Submitted by</div>
+          <div className="field-v">
+            <span className="avatar bg-c" style={{width:18,height:18,fontSize:9,borderRadius:"50%"}}>AP</span>
+            Anna Petrova
+          </div>
+        </div>
+        <div className="field">
+          <div className="field-l">Submitted at</div>
+          <div className="field-v"><span className="mono">{a.submittedAt}</span></div>
+        </div>
+        <div className="field">
+          <div className="field-l">Snapshot amount</div>
+          <div className="field-v num">$145,000</div>
+        </div>
+      </div>
+
+      <div className="chain">
+        <div className="chain-title">
+          <span>Approval chain · policy DISCOUNT-A</span>
+          <span className="mono" style={{color:"var(--muted-2)"}}>4 steps · sequential</span>
+        </div>
+        <div className="chain-steps">
+          <div className="chain-step done">
+            <div className="num mono">01 · DONE</div>
+            <div className="nm"><span className="dotmark">✓</span>Submitted</div>
+            <div className="who mono">by Anna Petrova · 05-12 09:14</div>
+          </div>
+          <div className="chain-step current">
+            <div className="num mono">02 · IN REVIEW</div>
+            <div className="nm"><span className="dotmark"> </span>Finance Review</div>
+            <div className="who mono">D. Smirnova · 2d 04h</div>
+          </div>
+          <div className="chain-step future">
+            <div className="num mono">03 · PENDING</div>
+            <div className="nm"><span className="dotmark"> </span>Legal Review</div>
+            <div className="who mono">O. Markov · queued</div>
+          </div>
+          <div className="chain-step future">
+            <div className="num mono">04 · PENDING</div>
+            <div className="nm"><span className="dotmark"> </span>Final Decision</div>
+            <div className="who mono">auto · on approval</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="just">
+        <div className="just-l">Justification · snapshot</div>
+        <div className="just-body">{a.justification}</div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────── Audit timeline ─────────── */
+
+function AuditTimeline(){
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <div className="panel-title">Business audit timeline<em>last 30 days · {AUDIT.length} events</em></div>
+        <div className="panel-actions">
+          <span className="filterchip on">ALL</span>
+          <span className="filterchip">STAGE</span>
+          <span className="filterchip">APPROVAL</span>
+          <span className="filterchip">FIELD</span>
+          <span className="filterchip">ACTIVITY</span>
+          <a>Open audit module ›</a>
+        </div>
+      </div>
+      <div className="timeline">
+        {AUDIT.map((e,i)=>(
+          <div className="tl-item" key={i}>
+            <div className="tl-time mono">{e.t.slice(11)}<small>{e.date} · {e.t.slice(0,10)}</small></div>
+            <div className={`tl-node ${e.type}`} />
+            <div className="tl-body">
+              <div className="tl-title">{e.title}<span className="tl-code mono">{e.code}</span></div>
+              <div className="tl-desc">{e.desc}</div>
+            </div>
+            <div className="tl-by mono">{e.who}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ─────────── Right column: Account / Contact context + Manager-only ─────────── */
+
+function AccountContact({ opp }){
+  const a = opp.account, c = opp.contact;
+  return (
+    <>
+      <section className="panel">
+        <div className="ctx-head">
+          <div className="ctx-head-row">
+            <div className="l">Account</div>
+            <div className="id mono">{a.id}</div>
+          </div>
+          <div className="nm">{a.name}</div>
+          <div className="sub">{a.industry} · <span className="mono">{a.website}</span></div>
+        </div>
+
+        {/* relationship trail */}
+        <div className="ctx-rel">
+          <div className="mark mono">AC</div>
+          <div className="body"><div className="l">Account</div><div className="v">{a.name}</div></div>
+          <span className="arrow">›</span>
+        </div>
+        <div className="ctx-rel">
+          <div className="mark mono">CT</div>
+          <div className="body"><div className="l">Primary contact</div><div className="v">{c.name}</div></div>
+          <span className="arrow">›</span>
+        </div>
+        <div className="ctx-rel current">
+          <div className="mark mono">OP</div>
+          <div className="body"><div className="l">This opportunity</div><div className="v">{opp.id} · {opp.title}</div></div>
+          <span className="arrow" style={{color:"var(--accent)"}}>●</span>
+        </div>
+
+        <div className="ctx-stats">
+          <div className="ctx-stat">
+            <div className="l">Account owner</div>
+            <div className="v" style={{fontSize:13,fontFamily:'inherit',fontWeight:500}}>Anna Petrova</div>
+            <div className="s">Same as opp owner</div>
+          </div>
+          <div className="ctx-stat">
+            <div className="l">Industry</div>
+            <div className="v" style={{fontSize:13,fontFamily:'inherit',fontWeight:500}}>Industrial</div>
+            <div className="s">Manufacturing · NA</div>
+          </div>
+          <div className="ctx-stat">
+            <div className="l">Open opps</div>
+            <div className="v">{a.openOpps}</div>
+            <div className="s">incl. this OPP-2418</div>
+          </div>
+          <div className="ctx-stat">
+            <div className="l">Total open pipeline</div>
+            <div className="v">{fmtMoney(a.totalPipeline)}</div>
+            <div className="s">across 4 opportunities</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="ctx-head">
+          <div className="ctx-head-row">
+            <div className="l">Primary contact</div>
+            <div className="id mono">{c.id}</div>
+          </div>
+          <div className="nm">{c.name}</div>
+          <div className="sub">{c.role} · {a.name}</div>
+        </div>
+
+        <div className="fields">
+          <div className="field" style={{borderRight:"1px solid var(--hairline)"}}>
+            <div className="field-l">Email</div>
+            <div className="field-v"><span className="mono" style={{fontSize:11.5}}>{c.email}</span></div>
+          </div>
+          <div className="field">
+            <div className="field-l">Phone</div>
+            <div className="field-v"><span className="mono" style={{fontSize:12}}>{c.phone}</span></div>
+          </div>
+          <div className="field" style={{borderRight:"1px solid var(--hairline)",borderBottom:0}}>
+            <div className="field-l">Influence level</div>
+            <div className="field-v"><Pill kind="approved">Decision maker</Pill></div>
+          </div>
+          <div className="field" style={{borderBottom:0}}>
+            <div className="field-l">Last touched</div>
+            <div className="field-v"><span className="mono" style={{fontSize:11.5}}>May 09 · site walk</span></div>
+          </div>
+        </div>
+
+        <div className="acts-section">Other contacts on account<span className="mono">{ACCT_CONTACTS.length-1}</span></div>
+        {ACCT_CONTACTS.filter(x=>!x.primary).map(x=>(
+          <div className="ctx-link-row" key={x.id}>
+            <span className="mono" style={{fontSize:11}}>{x.id}</span>
+            <div>
+              <div className="v">{x.name}</div>
+              <div className="mono" style={{color:"var(--muted)",fontSize:11}}>{x.role}</div>
+            </div>
+            <a className="a">view ›</a>
+          </div>
+        ))}
+      </section>
+    </>
+  );
+}
+
+function ManagerOnly(){
+  return (
+    <section className="mgr-block">
+      <div className="mgr-head">
+        <div className="panel-title">Manager actions<em style={{fontStyle:'normal',fontFamily:'"JetBrains Mono",monospace',color:"var(--muted)",fontSize:11,letterSpacing:".02em",fontWeight:400,textTransform:"none",marginLeft:8}}>role · MGR</em></div>
+        <span className="pill p-none mono" style={{textTransform:"uppercase"}}>
+          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" style={{flex:"0 0 9px"}}><rect x="2.5" y="5.5" width="7" height="5" rx="0.5"/><path d="M4 5.5V3.8a2 2 0 1 1 4 0V5.5"/></svg>
+          Locked
+        </span>
+      </div>
+
+      <div className="mgr-locked-banner">
+        <span className="mgr-lock-mark">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2.5" y="5.5" width="7" height="5" rx="0.5"/><path d="M4 5.5V3.8a2 2 0 1 1 4 0V5.5"/></svg>
+        </span>
+        <div>
+          <div className="t">Available only to Sales Manager</div>
+          <div className="s">Anna Petrova has role REP. Manager actions are read-visible but disabled by access policy.</div>
+        </div>
+      </div>
+
+      <div className="mgr-actions">
+        <div className="mgr-action" title="Available to Sales Manager only — Reassigns the opportunity owner and recomputes ownership-based visibility.">
+          <div className="mark">RO</div>
+          <div>
+            <div className="nm">Reassign Owner</div>
+            <div className="ds">Move OPP-2418 to a different rep · updates sharing</div>
+          </div>
+          <div className="lock mono">MGR ONLY</div>
+        </div>
+        <div className="mgr-action" title="Available to Sales Manager only — Adds an internal manager note visible to manager and rep.">
+          <div className="mark">MN</div>
+          <div>
+            <div className="nm">Add Manager Note</div>
+            <div className="ds">Internal note · not visible to approvers</div>
+          </div>
+          <div className="lock mono">MGR ONLY</div>
+        </div>
+        <div className="mgr-action" title="Available to Sales Manager only — Requests an update from the opportunity owner.">
+          <div className="mark">RU</div>
+          <div>
+            <div className="nm">Request Update</div>
+            <div className="ds">Notifies owner to refresh stage / next step</div>
+          </div>
+          <div className="lock mono">MGR ONLY</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────── View Approval Request drawer ─────────── */
+
+function ApprovalDrawer({ onClose }){
+  useEffect(()=>{
+    const onKey = (e)=>{ if(e.key==="Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return ()=>document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <>
+      <div className="scrim" onClick={onClose} />
+      <aside className="drawer" role="dialog" aria-label="Approval Request">
+        <div className="drawer-head">
+          <div>
+            <div className="h-title">Approval request · REQ-1182</div>
+            <div className="h-sub">
+              <span className="mono">OP ›</span>
+              <span>OPP-2418</span>
+              <span style={{color:"var(--line-2)"}}>·</span>
+              <span>Discount Exception · 8%</span>
+              <span style={{color:"var(--line-2)"}}>·</span>
+              <Pill kind="pending">Pending Finance</Pill>
+            </div>
+          </div>
+          <button className="drawer-close" onClick={onClose} aria-label="Close">
+            <svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="1.4" fill="none"><path d="m3 3 6 6M9 3l-6 6"/></svg>
+          </button>
+        </div>
+
+        <div className="drawer-body">
+          <div className="form-section">
+            <h4>Request snapshot<span className="mono" style={{color:"var(--muted-2)"}}>frozen at submit</span></h4>
+            <dl className="snap">
+              <dt>Type</dt><dd>Discount Exception · 8%</dd>
+              <dt>Policy</dt><dd>DISCOUNT-A · Finance → Legal</dd>
+              <dt>Opportunity</dt><dd>OPP-2418 · Q3 Equipment Renewal</dd>
+              <dt>Account</dt><dd>AC-3318 · Acme Manufacturing</dd>
+              <dt>Amount</dt><dd>$145,000</dd>
+              <dt>Stage at submit</dt><dd>Proposal</dd>
+              <dt>Submitted by</dt><dd>Anna Petrova · 2026-05-12 09:14</dd>
+              <dt>SLA</dt><dd>3 days · 0d 19h remaining</dd>
+            </dl>
+          </div>
+
+          <div className="form-section">
+            <h4>Approval chain</h4>
+            <div className="chain-steps" style={{gridTemplateColumns:"1fr"}}>
+              <div className="chain-step done" style={{borderRight:0,borderBottom:"1px solid var(--hairline)"}}>
+                <div className="num mono">01 · DONE · 05-12 09:14</div>
+                <div className="nm"><span className="dotmark">✓</span>Submitted by Anna Petrova</div>
+                <div className="who mono">Justification attached · 312 chars</div>
+              </div>
+              <div className="chain-step current" style={{borderRight:0,borderBottom:"1px solid var(--hairline)"}}>
+                <div className="num mono">02 · IN REVIEW · 2d 04h</div>
+                <div className="nm"><span className="dotmark"> </span>Finance Review · Daria Smirnova</div>
+                <div className="who mono">may approve, reject, or send back</div>
+              </div>
+              <div className="chain-step future" style={{borderRight:0,borderBottom:"1px solid var(--hairline)"}}>
+                <div className="num mono">03 · PENDING</div>
+                <div className="nm"><span className="dotmark"> </span>Legal Review · Oleg Markov</div>
+                <div className="who mono">queued · waits for step 2</div>
+              </div>
+              <div className="chain-step future" style={{borderRight:0}}>
+                <div className="num mono">04 · PENDING</div>
+                <div className="nm"><span className="dotmark"> </span>Final decision</div>
+                <div className="who mono">auto-applied to OPP-2418</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h4>Justification</h4>
+            <div className="just-body" style={{borderLeft:"2px solid var(--accent)"}}>{OPP.approval.justification}</div>
+          </div>
+
+          <div className="form-section">
+            <h4>Effect on opportunity lifecycle</h4>
+            <div style={{fontSize:12.5,color:"var(--ink-2)",lineHeight:1.5,background:"var(--paper-2)",padding:"10px 12px",border:"1px solid var(--hairline)"}}>
+              While this request is pending, the opportunity cannot move to <span className="mono">Negotiation</span> or beyond. A decision will be auto-applied: approval persists the 8% discount on OPP-2418; rejection or withdrawal clears it. Send-back returns the request to the owner with reviewer comments.
+            </div>
+          </div>
+        </div>
+
+        <div className="drawer-foot">
+          <span className="hint mono">READ-ONLY · REP · APPROVERS NOTIFIED</span>
+          <div style={{display:"flex",gap:8}}>
+            <button className="btn" onClick={onClose}>Close</button>
+            <button className="btn btn-disabled" aria-disabled="true" title="Only the submitter can withdraw — and not while in review">Withdraw request</button>
+          </div>
+        </div>
+      </aside>
+    </>
+  );
+}
+
+/* ─────────── Edit fields drawer ─────────── */
+
+function EditFieldsDrawer({ opp, onClose, onSaved }){
+  const [form, setForm] = useState({
+    amount: opp.amount.toLocaleString(),
+    close: opp.close,
+    forecast: opp.fields.forecast,
+    probability: String(opp.fields.probability),
+    nextStep: opp.fields.nextStep,
+    paymentRisk: opp.fields.paymentRisk,
+    region: opp.fields.region,
+    impl: opp.fields.impl,
+    legalEntityCode: opp.fields.legalEntityCode,
+  });
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+
+  useEffect(()=>{
+    const onKey = (e)=>{ if(e.key==="Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return ()=>document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <>
+      <div className="scrim" onClick={onClose} />
+      <aside className="drawer" role="dialog" aria-label="Edit fields">
+        <div className="drawer-head">
+          <div>
+            <div className="h-title">Edit opportunity fields</div>
+            <div className="h-sub">
+              <span className="mono">OP</span>
+              <span>OPP-2418 · Q3 Equipment Renewal</span>
+              <span style={{color:"var(--line-2)"}}>·</span>
+              <span className="mono">CUSTOM</span>
+              <span>5 tenant-specific</span>
+            </div>
+          </div>
+          <button className="drawer-close" onClick={onClose} aria-label="Close">
+            <svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="1.4" fill="none"><path d="m3 3 6 6M9 3l-6 6"/></svg>
+          </button>
+        </div>
+
+        <div className="drawer-body">
+          <div className="form-section">
+            <h4>Standard fields</h4>
+            <div className="form-grid">
+              <div className="form-field">
+                <label>Expected amount <span className="req">*</span></label>
+                <div className="ctl">
+                  <span className="mono" style={{color:"var(--muted)",fontSize:11}}>USD</span>
+                  <input value={form.amount} onChange={e=>set("amount",e.target.value)} />
+                </div>
+              </div>
+              <div className="form-field">
+                <label>Close date <span className="req">*</span></label>
+                <div className="ctl"><input value={form.close} onChange={e=>set("close",e.target.value)} placeholder="YYYY-MM-DD" /></div>
+              </div>
+              <div className="form-field">
+                <label>Forecast category</label>
+                <div className="ctl">
+                  <select value={form.forecast} onChange={e=>set("forecast",e.target.value)}>
+                    <option>Pipeline</option><option>Best Case</option><option>Commit</option><option>Closed</option>
+                  </select>
+                  <span style={{color:"var(--muted)"}}>▾</span>
+                </div>
+              </div>
+              <div className="form-field">
+                <label>Probability (%)</label>
+                <div className="ctl"><input value={form.probability} onChange={e=>set("probability",e.target.value)} /></div>
+                <div className="hint">Default at Proposal: 60 — overrideable</div>
+              </div>
+              <div className="form-field full">
+                <label>Next step</label>
+                <div className="ctl"><input value={form.nextStep} onChange={e=>set("nextStep",e.target.value)} /></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h4>Tenant custom fields <span className="mono" style={{color:"var(--muted-2)"}}>Orion Industrial · 5</span></h4>
+            <div className="form-grid">
+              <div className="form-field">
+                <label>Payment Risk Level</label>
+                <div className="ctl">
+                  <select value={form.paymentRisk} onChange={e=>set("paymentRisk",e.target.value)}>
+                    <option>Low</option><option>Medium</option><option>High</option>
+                  </select>
+                  <span style={{color:"var(--muted)"}}>▾</span>
+                </div>
+              </div>
+              <div className="form-field">
+                <label>Region</label>
+                <div className="ctl">
+                  <select value={form.region} onChange={e=>set("region",e.target.value)}>
+                    <option>NA-East</option><option>NA-West</option><option>DACH-North</option><option>Baltics</option><option>CEE</option>
+                  </select>
+                  <span style={{color:"var(--muted)"}}>▾</span>
+                </div>
+              </div>
+              <div className="form-field">
+                <label>Implementation Window</label>
+                <div className="ctl"><input value={form.impl} onChange={e=>set("impl",e.target.value)} /></div>
+              </div>
+              <div className="form-field">
+                <label>Procurement Process</label>
+                <div className="ctl"><input value={form.procurement || "Two-step (purchasing + plant)"} readOnly /></div>
+              </div>
+              <div className="form-field full">
+                <label>
+                  Legal Entity Code <span className="req">*</span>
+                  <span className="field-tag req mono" style={{fontSize:8.5}}>REQ AT N</span>
+                </label>
+                <div className="ctl"><input value={form.legalEntityCode} onChange={e=>set("legalEntityCode",e.target.value)} placeholder="e.g. ACME-US-0142" /></div>
+                <div className="hint">Currently empty — required to move stage to Negotiation</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="drawer-foot">
+          <span className="hint mono">OWNER · ANNA PETROVA · CHANGES AUDITED</span>
+          <div style={{display:"flex",gap:8}}>
+            <button className="btn" onClick={onClose}>Cancel</button>
+            <button className="btn btn-primary" onClick={()=>onSaved(form)}>Save changes</button>
+          </div>
+        </div>
+      </aside>
+    </>
+  );
+}
+
+/* ─────────── App ─────────── */
+
+function App(){
+  const [opp, setOpp] = useState(OPP);
+  const [acts, setActs] = useState(ACTIVITIES);
+  const [pop, setPop] = useState(null);              // stage validation panel
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [approvalOpen, setApprovalOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [inlineEdit, setInlineEdit] = useState(null); // inline edit key
+  const [draft, setDraft] = useState({});
+  const [toast, setToast] = useState(null);
+
+  function flashToast(text){
+    setToast(text);
+    setTimeout(()=>setToast(null), 2600);
+  }
+
+  /* Stage click → validation panel */
+  function onClickStage(s){
+    if(pop && pop.code === s.code){ setPop(null); return; }
+    setPop(s);
+    /* scroll the inline panel into view smoothly */
+  }
+
+  /* Activity submit */
+  function onSubmitActivity(act){
+    const id = "ACT-NEW-" + (acts.length+1);
+    const item = { id, section:"upcoming", kind:act.kind, title:act.title || "Untitled activity",
+                   meta:["Owner Anna Petrova","Linked OPP-2418"], time:act.when || "Today", state:"today",
+                   body:act.body || undefined };
+    setActs(prev => [item, ...prev]);
+    setComposerOpen(false);
+    flashToast("Activity added to OPP-2418 · linked to AC-3318 / CT-7421");
+  }
+
+  /* Inline edit */
+  function startInlineEdit(key){
+    setDraft({
+      amount: opp.amount.toLocaleString(),
+      close: opp.close,
+      forecast: opp.fields.forecast,
+      probability: String(opp.fields.probability),
+      paymentRisk: opp.fields.paymentRisk,
+      legalEntityCode: opp.fields.legalEntityCode,
+    });
+    setInlineEdit(key);
+  }
+  function commitInlineEdit(){
+    setOpp(o => ({
+      ...o,
+      amount: parseInt(String(draft.amount).replace(/[^0-9]/g,"")) || o.amount,
+      close: draft.close || o.close,
+      fields: {
+        ...o.fields,
+        forecast: draft.forecast,
+        probability: parseInt(draft.probability) || o.fields.probability,
+        paymentRisk: draft.paymentRisk,
+        legalEntityCode: draft.legalEntityCode,
+      }
+    }));
+    setInlineEdit(null);
+    flashToast("Field saved · audit recorded as OPP.UPDATE by Anna Petrova");
+  }
+
+  /* Drawer save */
+  function onSavedDrawer(form){
+    setOpp(o => ({
+      ...o,
+      amount: parseInt(String(form.amount).replace(/[^0-9]/g,"")) || o.amount,
+      close: form.close,
+      fields: {
+        ...o.fields,
+        forecast: form.forecast,
+        probability: parseInt(form.probability) || o.fields.probability,
+        nextStep: form.nextStep,
+        paymentRisk: form.paymentRisk,
+        region: form.region,
+        impl: form.impl,
+        legalEntityCode: form.legalEntityCode,
+      }
+    }));
+    setEditOpen(false);
+    flashToast("Opportunity fields updated · 1 audit event written");
+  }
+
+  return (
+    <div className="app" data-screen-label="Opportunity Detail · OPP-2418">
+      <Sidebar />
+      <div className="main">
+        <TopBar />
+
+        <div className="content" data-screen-label="03 Opportunity Detail">
+          <OppHeader
+            opp={opp}
+            onEdit={()=>setEditOpen(true)}
+            onMoveStage={()=>{
+              /* Scroll user attention to stage path & open the Negotiation cell pop */
+              const cell = STAGE_STATES(opp.stage).find(s=>s.code==="N");
+              setPop(cell);
+            }}
+            onAddActivity={()=>{ setComposerOpen(true); }}
+            onViewApproval={()=>setApprovalOpen(true)}
+          />
+
+          <StatesStrip opp={opp} />
+
+          <StagePath
+            current={opp.stage}
+            pop={pop}
+            onClickStage={onClickStage}
+            onClosePop={()=>setPop(null)}
+          />
+
+          <div className="work">
+            <div>
+              <DealFields
+                opp={opp}
+                editing={inlineEdit}
+                onEdit={startInlineEdit}
+                onCommit={commitInlineEdit}
+                onCancel={()=>setInlineEdit(null)}
+                draft={draft}
+                setDraft={setDraft}
+              />
+              <ActivitiesPanel
+                acts={acts}
+                composerOpen={composerOpen}
+                onOpenComposer={()=>setComposerOpen(true)}
+                onCloseComposer={()=>setComposerOpen(false)}
+                onSubmit={onSubmitActivity}
+              />
+              <ApprovalPanel opp={opp} onView={()=>setApprovalOpen(true)} />
+              <AuditTimeline />
+            </div>
+
+            <div>
+              <AccountContact opp={opp} />
+              <div style={{height:14}} />
+              <ManagerOnly />
+            </div>
+          </div>
+
+          <div className="foot-ruler">
+            <span>SALES OPS CRM · ORION INDUSTRIAL · LOCAL PILOT</span>
+            <span>OPP-2418 · OWNER AP · ROLE REP</span>
+            <span>POLICY v18 · METADATA v42 · SHELL v2.4</span>
+          </div>
+        </div>
+      </div>
+
+      {approvalOpen && <ApprovalDrawer onClose={()=>setApprovalOpen(false)} />}
+      {editOpen && <EditFieldsDrawer opp={opp} onClose={()=>setEditOpen(false)} onSaved={onSavedDrawer} />}
+      {toast && (
+        <div className="toast"><span className="ok">✓</span>{toast}</div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

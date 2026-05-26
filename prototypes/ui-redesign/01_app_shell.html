@@ -1,0 +1,1448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sales Ops CRM — App Shell</title>
+<meta name="viewport" content="width=1440" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --paper:#F4F1EB;
+    --paper-2:#EEEAE0;
+    --paper-3:#E6E1D4;
+    --ink:#17150F;
+    --ink-2:#3A372E;
+    --muted:#6E6A5C;
+    --muted-2:#8C8779;
+    --line:#D6D0BF;
+    --line-2:#C4BDA8;
+    --hairline:#E4DFD0;
+    --accent:#B57321;          /* ochre */
+    --accent-2:#8A5616;
+    --accent-soft:#F2E3C8;
+    --pos:#3F6B3A;             /* approved */
+    --pos-soft:#E2EAD6;
+    --neg:#9A3A2F;             /* rejected / blocked */
+    --neg-soft:#F0DAD3;
+    --warn:#A36A11;            /* pending / warn */
+    --warn-soft:#F4E3C1;
+    --info:#2D5B6B;            /* sent back / info */
+    --info-soft:#D6E1E4;
+    --white:#FBFAF6;
+    font-family:"Geist","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-feature-settings:"ss01","cv11","tnum";
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);}
+  body{font-size:13px;line-height:1.4;-webkit-font-smoothing:antialiased;}
+  .mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-feature-settings:"tnum","ss02";}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+  a{color:inherit;text-decoration:none}
+  ::selection{background:var(--accent-soft);color:var(--ink)}
+
+  /* ─────────── App layout ─────────── */
+  .app{display:grid;grid-template-columns:244px 1fr;min-height:100vh;}
+  .sidebar{
+    background:var(--paper-2);
+    border-right:1px solid var(--line);
+    display:flex;flex-direction:column;
+    position:sticky;top:0;height:100vh;
+  }
+  .main{display:flex;flex-direction:column;min-width:0}
+
+  /* ─────────── Sidebar ─────────── */
+  .brand{
+    padding:18px 18px 14px;
+    border-bottom:1px solid var(--hairline);
+    display:flex;align-items:center;gap:10px;
+  }
+  .brand-mark{
+    width:22px;height:22px;flex:0 0 22px;position:relative;
+  }
+  .brand-mark::before,.brand-mark::after{
+    content:"";position:absolute;inset:0;border:1.5px solid var(--ink);
+  }
+  .brand-mark::after{inset:5px;background:var(--accent);border-color:var(--accent-2);}
+  .brand-name{font-weight:600;letter-spacing:.02em;font-size:14px}
+  .brand-name span{color:var(--muted);font-weight:400;margin-left:6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;}
+
+  .tenant{
+    padding:12px 18px;border-bottom:1px solid var(--hairline);
+    display:flex;flex-direction:column;gap:4px;
+  }
+  .tenant-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .tenant-row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .tenant-name{font-weight:600;font-size:13.5px}
+  .tenant-env{
+    font-family:"JetBrains Mono",monospace;font-size:10px;
+    padding:2px 6px;border:1px solid var(--line-2);border-radius:2px;
+    color:var(--muted);background:var(--paper);letter-spacing:.04em;
+  }
+  .tenant-meta{display:flex;gap:8px;font-size:11px;color:var(--muted)}
+  .tenant-meta .dot{color:var(--line-2)}
+
+  .nav{flex:1;overflow:auto;padding:10px 0 12px;}
+  .nav-section{margin-top:14px}
+  .nav-section:first-child{margin-top:8px}
+  .nav-title{
+    font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-2);
+    padding:6px 18px 4px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .nav-title em{font-style:normal;font-family:"JetBrains Mono",monospace;color:var(--line-2);letter-spacing:.05em;}
+  .nav-item{
+    display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:10px;
+    padding:7px 18px 7px 14px;
+    border-left:2px solid transparent;
+    color:var(--ink-2);font-size:13px;cursor:pointer;
+    position:relative;
+  }
+  .nav-item:hover{background:var(--paper-3);color:var(--ink)}
+  .nav-item.active{
+    background:var(--paper-3);border-left-color:var(--accent);color:var(--ink);font-weight:500;
+  }
+  .nav-mark{
+    width:22px;height:22px;display:grid;place-items:center;
+    border:1px solid var(--line-2);background:var(--white);
+    font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:600;
+    letter-spacing:.04em;color:var(--ink-2);
+  }
+  .nav-item.active .nav-mark{border-color:var(--accent);color:var(--accent-2);background:var(--accent-soft)}
+  .nav-label{display:flex;align-items:baseline;gap:8px;min-width:0}
+  .nav-label small{color:var(--muted);font-weight:400;font-size:11px;}
+  .nav-count{
+    font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);
+    min-width:18px;text-align:right;
+  }
+  .nav-count.alert{color:var(--accent-2);font-weight:600}
+  .nav-item.disabled{opacity:.35;pointer-events:none}
+  .nav-item.disabled .nav-mark{background:transparent}
+
+  .user-block{
+    border-top:1px solid var(--line);
+    padding:12px 14px;display:flex;align-items:center;gap:10px;
+    background:var(--paper-2);
+  }
+  .avatar{
+    width:30px;height:30px;border-radius:50%;
+    display:grid;place-items:center;
+    background:var(--ink);color:var(--paper);
+    font-size:11px;font-weight:600;letter-spacing:.04em;
+    flex:0 0 30px;border:1px solid var(--ink);
+  }
+  .avatar.bg-a{background:#2D3E2C;border-color:#2D3E2C}
+  .avatar.bg-b{background:#5C3A1E;border-color:#5C3A1E}
+  .avatar.bg-c{background:#2A4655;border-color:#2A4655}
+  .avatar.bg-d{background:#6B2E2E;border-color:#6B2E2E}
+  .avatar.bg-e{background:#3D2A55;border-color:#3D2A55}
+  .avatar.bg-f{background:#5D562A;border-color:#5D562A}
+  .user-meta{display:flex;flex-direction:column;min-width:0;flex:1}
+  .user-name{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .user-role{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .switch-btn{
+    border:1px solid var(--line-2);padding:5px 8px;font-size:10.5px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--ink-2);background:var(--paper);
+    border-radius:2px;font-family:"JetBrains Mono",monospace;
+  }
+  .switch-btn:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  /* ─────────── Top bar ─────────── */
+  .topbar{
+    height:56px;border-bottom:1px solid var(--line);
+    background:var(--paper);
+    display:grid;grid-template-columns:1fr minmax(280px,440px) auto;
+    align-items:center;gap:20px;padding:0 22px;
+    position:sticky;top:0;z-index:5;
+  }
+  .crumb{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px}
+  .crumb strong{color:var(--ink);font-weight:600;font-size:13.5px}
+  .crumb .sep{color:var(--line-2)}
+  .crumb .pulse{
+    display:inline-flex;align-items:center;gap:6px;font-family:"JetBrains Mono",monospace;
+    font-size:10.5px;color:var(--muted);padding:3px 7px;border:1px solid var(--line-2);
+    border-radius:2px;background:var(--paper-2);letter-spacing:.04em;
+  }
+  .pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--pos);box-shadow:0 0 0 2px var(--pos-soft)}
+  .search{
+    display:flex;align-items:center;gap:8px;background:var(--paper-2);
+    border:1px solid var(--line);border-radius:3px;padding:7px 10px;font-size:12.5px;color:var(--muted);
+  }
+  .search:focus-within{border-color:var(--ink);background:var(--white)}
+  .search svg{flex:0 0 14px;color:var(--muted)}
+  .search input{
+    border:0;background:transparent;outline:none;flex:1;font:inherit;color:var(--ink);
+  }
+  .search kbd{
+    font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted);
+    border:1px solid var(--line-2);border-radius:2px;padding:1px 5px;background:var(--paper);
+  }
+  .top-actions{display:flex;align-items:center;gap:10px}
+  .icon-btn{
+    width:32px;height:32px;display:grid;place-items:center;
+    border:1px solid var(--line);border-radius:3px;background:var(--paper);
+    color:var(--ink-2);position:relative;
+  }
+  .icon-btn:hover{border-color:var(--ink);color:var(--ink)}
+  .icon-btn .dot-badge{
+    position:absolute;top:-3px;right:-3px;min-width:14px;height:14px;padding:0 3px;
+    background:var(--accent);color:var(--white);font-family:"JetBrains Mono",monospace;
+    font-size:9px;font-weight:600;border-radius:7px;display:grid;place-items:center;
+    border:1.5px solid var(--paper);
+  }
+  .role-pill{
+    display:flex;align-items:center;gap:10px;padding:4px 10px 4px 4px;
+    border:1px solid var(--line);border-radius:18px;background:var(--paper);
+  }
+  .role-pill:hover{border-color:var(--ink)}
+  .role-pill .avatar{width:26px;height:26px;flex:0 0 26px;font-size:10px}
+  .role-pill .who{display:flex;flex-direction:column;line-height:1.15;text-align:left}
+  .role-pill .who b{font-size:12px;font-weight:600}
+  .role-pill .who span{font-size:10.5px;color:var(--muted)}
+  .role-pill .chev{color:var(--muted);margin-left:2px}
+
+  /* ─────────── Role switcher popover ─────────── */
+  .popover-wrap{position:relative}
+  .popover{
+    position:absolute;top:calc(100% + 8px);right:0;
+    background:var(--white);border:1px solid var(--line);
+    border-radius:4px;box-shadow:0 8px 24px rgba(20,18,12,.12),0 2px 6px rgba(20,18,12,.06);
+    width:340px;z-index:30;overflow:hidden;
+  }
+  .popover-head{
+    padding:10px 14px;border-bottom:1px solid var(--hairline);
+    font-size:10px;text-transform:uppercase;letter-spacing:.16em;color:var(--muted);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .popover-head em{font-style:normal;font-family:"JetBrains Mono",monospace;color:var(--muted-2);letter-spacing:.05em}
+  .user-row{
+    display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center;
+    padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--hairline);
+  }
+  .user-row:last-child{border-bottom:0}
+  .user-row:hover{background:var(--paper-2)}
+  .user-row.active{background:var(--accent-soft)}
+  .user-row .meta{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+  .user-row .meta b{font-size:12.5px;font-weight:500}
+  .user-row .meta span{font-size:11px;color:var(--muted)}
+  .role-badge{
+    font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.06em;
+    padding:2px 6px;border-radius:2px;border:1px solid var(--line-2);
+    color:var(--muted);background:var(--paper);text-transform:uppercase;
+  }
+  .role-badge.r-rep{color:#2D5B6B;border-color:#A4C0C8;background:var(--info-soft)}
+  .role-badge.r-mgr{color:#5C3A1E;border-color:#D9BFA0;background:#F0E2CE}
+  .role-badge.r-ops{color:#3D2A55;border-color:#BFAED9;background:#E4DBF0}
+  .role-badge.r-fin{color:#3F6B3A;border-color:#B2C8A8;background:var(--pos-soft)}
+  .role-badge.r-leg{color:#6B2E2E;border-color:#D6B0A8;background:var(--neg-soft)}
+  .role-badge.r-exe{color:#17150F;border-color:#C4BDA8;background:var(--paper-3)}
+
+  /* ─────────── Main content ─────────── */
+  .content{padding:20px 26px 60px;max-width:1400px;}
+  .page-head{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    padding-bottom:14px;border-bottom:1px solid var(--hairline);margin-bottom:18px;
+  }
+  .page-title{font-size:22px;font-weight:600;letter-spacing:-.01em;margin:0}
+  .page-title em{font-style:normal;color:var(--muted);font-weight:400}
+  .page-sub{display:flex;gap:14px;color:var(--muted);font-size:12px;margin-top:6px}
+  .page-sub .mono{color:var(--ink-2)}
+  .page-sub .sep{color:var(--line-2)}
+  .page-actions{display:flex;gap:8px;align-items:center}
+  .btn{
+    border:1px solid var(--line-2);background:var(--paper);
+    padding:7px 12px;font-size:12px;color:var(--ink);border-radius:3px;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .btn:hover{border-color:var(--ink)}
+  .btn-primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .btn-primary:hover{background:var(--accent-2);border-color:var(--accent-2)}
+  .btn .kbd{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted);}
+  .btn-primary .kbd{color:var(--paper-3)}
+
+  /* KPI strip */
+  .kpis{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:0;
+    border:1px solid var(--line);background:var(--white);margin-bottom:18px;
+  }
+  .kpi{padding:14px 16px;border-right:1px solid var(--hairline);position:relative}
+  .kpi:last-child{border-right:0}
+  .kpi-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+  .kpi-label .delta{font-family:"JetBrains Mono",monospace;letter-spacing:0;text-transform:none;font-size:11px;}
+  .kpi-label .delta.up{color:var(--pos)}
+  .kpi-label .delta.dn{color:var(--neg)}
+  .kpi-value{font-family:"JetBrains Mono",monospace;font-size:26px;font-weight:500;margin-top:6px;letter-spacing:-.01em}
+  .kpi-value small{font-size:13px;color:var(--muted);margin-left:4px}
+  .kpi-foot{font-size:11.5px;color:var(--muted);margin-top:4px}
+
+  /* Panels & tables */
+  .row{display:grid;gap:18px}
+  .row.r-2-1{grid-template-columns:2fr 1fr}
+  .row.r-1-1{grid-template-columns:1fr 1fr}
+  .row.r-3-2{grid-template-columns:3fr 2fr}
+
+  .panel{background:var(--white);border:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+  .panel-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:11px 14px;border-bottom:1px solid var(--hairline);
+  }
+  .panel-title{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;display:flex;gap:10px;align-items:center}
+  .panel-title em{font-style:normal;font-family:"JetBrains Mono",monospace;color:var(--muted);font-weight:400;font-size:11px;letter-spacing:.02em;text-transform:none}
+  .panel-actions{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:11.5px}
+  .panel-actions a{border-bottom:1px dotted var(--line-2)}
+  .panel-actions a:hover{color:var(--ink);border-color:var(--ink)}
+  .filterchip{
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.04em;
+    border:1px solid var(--line-2);padding:2px 6px;border-radius:2px;color:var(--ink-2);background:var(--paper);
+  }
+  .filterchip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  table.t{width:100%;border-collapse:collapse;table-layout:fixed}
+  table.t th, table.t td{
+    text-align:left;padding:8px 14px;border-bottom:1px solid var(--hairline);
+    font-size:12.5px;vertical-align:middle;
+  }
+  table.t th{
+    font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);
+    font-weight:500;background:var(--paper-2);border-bottom:1px solid var(--line);
+    padding:6px 14px;
+  }
+  table.t td.mono{font-family:"JetBrains Mono",monospace;font-size:12px}
+  table.t tr:hover td{background:#FBF7EB}
+  table.t .truncate{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  table.t td .sub{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+  table.t .num{font-family:"JetBrains Mono",monospace;text-align:right;font-variant-numeric:tabular-nums}
+  table.t th.num{text-align:right}
+
+  /* Stage pip */
+  .stage-pip{display:inline-flex;gap:3px;align-items:center;margin-right:6px;vertical-align:middle}
+  .stage-pip i{width:6px;height:10px;background:var(--line);display:block}
+  .stage-pip i.on{background:var(--ink)}
+  .stage-pip i.flag{background:var(--accent)}
+
+  /* Status pills */
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:11px;font-family:"JetBrains Mono",monospace;letter-spacing:.04em;
+    padding:2px 7px;border-radius:2px;border:1px solid var(--line-2);background:var(--paper);
+    text-transform:uppercase;
+  }
+  .pill .pdot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+  .pill.p-pending{color:var(--warn);border-color:#E2C887;background:var(--warn-soft)}
+  .pill.p-pending .pdot{background:var(--warn)}
+  .pill.p-approved{color:var(--pos);border-color:#B2C8A8;background:var(--pos-soft)}
+  .pill.p-approved .pdot{background:var(--pos)}
+  .pill.p-rejected{color:var(--neg);border-color:#D6B0A8;background:var(--neg-soft)}
+  .pill.p-rejected .pdot{background:var(--neg)}
+  .pill.p-sentback{color:var(--info);border-color:#A4C0C8;background:var(--info-soft)}
+  .pill.p-sentback .pdot{background:var(--info)}
+  .pill.p-none{color:var(--muted)}
+  .pill.p-running{color:var(--info);border-color:#A4C0C8;background:var(--info-soft)}
+  .pill.p-running .pdot{background:var(--info);animation:bp 1.6s infinite}
+  @keyframes bp{50%{opacity:.3}}
+
+  /* Activity / list items */
+  .list{display:flex;flex-direction:column}
+  .list-item{
+    display:grid;grid-template-columns:60px 1fr auto;gap:12px;
+    padding:10px 14px;border-bottom:1px solid var(--hairline);align-items:start;
+  }
+  .list-item:last-child{border-bottom:0}
+  .list-time{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);padding-top:1px}
+  .list-time.due{color:var(--accent-2);font-weight:600}
+  .list-time.over{color:var(--neg)}
+  .list-body{min-width:0}
+  .list-title{font-size:12.5px;font-weight:500;line-height:1.35}
+  .list-meta{font-size:11px;color:var(--muted);margin-top:2px;display:flex;gap:6px;flex-wrap:wrap}
+  .list-meta .sep{color:var(--line-2)}
+  .list-action{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted);padding-top:2px;text-transform:uppercase;letter-spacing:.08em}
+  .list-action.act{color:var(--accent-2)}
+
+  /* Funnel / bar viz */
+  .funnel{padding:6px 14px 14px}
+  .funnel-row{display:grid;grid-template-columns:128px 1fr 80px 84px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--hairline);}
+  .funnel-row:last-child{border-bottom:0}
+  .funnel-stage{font-size:12px;display:flex;align-items:center;gap:8px}
+  .funnel-stage .ix{font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--muted);width:18px}
+  .funnel-bar{height:14px;position:relative;background:var(--paper-2);border:1px solid var(--hairline)}
+  .funnel-bar .fill{position:absolute;left:0;top:0;bottom:0;background:var(--ink);}
+  .funnel-bar .fill.acc{background:var(--accent)}
+  .funnel-bar .fill.warn{background:var(--warn)}
+  .funnel-bar .marker{position:absolute;top:-3px;bottom:-3px;width:1px;background:var(--ink-2)}
+  .funnel-num{font-family:"JetBrains Mono",monospace;font-size:12px;text-align:right;font-variant-numeric:tabular-nums}
+  .funnel-pct{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);text-align:right}
+
+  /* Empty hint when role can't see module */
+  .role-hint{
+    font-size:11px;color:var(--muted-2);padding:8px 18px;
+    border-top:1px solid var(--hairline);font-style:italic;letter-spacing:.01em;
+  }
+
+  /* Foot ruler */
+  .foot-ruler{
+    margin-top:24px;border-top:1px solid var(--hairline);padding-top:10px;
+    display:flex;justify-content:space-between;color:var(--muted);font-size:11px;
+    font-family:"JetBrains Mono",monospace;letter-spacing:.04em;
+  }
+
+  /* Risk row mini */
+  .riskrow{
+    display:grid;grid-template-columns:1fr 64px 80px;align-items:center;gap:10px;
+    padding:9px 14px;border-bottom:1px solid var(--hairline);
+  }
+  .riskrow:last-child{border-bottom:0}
+  .riskrow .nm{font-size:12.5px}
+  .riskrow .nm small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+  .riskrow .num{font-family:"JetBrains Mono",monospace;font-size:12px;text-align:right}
+  .riskrow .age{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--neg);text-align:right}
+
+  /* mini stat list */
+  .ministat{display:flex;flex-direction:column}
+  .ministat-row{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--hairline)}
+  .ministat-row:last-child{border-bottom:0}
+  .ministat-row .lbl{font-size:12.5px}
+  .ministat-row .lbl small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+  .ministat-row .v{font-family:"JetBrains Mono",monospace;font-size:13px;font-variant-numeric:tabular-nums}
+  .ministat-row .v.warn{color:var(--accent-2);font-weight:600}
+
+  /* Tablet */
+  @media (max-width:1100px){
+    .app{grid-template-columns:64px 1fr}
+    .sidebar .nav-label, .sidebar .brand-name span, .sidebar .nav-count, .sidebar .tenant, .sidebar .user-meta, .sidebar .switch-btn{display:none}
+    .sidebar .brand{justify-content:center;padding:18px 0}
+    .sidebar .brand-name{display:none}
+    .nav-item{grid-template-columns:1fr;justify-items:center;padding:8px}
+    .nav-title{display:none}
+    .user-block{justify-content:center;padding:12px 0}
+    .row.r-2-1,.row.r-1-1,.row.r-3-2{grid-template-columns:1fr}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .kpi:nth-child(2){border-right:0}
+    .kpi:nth-child(1),.kpi:nth-child(2){border-bottom:1px solid var(--hairline)}
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useEffect, useRef } = React;
+
+/* ─────────── Data ─────────── */
+
+const USERS = [
+  { id:"u1", name:"Anna Petrova",    role:"Sales Representative",   roleKey:"rep", initials:"AP", color:"bg-c", roleCode:"REP" },
+  { id:"u2", name:"Michael Chen",    role:"Sales Manager",          roleKey:"mgr", initials:"MC", color:"bg-b", roleCode:"MGR" },
+  { id:"u3", name:"Irina Volkova",   role:"RevOps Administrator",   roleKey:"ops", initials:"IV", color:"bg-e", roleCode:"OPS" },
+  { id:"u4", name:"Daria Smirnova",  role:"Finance Approver",       roleKey:"fin", initials:"DS", color:"bg-a", roleCode:"FIN" },
+  { id:"u5", name:"Oleg Markov",     role:"Legal Approver",         roleKey:"leg", initials:"OM", color:"bg-d", roleCode:"LEG" },
+  { id:"u6", name:"Elena Morozova",  role:"Executive",              roleKey:"exe", initials:"EM", color:"bg-f", roleCode:"EXE" },
+];
+
+const MODULES = [
+  { key:"dashboard",  code:"DA", label:"Dashboard",      section:"workspace" },
+  { key:"accounts",   code:"AC", label:"Accounts",       section:"workspace" },
+  { key:"contacts",   code:"CO", label:"Contacts",       section:"workspace" },
+  { key:"opps",       code:"OP", label:"Opportunities",  section:"workspace" },
+  { key:"approvals",  code:"AP", label:"Approvals",      section:"governance" },
+  { key:"imports",    code:"IM", label:"Imports",        section:"data" },
+  { key:"duplicates", code:"DU", label:"Duplicates",     section:"data" },
+  { key:"metadata",   code:"MA", label:"Metadata Admin", section:"data" },
+  { key:"reports",    code:"RE", label:"Reports",        section:"insights" },
+  { key:"audit",      code:"AU", label:"Audit",          section:"insights" },
+];
+
+const SECTIONS = [
+  { key:"workspace",  label:"Workspace",   index:"01" },
+  { key:"governance", label:"Governance",  index:"02" },
+  { key:"data",       label:"Data & Quality", index:"03" },
+  { key:"insights",   label:"Insights",    index:"04" },
+];
+
+// Role → module visibility (mark hidden modules as disabled instead of removed, so the system is legible)
+const ROLE_ACCESS = {
+  rep: ["dashboard","accounts","contacts","opps","approvals"],
+  mgr: ["dashboard","accounts","contacts","opps","approvals","reports"],
+  ops: ["dashboard","accounts","contacts","opps","approvals","imports","duplicates","metadata","reports","audit"],
+  fin: ["dashboard","approvals","accounts","opps","audit"],
+  leg: ["dashboard","approvals","accounts","opps","audit"],
+  exe: ["dashboard","reports"],
+};
+
+// Counts (badges next to nav items). Some role-dependent.
+function navCounts(roleKey){
+  const base = {
+    accounts:412, contacts:1843, opps:128,
+    imports:2, duplicates:24, metadata:3, audit:0, reports:0,
+  };
+  if(roleKey==="rep") return { ...base, opps:12, approvals:3 };
+  if(roleKey==="mgr") return { ...base, opps:46, approvals:7 };
+  if(roleKey==="ops") return { ...base, approvals:0 };
+  if(roleKey==="fin") return { approvals:9, opps:46, accounts:412, audit:0 };
+  if(roleKey==="leg") return { approvals:4, opps:46, accounts:412, audit:0 };
+  if(roleKey==="exe") return { reports:0 };
+  return base;
+}
+
+/* ─────────── Layout primitives ─────────── */
+
+function BrandMark(){ return <span className="brand-mark" aria-hidden /> }
+
+function Sidebar({ user, activeModule, onSelectModule, onOpenSwitcher }){
+  const access = ROLE_ACCESS[user.roleKey];
+  const counts = navCounts(user.roleKey);
+  return (
+    <aside className="sidebar">
+      <div className="brand">
+        <BrandMark />
+        <div className="brand-name">Sales Ops CRM<span>v2.4</span></div>
+      </div>
+
+      <div className="tenant">
+        <div className="tenant-label">Tenant</div>
+        <div className="tenant-row">
+          <div className="tenant-name">Orion Industrial</div>
+          <div className="tenant-env mono">LOCAL PILOT</div>
+        </div>
+        <div className="tenant-meta">
+          <span className="mono">EU-CENTRAL-1</span>
+          <span className="dot">·</span>
+          <span>184 seats</span>
+        </div>
+      </div>
+
+      <nav className="nav">
+        {SECTIONS.map(sec => {
+          const items = MODULES.filter(m => m.section === sec.key);
+          const anyVisible = items.some(m => access.includes(m.key));
+          if(!anyVisible) return null;
+          return (
+            <div key={sec.key} className="nav-section">
+              <div className="nav-title">{sec.label}<em>{sec.index}</em></div>
+              {items.map(m => {
+                const allowed = access.includes(m.key);
+                const c = counts[m.key];
+                const alert = (m.key==="approvals" && c>0 && (user.roleKey==="fin"||user.roleKey==="leg"||user.roleKey==="rep"||user.roleKey==="mgr"))
+                            || (m.key==="duplicates" && c>0 && user.roleKey==="ops")
+                            || (m.key==="imports" && c>0 && user.roleKey==="ops");
+                return (
+                  <div
+                    key={m.key}
+                    className={`nav-item ${activeModule===m.key?"active":""} ${!allowed?"disabled":""}`}
+                    onClick={()=>{ if(allowed) onSelectModule(m.key); }}
+                    title={allowed ? m.label : `${m.label} — not visible to ${user.role}`}
+                  >
+                    <span className="nav-mark mono">{m.code}</span>
+                    <span className="nav-label">{m.label}</span>
+                    <span className={`nav-count mono ${alert?"alert":""}`}>
+                      {allowed && c!==undefined && c!==0 ? c : ""}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </nav>
+
+      <div className="user-block">
+        <div className={`avatar ${user.color}`}>{user.initials}</div>
+        <div className="user-meta">
+          <div className="user-name">{user.name}</div>
+          <div className="user-role">{user.role}</div>
+        </div>
+        <button className="switch-btn" onClick={onOpenSwitcher}>Switch</button>
+      </div>
+    </aside>
+  );
+}
+
+function TopBar({ user, activeLabel, onOpenSwitcher, switcherOpen, onPickUser, popoverRef }){
+  return (
+    <div className="topbar">
+      <div className="crumb">
+        <span className="pulse"><span className="pulse-dot" /> CONNECTED</span>
+        <span>Orion Industrial</span>
+        <span className="sep">/</span>
+        <strong>{activeLabel}</strong>
+      </div>
+
+      <label className="search">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5"/></svg>
+        <input placeholder="Search accounts, opportunities, requests, audit events…" />
+        <kbd>⌘K</kbd>
+      </label>
+
+      <div className="top-actions">
+        <button className="icon-btn" aria-label="Notifications" title="Notifications">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M3.5 12h9l-1-1.5V7a3.5 3.5 0 0 0-7 0v3.5L3.5 12Z"/><path d="M6.5 13.5a1.5 1.5 0 0 0 3 0"/></svg>
+          <span className="dot-badge mono">{user.roleKey==="fin" ? 9 : user.roleKey==="rep" ? 4 : user.roleKey==="ops" ? 12 : 3}</span>
+        </button>
+        <div className="popover-wrap">
+          <button className="role-pill" onClick={onOpenSwitcher} aria-haspopup="menu" aria-expanded={switcherOpen}>
+            <span className={`avatar ${user.color}`}>{user.initials}</span>
+            <span className="who">
+              <b>{user.name.split(" ")[0]} {user.name.split(" ")[1][0]}.</b>
+              <span>{user.role}</span>
+            </span>
+            <span className="chev">▾</span>
+          </button>
+          {switcherOpen && (
+            <div className="popover" ref={popoverRef} role="menu">
+              <div className="popover-head">Switch user (sample) <em>DEMO</em></div>
+              {USERS.map(u => (
+                <div key={u.id} className={`user-row ${u.id===user.id?"active":""}`} onClick={()=>onPickUser(u)}>
+                  <div className={`avatar ${u.color}`}>{u.initials}</div>
+                  <div className="meta">
+                    <b>{u.name}</b>
+                    <span>{u.role}</span>
+                  </div>
+                  <span className={`role-badge r-${u.roleKey}`}>{u.roleCode}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── Shared bits ─────────── */
+
+function Pill({ kind, children }){
+  return <span className={`pill p-${kind}`}><span className="pdot" />{children}</span>;
+}
+
+function StagePip({ stage }){
+  // Pipeline stages: Q (Qualification), D (Discovery), P (Proposal), N (Negotiation), W (Closed Won), L (Closed Lost)
+  const stages = ["Q","D","P","N","W"];
+  const flag = stage === "FLAG";
+  return (
+    <span className="stage-pip">
+      {stages.map((s,i)=>{
+        const idx = ["Q","D","P","N","W"].indexOf(stage);
+        const isOn = i <= idx;
+        return <i key={s} className={isOn ? (flag?"flag":"on") : ""} />;
+      })}
+    </span>
+  );
+}
+
+function fmtMoney(n){
+  if(n>=1_000_000) return `$${(n/1_000_000).toFixed(2)}M`;
+  if(n>=1_000) return `$${(n/1_000).toFixed(0)}K`;
+  return `$${n}`;
+}
+
+function PageHead({ title, sub, actions }){
+  return (
+    <div className="page-head">
+      <div>
+        <h1 className="page-title">{title}</h1>
+        <div className="page-sub">{sub}</div>
+      </div>
+      {actions && <div className="page-actions">{actions}</div>}
+    </div>
+  );
+}
+
+function Kpi({ label, value, unit, delta, foot }){
+  return (
+    <div className="kpi">
+      <div className="kpi-label">
+        <span>{label}</span>
+        {delta && <span className={`delta ${delta.dir}`}>{delta.dir==="up"?"▲":"▼"} {delta.v}</span>}
+      </div>
+      <div className="kpi-value">{value}{unit && <small>{unit}</small>}</div>
+      <div className="kpi-foot">{foot}</div>
+    </div>
+  );
+}
+
+function Panel({ title, count, actions, children, filters }){
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <div className="panel-title">
+          {title}
+          {count !== undefined && <em>{count}</em>}
+        </div>
+        <div className="panel-actions">
+          {filters}
+          {actions}
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/* ─────────── Role landings ─────────── */
+
+function RepLanding(){
+  const opps = [
+    { id:"OPP-2418", acct:"Tarsis Bearings",       amt:148000, stage:"P", close:"2026-06-12", next:"Send revised quote",        nextDue:"Today",      appr:"none" },
+    { id:"OPP-2410", acct:"Nordwerk Tooling AG",   amt:412500, stage:"N", close:"2026-05-30", next:"Confirm payment terms",     nextDue:"Tomorrow",   appr:"pending" },
+    { id:"OPP-2399", acct:"Helios Pumps OÜ",       amt:86000,  stage:"D", close:"2026-07-04", next:"Discovery call w/ ops lead",nextDue:"Thu 14:00",  appr:"none" },
+    { id:"OPP-2385", acct:"Carpathia Steel",       amt:264000, stage:"N", close:"2026-05-22", next:"Resend signed NDA",         nextDue:"Overdue 2d", appr:"sentback", overdue:true },
+    { id:"OPP-2371", acct:"Baltic Hydraulics",     amt:58000,  stage:"Q", close:"2026-08-20", next:"Qualify volume forecast",   nextDue:"Next week",  appr:"none" },
+    { id:"OPP-2360", acct:"Vetra Logistics",       amt:192000, stage:"P", close:"2026-06-28", next:"Pricing model review",      nextDue:"Mon 10:00",  appr:"approved" },
+    { id:"OPP-2344", acct:"Donaubau Components",   amt:73000,  stage:"D", close:"2026-07-15", next:"Map decision unit",         nextDue:"Wed",        appr:"none" },
+  ];
+  const today = [
+    { t:"09:30", title:"Call — Helios Pumps OÜ", meta:["Discovery","OPP-2399","R. Tamm"], action:"PREP" },
+    { t:"11:00", title:"Send revised quote — Tarsis Bearings", meta:["Quote","OPP-2418","Discount 8%"], action:"OPEN", on:true },
+    { t:"14:00", title:"Internal — Pricing review Carpathia", meta:["Approval send-back","OPP-2385"], action:"OPEN", on:true },
+    { t:"16:30", title:"Follow-up email — Vetra Logistics", meta:["Email","OPP-2360"], action:"DRAFT" },
+  ];
+  const myApprovals = [
+    { id:"REQ-1182", opp:"OPP-2410 · Nordwerk Tooling AG", kind:"Discount 14%", state:"pending", step:"Finance · D. Smirnova", age:"2d" },
+    { id:"REQ-1175", opp:"OPP-2385 · Carpathia Steel",    kind:"Terms NET-90",  state:"sentback", step:"You — revise & resubmit", age:"3h" },
+    { id:"REQ-1168", opp:"OPP-2360 · Vetra Logistics",    kind:"Discount 6%",   state:"approved", step:"Finance · D. Smirnova", age:"4d" },
+  ];
+
+  return (
+    <>
+      <div className="kpis">
+        <Kpi label="My open opportunities" value="12" foot="3 closing within 14 days" delta={{dir:"up", v:"+2 wk"}} />
+        <Kpi label="My pipeline" value="$1.43" unit="M" foot="Weighted $612K · vs commit $580K" delta={{dir:"up", v:"+5.5%"}} />
+        <Kpi label="Activities due today" value="4" foot="1 overdue · OPP-2385" delta={{dir:"dn", v:"-1"}} />
+        <Kpi label="Approvals submitted" value="3" foot="1 pending · 1 sent back · 1 approved" />
+      </div>
+
+      <Panel
+        title="My open opportunities" count="12"
+        filters={<>
+          <span className="filterchip on">OWNER · me</span>
+          <span className="filterchip">STAGE · all</span>
+          <span className="filterchip">CLOSE · ≤60d</span>
+        </>}
+        actions={<a>Open saved view ›</a>}
+      >
+        <table className="t">
+          <colgroup>
+            <col style={{width:"96px"}}/>
+            <col style={{width:"68px"}}/>
+            <col/>
+            <col style={{width:"104px"}}/>
+            <col style={{width:"104px"}}/>
+            <col/>
+            <col style={{width:"118px"}}/>
+          </colgroup>
+          <thead><tr>
+            <th>ID</th><th>Stage</th><th>Account</th><th className="num">Amount</th><th>Close</th><th>Next step</th><th>Approval</th>
+          </tr></thead>
+          <tbody>
+            {opps.map(o=>(
+              <tr key={o.id}>
+                <td className="mono">{o.id}</td>
+                <td><StagePip stage={o.stage} /></td>
+                <td className="truncate">
+                  {o.acct}
+                  <span className="sub">Stage {o.stage} · owner Anna P.</span>
+                </td>
+                <td className="num">{fmtMoney(o.amt)}</td>
+                <td className="mono">{o.close}</td>
+                <td className="truncate">
+                  {o.next}
+                  <span className="sub" style={{color: o.overdue ? "var(--neg)" : undefined}}>Due {o.nextDue}</span>
+                </td>
+                <td><Pill kind={o.appr}>{o.appr==="none"?"—":o.appr}</Pill></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Panel>
+
+      <div style={{height:18}} />
+
+      <div className="row r-1-1">
+        <Panel
+          title="Today" count="4"
+          actions={<a>Full queue ›</a>}
+        >
+          <div className="list">
+            {today.map((a,i)=>(
+              <div key={i} className="list-item">
+                <div className={`list-time mono ${a.on?"due":""}`}>{a.t}</div>
+                <div className="list-body">
+                  <div className="list-title">{a.title}</div>
+                  <div className="list-meta">
+                    {a.meta.map((m,j)=>(<React.Fragment key={j}>{j>0 && <span className="sep">·</span>}<span>{m}</span></React.Fragment>))}
+                  </div>
+                </div>
+                <div className={`list-action ${a.on?"act":""}`}>{a.action}</div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+
+        <Panel title="My approvals" count="3" actions={<a>All requests ›</a>}>
+          <div className="list">
+            {myApprovals.map((r,i)=>(
+              <div key={i} className="list-item" style={{gridTemplateColumns:"86px 1fr auto"}}>
+                <div className="list-time mono">{r.id}</div>
+                <div className="list-body">
+                  <div className="list-title">{r.kind}</div>
+                  <div className="list-meta"><span>{r.opp}</span><span className="sep">·</span><span>{r.step}</span></div>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+                  <Pill kind={r.state}>{r.state}</Pill>
+                  <span className="mono" style={{fontSize:10,color:"var(--muted)"}}>{r.age}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      </div>
+    </>
+  );
+}
+
+function MgrLanding(){
+  const funnel = [
+    { stage:"Qualification", code:"Q", count:24, value:1860000, pct:100 },
+    { stage:"Discovery",     code:"D", count:18, value:2140000, pct:78 },
+    { stage:"Proposal",      code:"P", count:11, value:1620000, pct:54, flag:true },
+    { stage:"Negotiation",   code:"N", count:7,  value:1280000, pct:32 },
+    { stage:"Closed Won",    code:"W", count:4,  value: 612000, pct:18 },
+  ];
+  const stuck = [
+    { id:"OPP-2385", acct:"Carpathia Steel",   owner:"A. Petrova", amt:264000, age:"22d", reason:"Send-back from Finance, no resubmit" },
+    { id:"OPP-2342", acct:"Sigma Castings GmbH", owner:"J. Berg",  amt:380000, age:"31d", reason:"No activity logged, stage Proposal" },
+    { id:"OPP-2298", acct:"Renvik Industri",   owner:"L. Hassan",  amt:198000, age:"18d", reason:"Missing close date on stage transition" },
+    { id:"OPP-2271", acct:"AltaWerk Maschinen", owner:"A. Petrova", amt:142000, age:"16d", reason:"Approval pending > SLA" },
+  ];
+  const team = [
+    { who:"Anna Petrova",   open:12, pipeline:1430000, won:380000, app:3 },
+    { who:"Jonas Berg",     open:14, pipeline:1820000, won:540000, app:2 },
+    { who:"Layla Hassan",   open:9,  pipeline: 920000, won:210000, app:1 },
+    { who:"Tomáš Novák",    open:11, pipeline:1240000, won:330000, app:1 },
+  ];
+  return (
+    <>
+      <div className="kpis">
+        <Kpi label="Team pipeline" value="$7.51" unit="M" foot="Weighted $3.18M · forecast $2.94M" delta={{dir:"up", v:"+3.1%"}} />
+        <Kpi label="Stuck > 14 days" value="9" foot="3 awaiting approval · 6 no activity" delta={{dir:"up", v:"+2"}} />
+        <Kpi label="Approvals on team" value="7" foot="4 finance · 3 legal" />
+        <Kpi label="Forecast vs commit" value="103" unit="% of commit" foot="Commit $2.85M · gap +$90K" delta={{dir:"up", v:"+1.2pp"}} />
+      </div>
+
+      <div className="row r-2-1">
+        <Panel
+          title="Team pipeline by stage" count="64"
+          filters={<><span className="filterchip on">TEAM · DACH-North</span><span className="filterchip">PERIOD · Q2-2026</span></>}
+          actions={<a>Open Opportunities ›</a>}
+        >
+          <div className="funnel">
+            <div className="funnel-row" style={{borderBottom:"1px solid var(--line)",paddingBottom:6,marginBottom:4}}>
+              <div className="funnel-stage" style={{color:"var(--muted)",fontSize:10,letterSpacing:".1em",textTransform:"uppercase"}}>Stage</div>
+              <div style={{color:"var(--muted)",fontSize:10,letterSpacing:".1em",textTransform:"uppercase"}}>Distribution · weighted</div>
+              <div style={{color:"var(--muted)",fontSize:10,letterSpacing:".1em",textTransform:"uppercase",textAlign:"right"}}>Count</div>
+              <div style={{color:"var(--muted)",fontSize:10,letterSpacing:".1em",textTransform:"uppercase",textAlign:"right"}}>Value</div>
+            </div>
+            {funnel.map(s=>(
+              <div className="funnel-row" key={s.code}>
+                <div className="funnel-stage"><span className="ix">{s.code}</span>{s.stage}</div>
+                <div className="funnel-bar">
+                  <div className={`fill ${s.flag?"acc":""}`} style={{width:`${s.pct}%`}} />
+                </div>
+                <div className="funnel-num">{s.count}</div>
+                <div className="funnel-num">{fmtMoney(s.value)}</div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+
+        <Panel title="Deals needing attention" count="4" actions={<a>All ›</a>}>
+          {stuck.map((d,i)=>(
+            <div key={i} className="riskrow">
+              <div className="nm">
+                <span className="mono" style={{color:"var(--muted)",marginRight:6,fontSize:11}}>{d.id}</span>
+                {d.acct}
+                <small>{d.owner} · {d.reason}</small>
+              </div>
+              <div className="num">{fmtMoney(d.amt)}</div>
+              <div className="age">{d.age} idle</div>
+            </div>
+          ))}
+        </Panel>
+      </div>
+
+      <div style={{height:18}} />
+
+      <Panel
+        title="Reps · this quarter" count="4"
+        filters={<><span className="filterchip on">TEAM · DACH-North</span><span className="filterchip">QUARTER · Q2</span></>}
+      >
+        <table className="t">
+          <colgroup><col style={{width:"30%"}}/><col/><col/><col/><col/></colgroup>
+          <thead><tr><th>Rep</th><th className="num">Open opps</th><th className="num">Pipeline</th><th className="num">Won (QTD)</th><th className="num">Approvals in-flight</th></tr></thead>
+          <tbody>
+            {team.map(r=>(
+              <tr key={r.who}>
+                <td>{r.who}</td>
+                <td className="num">{r.open}</td>
+                <td className="num">{fmtMoney(r.pipeline)}</td>
+                <td className="num">{fmtMoney(r.won)}</td>
+                <td className="num">{r.app}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Panel>
+    </>
+  );
+}
+
+function OpsLanding(){
+  const imports = [
+    { id:"IMP-0241", file:"orion_accounts_may.csv",    target:"Account",     rows:"4,128", status:"running",  progress:"68%",  by:"I. Volkova", started:"08:12" },
+    { id:"IMP-0240", file:"contacts_legacy_q1.csv",    target:"Contact",     rows:"12,602",status:"running",  progress:"22%",  by:"I. Volkova", started:"08:04" },
+    { id:"IMP-0239", file:"open_opps_pipeline.csv",    target:"Opportunity", rows:"812",   status:"approved", progress:"done", by:"L. Hassan",  started:"yest" },
+    { id:"IMP-0238", file:"accounts_de_region.csv",    target:"Account",     rows:"1,940", status:"rejected", progress:"54%",  by:"I. Volkova", started:"yest" },
+  ];
+  const dupes = [
+    { left:"Carpathia Steel S.A.",    right:"Carpathia Steel SA",      reason:"Normalized name · same VAT", strength:"0.94", scope:"Account" },
+    { left:"Nordwerk Tooling AG",     right:"Nordwerk-Tooling A.G.",   reason:"Fuzzy name · same domain",   strength:"0.91", scope:"Account" },
+    { left:"R. Tamm — Helios Pumps",  right:"Riin Tamm — Helios Pumps OÜ", reason:"Same email · same phone", strength:"0.97", scope:"Contact" },
+    { left:"Vetra Logistic",          right:"Vetra Logistics OÜ",      reason:"Trigram match · same country", strength:"0.82", scope:"Account" },
+    { left:"Baltic Hydraulics OOO",   right:"Baltic Hydraulics LLC",   reason:"Same VAT · diff legal form",  strength:"0.88", scope:"Account" },
+  ];
+  const meta = [
+    { id:"META-DR-22", title:"Add field `payment_risk_level` on Account",   author:"I. Volkova", state:"pending",  age:"1d" },
+    { id:"META-DR-21", title:"Required: `legal_entity_code` at stage N",   author:"I. Volkova", state:"pending",  age:"3d" },
+    { id:"META-DR-20", title:"Rename stage `Proposal` → `Quote Sent`",      author:"L. Hassan",  state:"sentback", age:"5d" },
+  ];
+  return (
+    <>
+      <div className="kpis">
+        <Kpi label="Imports running" value="2" foot="14,730 rows in flight · 0 failed jobs" delta={{dir:"up", v:"+2"}} />
+        <Kpi label="Duplicate candidates" value="24" foot="17 Account · 7 Contact · 5 high-confidence" delta={{dir:"dn", v:"-6"}} />
+        <Kpi label="Metadata drafts" value="3" foot="2 pending publish · 1 sent back" />
+        <Kpi label="Audit events · 24h" value="1,284" foot="Approvals 312 · Merges 18 · Config 6" />
+      </div>
+
+      <div className="row r-1-1">
+        <Panel
+          title="Imports — in flight & recent" count="4"
+          filters={<><span className="filterchip on">STATE · active+24h</span><span className="filterchip">TARGET · all</span></>}
+          actions={<a>Open imports ›</a>}
+        >
+          <table className="t">
+            <colgroup><col style={{width:"96px"}}/><col/><col style={{width:"96px"}}/><col style={{width:"68px"}}/><col style={{width:"100px"}}/></colgroup>
+            <thead><tr><th>Job</th><th>File · target</th><th className="num">Rows</th><th>Progress</th><th>Status</th></tr></thead>
+            <tbody>
+              {imports.map(j=>(
+                <tr key={j.id}>
+                  <td className="mono">{j.id}<span className="sub">{j.by} · {j.started}</span></td>
+                  <td className="truncate"><span className="mono">{j.file}</span><span className="sub">→ {j.target}</span></td>
+                  <td className="num">{j.rows}</td>
+                  <td className="mono" style={{fontSize:11.5}}>{j.progress}</td>
+                  <td><Pill kind={j.status==="running"?"running":j.status==="approved"?"approved":j.status==="rejected"?"rejected":"pending"}>{j.status==="approved"?"done":j.status==="rejected"?"failed":j.status}</Pill></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+
+        <Panel
+          title="Duplicate candidates" count="24"
+          filters={<><span className="filterchip on">SCOPE · all</span><span className="filterchip">CONFIDENCE · ≥0.80</span></>}
+          actions={<a>Review queue ›</a>}
+        >
+          <table className="t">
+            <colgroup><col style={{width:"56px"}}/><col/><col style={{width:"86px"}}/><col style={{width:"68px"}}/></colgroup>
+            <thead><tr><th>Type</th><th>Candidate pair · reason</th><th>Match</th><th></th></tr></thead>
+            <tbody>
+              {dupes.map((d,i)=>(
+                <tr key={i}>
+                  <td className="mono" style={{fontSize:11}}>{d.scope.slice(0,3).toUpperCase()}</td>
+                  <td className="truncate">
+                    {d.left} <span style={{color:"var(--muted)"}}>↔</span> {d.right}
+                    <span className="sub">{d.reason}</span>
+                  </td>
+                  <td className="mono">{d.strength}</td>
+                  <td><a style={{borderBottom:"1px dotted var(--line-2)",fontSize:11.5}}>review</a></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+      </div>
+
+      <div style={{height:18}} />
+
+      <div className="row r-1-1">
+        <Panel
+          title="Metadata drafts" count="3"
+          actions={<a>Open metadata admin ›</a>}
+        >
+          <div className="ministat">
+            {meta.map((m,i)=>(
+              <div key={i} className="ministat-row" style={{gridTemplateColumns:"86px 1fr auto"}}>
+                <span className="mono" style={{fontSize:11.5,color:"var(--muted)"}}>{m.id}</span>
+                <div className="lbl">{m.title}<small>by {m.author} · {m.age} ago</small></div>
+                <Pill kind={m.state}>{m.state}</Pill>
+              </div>
+            ))}
+          </div>
+        </Panel>
+
+        <Panel title="Last hour of audit" count="184" actions={<a>Open audit ›</a>}>
+          <div className="ministat">
+            {[
+              { t:"09:42:11", who:"D. Smirnova", what:"Approved REQ-1168 · OPP-2360 · Vetra Logistics", code:"APPR.DECIDE" },
+              { t:"09:39:07", who:"system",      what:"Reporting projection refreshed · pipeline.by_stage", code:"PROJ.REFRESH" },
+              { t:"09:31:55", who:"I. Volkova",  what:"Merge AC-3318 ← AC-3127 (Carpathia)", code:"MERGE.COMMIT" },
+              { t:"09:28:30", who:"A. Petrova",  what:"Submitted REQ-1182 · discount 14%", code:"APPR.SUBMIT" },
+              { t:"09:14:02", who:"O. Markov",   what:"Sent back REQ-1175 · legal terms NET-90", code:"APPR.SENDBACK" },
+            ].map((e,i)=>(
+              <div key={i} className="ministat-row" style={{gridTemplateColumns:"68px 1fr auto"}}>
+                <span className="mono" style={{fontSize:11,color:"var(--muted)"}}>{e.t}</span>
+                <div className="lbl">{e.what}<small>by {e.who}</small></div>
+                <span className="mono" style={{fontSize:10.5,color:"var(--muted-2)",letterSpacing:".04em"}}>{e.code}</span>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      </div>
+    </>
+  );
+}
+
+function FinanceLanding(){
+  const queue = [
+    { id:"REQ-1182", opp:"OPP-2410", acct:"Nordwerk Tooling AG",   kind:"Discount",   amount:412500, ask:"14% off list", requester:"A. Petrova", age:"2d 04h", slaPct:80, sla:"warn" },
+    { id:"REQ-1181", opp:"OPP-2402", acct:"Sigma Castings GmbH",   kind:"Discount",   amount:380000, ask:"11% off list", requester:"J. Berg",    age:"1d 02h", slaPct:42, sla:"ok" },
+    { id:"REQ-1179", opp:"OPP-2398", acct:"Renvik Industri",       kind:"Terms",      amount:198000, ask:"NET-60",       requester:"L. Hassan",  age:"3d 18h", slaPct:96, sla:"over", over:true },
+    { id:"REQ-1177", opp:"OPP-2391", acct:"AltaWerk Maschinen",    kind:"Exception",  amount:142000, ask:"Pricing floor breach",       requester:"A. Petrova", age:"2d 11h", slaPct:88, sla:"warn" },
+    { id:"REQ-1174", opp:"OPP-2387", acct:"Donaubau Components",   kind:"Discount",   amount: 73000, ask:"8% off list",  requester:"T. Novák",   age:"0d 06h", slaPct:18, sla:"ok" },
+    { id:"REQ-1172", opp:"OPP-2380", acct:"Vetra Logistics",       kind:"Discount",   amount:192000, ask:"9% off list",  requester:"A. Petrova", age:"1d 22h", slaPct:62, sla:"ok" },
+  ];
+  return (
+    <>
+      <div className="kpis">
+        <Kpi label="Pending decisions" value="9" foot="6 discount · 2 terms · 1 exception" delta={{dir:"up", v:"+2"}} />
+        <Kpi label="Avg turnaround · 7d" value="14.6" unit="h" foot="Target ≤ 24h · within SLA 88%" delta={{dir:"dn", v:"-2.4h"}} />
+        <Kpi label="Sent back this week" value="3" foot="2 missing justification · 1 floor breach" />
+        <Kpi label="Decided today" value="5" foot="4 approved · 1 rejected" />
+      </div>
+
+      <Panel
+        title="Finance approval queue" count="9"
+        filters={<>
+          <span className="filterchip on">QUEUE · me</span>
+          <span className="filterchip">TYPE · all</span>
+          <span className="filterchip">SLA · all</span>
+          <span className="filterchip">AMOUNT · ≥ $50K</span>
+        </>}
+        actions={<><a>Saved view ›</a></>}
+      >
+        <table className="t">
+          <colgroup><col style={{width:"96px"}}/><col style={{width:"82px"}}/><col/><col style={{width:"108px"}}/><col style={{width:"160px"}}/><col style={{width:"110px"}}/><col style={{width:"96px"}}/><col style={{width:"180px"}}/></colgroup>
+          <thead><tr>
+            <th>Request</th>
+            <th>Type</th>
+            <th>Account · opportunity</th>
+            <th className="num">Deal value</th>
+            <th>Requested exception</th>
+            <th>Requester</th>
+            <th className="num">Age</th>
+            <th>SLA</th>
+          </tr></thead>
+          <tbody>
+            {queue.map(r=>(
+              <tr key={r.id}>
+                <td className="mono">{r.id}</td>
+                <td>{r.kind}</td>
+                <td className="truncate">{r.acct}<span className="sub mono">{r.opp}</span></td>
+                <td className="num">{fmtMoney(r.amount)}</td>
+                <td>{r.ask}</td>
+                <td>{r.requester}</td>
+                <td className="num mono">{r.age}</td>
+                <td>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div style={{flex:1,height:6,background:"var(--paper-2)",border:"1px solid var(--hairline)",position:"relative"}}>
+                      <div style={{position:"absolute",left:0,top:0,bottom:0,width:`${r.slaPct}%`,background: r.sla==="over"?"var(--neg)": r.sla==="warn"?"var(--warn)":"var(--ink)"}} />
+                    </div>
+                    <span className="mono" style={{fontSize:11,color: r.sla==="over"?"var(--neg)":"var(--muted)"}}>{r.slaPct}%</span>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Panel>
+
+      <div style={{height:18}} />
+
+      <div className="row r-1-1">
+        <Panel title="Recent decisions" count="12">
+          <table className="t">
+            <colgroup><col style={{width:"96px"}}/><col/><col style={{width:"110px"}}/><col style={{width:"84px"}}/></colgroup>
+            <thead><tr><th>Request</th><th>Outcome</th><th>Decided</th><th>Decided by</th></tr></thead>
+            <tbody>
+              {[
+                { id:"REQ-1170", out:"Approved · Discount 6% on Vetra Logistics",          when:"09:42 today",   who:"You", k:"approved" },
+                { id:"REQ-1169", out:"Sent back · Carpathia Steel · need justification",   when:"08:55 today",   who:"You", k:"sentback" },
+                { id:"REQ-1166", out:"Approved · Terms NET-60 · Sigma Castings",           when:"yest 17:02",    who:"You", k:"approved" },
+                { id:"REQ-1162", out:"Rejected · Floor-breach · AltaWerk Maschinen",       when:"yest 14:40",    who:"You", k:"rejected" },
+                { id:"REQ-1158", out:"Approved · Discount 8% · Tarsis Bearings",           when:"2 days ago",    who:"You", k:"approved" },
+              ].map((d,i)=>(
+                <tr key={i}>
+                  <td className="mono">{d.id}</td>
+                  <td className="truncate"><Pill kind={d.k}>{d.k}</Pill> <span style={{marginLeft:6}}>{d.out.split(" · ").slice(1).join(" · ")}</span></td>
+                  <td className="mono">{d.when}</td>
+                  <td>{d.who}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+
+        <Panel title="Policy snapshot · what routes to you" count="4">
+          <div className="ministat">
+            {[
+              { lbl:"Discount on list price", v:">= 10%", note:"Auto-route to Finance, then Legal if ≥ 20%" },
+              { lbl:"Payment terms exception", v:"NET-60+", note:"Finance sole approver up to NET-90" },
+              { lbl:"Pricing floor breach",   v:"any",   note:"Finance + Legal sequential, snapshot deal" },
+              { lbl:"Deal value cap",         v:"≥ $250K", note:"Adds VP Sales as final step (not you)" },
+            ].map((p,i)=>(
+              <div key={i} className="ministat-row" style={{gridTemplateColumns:"1fr 96px"}}>
+                <div className="lbl">{p.lbl}<small>{p.note}</small></div>
+                <div className="v">{p.v}</div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      </div>
+    </>
+  );
+}
+
+function LegalLanding(){
+  const queue = [
+    { id:"REQ-1180", opp:"OPP-2405", acct:"Sigma Castings GmbH",  kind:"Liability cap",        ask:"Cap raised 2× annual fee", requester:"J. Berg",   age:"1d 11h", slaPct:46, sla:"ok" },
+    { id:"REQ-1178", opp:"OPP-2400", acct:"Nordwerk Tooling AG",  kind:"Governing law",        ask:"Swiss law instead of DE",  requester:"A. Petrova", age:"2d 02h", slaPct:74, sla:"warn" },
+    { id:"REQ-1175", opp:"OPP-2385", acct:"Carpathia Steel",      kind:"Terms NET-90",         ask:"Extend from NET-60",        requester:"A. Petrova", age:"3d 04h", slaPct:92, sla:"over", over:true },
+    { id:"REQ-1173", opp:"OPP-2382", acct:"Helios Pumps OÜ",      kind:"Confidentiality",      ask:"Mutual NDA, 5y term",       requester:"T. Novák",  age:"0d 18h", slaPct:30, sla:"ok" },
+  ];
+  return (
+    <>
+      <div className="kpis">
+        <Kpi label="Legal queue" value="4" foot="2 terms · 1 cap · 1 NDA" />
+        <Kpi label="Avg turnaround · 7d" value="22.1" unit="h" foot="Target ≤ 48h · within SLA 100%" delta={{dir:"dn", v:"-3.5h"}} />
+        <Kpi label="Sent back · 30d" value="6" foot="3 missing prior Finance step · 3 redline scope" />
+        <Kpi label="Decided today" value="2" foot="1 approved · 1 sent back" />
+      </div>
+
+      <Panel
+        title="Legal approval queue" count="4"
+        filters={<>
+          <span className="filterchip on">QUEUE · me</span>
+          <span className="filterchip">PRIOR FINANCE · all</span>
+          <span className="filterchip">SLA · all</span>
+        </>}
+        actions={<a>Saved view ›</a>}
+      >
+        <table className="t">
+          <colgroup><col style={{width:"96px"}}/><col style={{width:"130px"}}/><col/><col style={{width:"220px"}}/><col style={{width:"110px"}}/><col style={{width:"96px"}}/><col style={{width:"160px"}}/></colgroup>
+          <thead><tr>
+            <th>Request</th><th>Exception</th><th>Account · opportunity</th><th>Requested change</th><th>Requester</th><th className="num">Age</th><th>SLA</th>
+          </tr></thead>
+          <tbody>
+            {queue.map(r=>(
+              <tr key={r.id}>
+                <td className="mono">{r.id}</td>
+                <td>{r.kind}</td>
+                <td className="truncate">{r.acct}<span className="sub mono">{r.opp}</span></td>
+                <td>{r.ask}</td>
+                <td>{r.requester}</td>
+                <td className="num mono">{r.age}</td>
+                <td>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div style={{flex:1,height:6,background:"var(--paper-2)",border:"1px solid var(--hairline)",position:"relative"}}>
+                      <div style={{position:"absolute",left:0,top:0,bottom:0,width:`${r.slaPct}%`,background: r.sla==="over"?"var(--neg)": r.sla==="warn"?"var(--warn)":"var(--ink)"}} />
+                    </div>
+                    <span className="mono" style={{fontSize:11,color: r.sla==="over"?"var(--neg)":"var(--muted)"}}>{r.slaPct}%</span>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Panel>
+
+      <div style={{height:18}} />
+
+      <div className="row r-1-1">
+        <Panel title="Decision context · what you see" count="—">
+          <div className="ministat">
+            {[
+              { lbl:"Opportunity snapshot at submit",        note:"Frozen amount, stage, owner, custom fields used by policy", v:"VISIBLE" },
+              { lbl:"Account legal entity & jurisdiction",   note:"Required to evaluate governing-law exceptions",            v:"VISIBLE" },
+              { lbl:"Prior Finance decision (if any)",       note:"Decision, comment and decided-at",                          v:"VISIBLE" },
+              { lbl:"Revenue figures and forecast",          note:"Hidden by field-level rule for Legal Approver",            v:"HIDDEN" },
+              { lbl:"Sales rep activity log",                note:"Hidden — not required for legal decision",                  v:"HIDDEN" },
+            ].map((p,i)=>(
+              <div key={i} className="ministat-row" style={{gridTemplateColumns:"1fr 96px"}}>
+                <div className="lbl">{p.lbl}<small>{p.note}</small></div>
+                <div className="v" style={{color: p.v==="HIDDEN" ? "var(--neg)" : "var(--pos)"}}>{p.v}</div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+
+        <Panel title="Recent decisions" count="12">
+          <table className="t">
+            <colgroup><col style={{width:"96px"}}/><col/><col style={{width:"110px"}}/></colgroup>
+            <thead><tr><th>Request</th><th>Outcome</th><th>Decided</th></tr></thead>
+            <tbody>
+              {[
+                { id:"REQ-1171", out:"Approved · Mutual NDA · Tarsis Bearings", when:"yest 16:10", k:"approved" },
+                { id:"REQ-1167", out:"Sent back · Vetra Logistics — needs Finance first", when:"yest 11:22", k:"sentback" },
+                { id:"REQ-1164", out:"Approved · Liability cap 2× · Donaubau", when:"2 days ago", k:"approved" },
+                { id:"REQ-1160", out:"Rejected · Governing law US · AltaWerk", when:"3 days ago", k:"rejected" },
+              ].map((d,i)=>(
+                <tr key={i}>
+                  <td className="mono">{d.id}</td>
+                  <td><Pill kind={d.k}>{d.k}</Pill> <span style={{marginLeft:6}}>{d.out.split(" · ").slice(1).join(" · ")}</span></td>
+                  <td className="mono">{d.when}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+      </div>
+    </>
+  );
+}
+
+function ExecLanding(){
+  const stages = [
+    { stage:"Qualification", code:"Q", count:96,  value:7860000, weighted: 1572000, pct:100 },
+    { stage:"Discovery",     code:"D", count:68,  value:9420000, weighted: 2826000, pct:80 },
+    { stage:"Proposal",      code:"P", count:42,  value:6840000, weighted: 3420000, pct:56 },
+    { stage:"Negotiation",   code:"N", count:23,  value:5210000, weighted: 3647000, pct:38 },
+    { stage:"Closed Won",    code:"W", count:18,  value:2940000, weighted: 2940000, pct:22 },
+  ];
+  const bottle = [
+    { lbl:"Finance · Discount", v:"14.6h", pct:30, dir:"dn" },
+    { lbl:"Finance · Terms",    v:"19.2h", pct:42, dir:"up" },
+    { lbl:"Legal · Liability",  v:"22.1h", pct:48, dir:"dn" },
+    { lbl:"Legal · Governing law", v:"36.4h", pct:80, dir:"up", flag:true },
+    { lbl:"VP Sales · ≥ $250K", v:"11.8h", pct:24, dir:"dn" },
+  ];
+  const risk = [
+    { acct:"Sigma Castings GmbH",  amt:380000, age:"31d idle", owner:"J. Berg",     stage:"Proposal" },
+    { acct:"Nordwerk Tooling AG",  amt:412500, age:"SLA 80%",  owner:"A. Petrova",  stage:"Negotiation" },
+    { acct:"Renvik Industri",     amt:198000, age:"SLA over",owner:"L. Hassan",   stage:"Negotiation" },
+    { acct:"Carpathia Steel",     amt:264000, age:"22d idle",owner:"A. Petrova",  stage:"Negotiation" },
+  ];
+  return (
+    <>
+      <div className="kpis">
+        <Kpi label="Pipeline total" value="$32.27" unit="M" foot="Coverage 4.1× of quota" delta={{dir:"up", v:"+6.2%"}} />
+        <Kpi label="Weighted forecast" value="$14.40" unit="M" foot="Q2 target $12.80M · gap +$1.6M" delta={{dir:"up", v:"+2.1pp"}} />
+        <Kpi label="Approval bottleneck" value="36.4" unit="h" foot="Legal · Governing law · vs target 48h" delta={{dir:"up", v:"+9.2h"}} />
+        <Kpi label="Win rate · 90d" value="29.4" unit="%" foot="Negotiation→Won 62% · WoW stable" delta={{dir:"dn", v:"-0.4pp"}} />
+      </div>
+
+      <div className="row r-2-1">
+        <Panel
+          title="Pipeline by stage · all teams" count="247"
+          filters={<><span className="filterchip on">PERIOD · Q2-2026</span><span className="filterchip">REGION · all</span><span className="filterchip">SEGMENT · all</span></>}
+          actions={<a>Drill into Reports ›</a>}
+        >
+          <div className="funnel">
+            <div className="funnel-row" style={{borderBottom:"1px solid var(--line)",paddingBottom:6,marginBottom:4}}>
+              <div style={{color:"var(--muted)",fontSize:10,letterSpacing:".1em",textTransform:"uppercase"}}>Stage</div>
+              <div style={{color:"var(--muted)",fontSize:10,letterSpacing:".1em",textTransform:"uppercase"}}>Distribution · weighted</div>
+              <div style={{color:"var(--muted)",fontSize:10,letterSpacing:".1em",textTransform:"uppercase",textAlign:"right"}}>Count</div>
+              <div style={{color:"var(--muted)",fontSize:10,letterSpacing:".1em",textTransform:"uppercase",textAlign:"right"}}>Value</div>
+            </div>
+            {stages.map(s=>(
+              <div className="funnel-row" key={s.code}>
+                <div className="funnel-stage"><span className="ix">{s.code}</span>{s.stage}</div>
+                <div className="funnel-bar">
+                  <div className="fill" style={{width:`${s.pct}%`}} />
+                  <div className="marker" style={{left:`${Math.round((s.weighted/s.value)*100)}%`}} title="weighted ratio" />
+                </div>
+                <div className="funnel-num">{s.count}</div>
+                <div className="funnel-num">{fmtMoney(s.value)}</div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+
+        <Panel title="Approval bottlenecks" count="5" actions={<a>Open Reports ›</a>}>
+          <div className="funnel">
+            {bottle.map((b,i)=>(
+              <div className="funnel-row" key={i} style={{gridTemplateColumns:"150px 1fr 72px"}}>
+                <div className="funnel-stage" style={{fontSize:12}}>{b.lbl}</div>
+                <div className="funnel-bar">
+                  <div className={`fill ${b.flag?"acc":""}`} style={{width:`${b.pct}%`}} />
+                </div>
+                <div className="funnel-num" style={{color:b.flag?"var(--accent-2)":"var(--ink)"}}>{b.v}</div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      </div>
+
+      <div style={{height:18}} />
+
+      <div className="row r-1-1">
+        <Panel title="Top deals at risk" count="4" actions={<a>Drill ›</a>}>
+          {risk.map((d,i)=>(
+            <div key={i} className="riskrow">
+              <div className="nm">
+                {d.acct}
+                <small>{d.owner} · {d.stage}</small>
+              </div>
+              <div className="num">{fmtMoney(d.amt)}</div>
+              <div className="age">{d.age}</div>
+            </div>
+          ))}
+        </Panel>
+
+        <Panel title="Operational trust signals" count="—">
+          <div className="ministat">
+            {[
+              { lbl:"Reporting projection · pipeline", v:"FRESH", note:"Refreshed 09:39 today · lag 3 min" },
+              { lbl:"Open imports affecting metrics",  v:"2", note:"Accounts, Contacts — refresh pending" },
+              { lbl:"Open duplicate candidates",       v:"24", note:"5 high-confidence — may move totals" },
+              { lbl:"Unresolved metadata drafts",      v:"3", note:"None affect reporting dimensions" },
+              { lbl:"Audit coverage · 30d",             v:"100%", note:"All approvals, merges, config changes" },
+            ].map((p,i)=>(
+              <div key={i} className="ministat-row" style={{gridTemplateColumns:"1fr 90px"}}>
+                <div className="lbl">{p.lbl}<small>{p.note}</small></div>
+                <div className={`v ${p.v==="FRESH"?"":(p.v==="2"||p.v==="24"||p.v==="3")?"warn":""}`}>{p.v}</div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      </div>
+    </>
+  );
+}
+
+const LANDINGS = {
+  rep: { Comp: RepLanding, title:"My workspace", sub:["Sales Representative landing","Q2 2026","Owner-scoped view"] },
+  mgr: { Comp: MgrLanding, title:"Team operations", sub:["Sales Manager landing","Team · DACH-North","Q2 2026"] },
+  ops: { Comp: OpsLanding, title:"Operations control room", sub:["RevOps Administrator landing","Tenant Orion Industrial","All systems"] },
+  fin: { Comp: FinanceLanding, title:"Finance approval desk", sub:["Finance Approver landing","Routed by policy v18","SLA target ≤ 24h"] },
+  leg: { Comp: LegalLanding, title:"Legal approval desk", sub:["Legal Approver landing","Routed by policy v18","SLA target ≤ 48h"] },
+  exe: { Comp: ExecLanding, title:"Executive overview", sub:["Executive landing","All teams · all regions","Q2 2026"] },
+};
+
+/* ─────────── Shell ─────────── */
+
+function App(){
+  const [userId, setUserId] = useState("u1");
+  const user = useMemo(()=>USERS.find(u=>u.id===userId), [userId]);
+  const access = ROLE_ACCESS[user.roleKey];
+  const [activeModule, setActiveModule] = useState("dashboard");
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const popRef = useRef(null);
+
+  // Reset active module if not visible under new role
+  useEffect(()=>{
+    if(!access.includes(activeModule)) setActiveModule("dashboard");
+  }, [user.roleKey]);
+
+  // close popover on outside click / Esc
+  useEffect(()=>{
+    if(!switcherOpen) return;
+    const onDown = (e) => {
+      if(popRef.current && !popRef.current.contains(e.target) && !e.target.closest(".role-pill") && !e.target.closest(".switch-btn")){
+        setSwitcherOpen(false);
+      }
+    };
+    const onKey = (e) => { if(e.key==="Escape") setSwitcherOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return ()=>{ document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
+  }, [switcherOpen]);
+
+  const activeMod = MODULES.find(m=>m.key===activeModule);
+  const landing = LANDINGS[user.roleKey];
+  const today = new Date(2026,4,12); // May 12 2026
+  const dateStr = today.toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
+
+  return (
+    <div className="app">
+      <Sidebar
+        user={user}
+        activeModule={activeModule}
+        onSelectModule={setActiveModule}
+        onOpenSwitcher={()=>setSwitcherOpen(s=>!s)}
+      />
+      <div className="main">
+        <TopBar
+          user={user}
+          activeLabel={activeMod?.label || "Dashboard"}
+          onOpenSwitcher={()=>setSwitcherOpen(s=>!s)}
+          switcherOpen={switcherOpen}
+          popoverRef={popRef}
+          onPickUser={(u)=>{ setUserId(u.id); setSwitcherOpen(false); }}
+        />
+
+        <div className="content">
+          <PageHead
+            title={<>{landing.title} <em style={{fontWeight:400}}>· {dateStr.split(",")[0]}</em></>}
+            sub={<>
+              <span className="mono">{user.roleCode}</span>
+              <span className="sep">/</span>
+              <span>{landing.sub[0]}</span>
+              {landing.sub.slice(1).map((s,i)=>(<React.Fragment key={i}><span className="sep">·</span><span>{s}</span></React.Fragment>))}
+              <span className="sep">·</span>
+              <span className="mono">{dateStr}</span>
+            </>}
+            actions={
+              user.roleKey==="rep" ? <>
+                <button className="btn">New activity</button>
+                <button className="btn-primary btn">New opportunity <span className="kbd">N</span></button>
+              </> :
+              user.roleKey==="mgr" ? <>
+                <button className="btn">Export pipeline</button>
+                <button className="btn-primary btn">Open team report</button>
+              </> :
+              user.roleKey==="ops" ? <>
+                <button className="btn">New import</button>
+                <button className="btn-primary btn">Publish metadata draft</button>
+              </> :
+              user.roleKey==="fin" ? <>
+                <button className="btn">Bulk decide</button>
+                <button className="btn-primary btn">Open next request <span className="kbd">↵</span></button>
+              </> :
+              user.roleKey==="leg" ? <>
+                <button className="btn">Bulk decide</button>
+                <button className="btn-primary btn">Open next request <span className="kbd">↵</span></button>
+              </> :
+              <button className="btn-primary btn">Open Reports</button>
+            }
+          />
+
+          <landing.Comp />
+
+          <div className="foot-ruler">
+            <span>SALES OPS CRM · ORION INDUSTRIAL · LOCAL PILOT</span>
+            <span>USER {user.roleCode} · {user.initials}</span>
+            <span>POLICY v18 · METADATA v42 · SHELL v2.4</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

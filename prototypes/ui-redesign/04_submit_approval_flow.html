@@ -1,0 +1,1546 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sales Ops CRM — Submit Approval</title>
+<meta name="viewport" content="width=1440" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --paper:#F4F1EB; --paper-2:#EEEAE0; --paper-3:#E6E1D4;
+    --ink:#17150F; --ink-2:#3A372E; --muted:#6E6A5C; --muted-2:#8C8779;
+    --line:#D6D0BF; --line-2:#C4BDA8; --hairline:#E4DFD0;
+    --accent:#B57321; --accent-2:#8A5616; --accent-soft:#F2E3C8;
+    --pos:#3F6B3A; --pos-soft:#E2EAD6;
+    --neg:#9A3A2F; --neg-soft:#F0DAD3;
+    --warn:#A36A11; --warn-soft:#F4E3C1;
+    --info:#2D5B6B; --info-soft:#D6E1E4;
+    --white:#FBFAF6; --select:#FBF1DC;
+    font-family:"Geist","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-feature-settings:"ss01","cv11","tnum";
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink)}
+  body{font-size:13px;line-height:1.4;-webkit-font-smoothing:antialiased}
+  .mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-feature-settings:"tnum","ss02"}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+  a{color:inherit;text-decoration:none}
+  input,select,textarea{font:inherit;color:inherit}
+  ::selection{background:var(--accent-soft);color:var(--ink)}
+
+  /* ─── App grid (shell carried from previous prototypes) ─── */
+  .app{display:grid;grid-template-columns:244px 1fr;min-height:100vh}
+  .sidebar{background:var(--paper-2);border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .main{display:flex;flex-direction:column;min-width:0}
+
+  /* Sidebar */
+  .brand{padding:18px 18px 14px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px}
+  .brand-mark{width:22px;height:22px;flex:0 0 22px;position:relative}
+  .brand-mark::before,.brand-mark::after{content:"";position:absolute;inset:0;border:1.5px solid var(--ink)}
+  .brand-mark::after{inset:5px;background:var(--accent);border-color:var(--accent-2)}
+  .brand-name{font-weight:600;letter-spacing:.02em;font-size:14px}
+  .brand-name span{color:var(--muted);font-weight:400;margin-left:6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+  .tenant{padding:12px 18px;border-bottom:1px solid var(--hairline);display:flex;flex-direction:column;gap:4px}
+  .tenant-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .tenant-row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .tenant-name{font-weight:600;font-size:13.5px}
+  .tenant-env{font-family:"JetBrains Mono",monospace;font-size:10px;padding:2px 6px;border:1px solid #D9BFA0;border-radius:2px;color:var(--accent-2);background:var(--warn-soft);letter-spacing:.04em}
+  .tenant-meta{display:flex;gap:8px;font-size:11px;color:var(--muted)}
+  .tenant-meta .dot{color:var(--line-2)}
+  .nav{flex:1;overflow:auto;padding:10px 0 12px}
+  .nav-section{margin-top:14px}
+  .nav-section:first-child{margin-top:8px}
+  .nav-title{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-2);padding:6px 18px 4px;display:flex;justify-content:space-between;align-items:center}
+  .nav-title em{font-style:normal;font-family:"JetBrains Mono",monospace;color:var(--line-2);letter-spacing:.05em}
+  .nav-item{display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:10px;padding:7px 18px 7px 14px;border-left:2px solid transparent;color:var(--ink-2);font-size:13px;cursor:pointer;position:relative}
+  .nav-item:hover{background:var(--paper-3);color:var(--ink)}
+  .nav-item.active{background:var(--paper-3);border-left-color:var(--accent);color:var(--ink);font-weight:500}
+  .nav-mark{width:22px;height:22px;display:grid;place-items:center;border:1px solid var(--line-2);background:var(--white);font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:600;letter-spacing:.04em;color:var(--ink-2)}
+  .nav-item.active .nav-mark{border-color:var(--accent);color:var(--accent-2);background:var(--accent-soft)}
+  .nav-count{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);min-width:18px;text-align:right}
+  .nav-count.alert{color:var(--accent-2);font-weight:600}
+  .nav-item.disabled{opacity:.35;pointer-events:none}
+  .nav-label{display:flex;align-items:baseline}
+  .user-block{border-top:1px solid var(--line);padding:12px 14px;display:flex;align-items:center;gap:10px;background:var(--paper-2)}
+  .avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--paper);font-size:11px;font-weight:600;letter-spacing:.04em;flex:0 0 30px;border:1px solid var(--ink)}
+  .avatar.bg-c{background:#2A4655;border-color:#2A4655}
+  .avatar.bg-b{background:#5C3A1E;border-color:#5C3A1E}
+  .avatar.bg-a{background:#2D3E2C;border-color:#2D3E2C}
+  .avatar.bg-d{background:#6B2E2E;border-color:#6B2E2E}
+  .user-meta{display:flex;flex-direction:column;min-width:0;flex:1}
+  .user-name{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .user-role{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .switch-btn{border:1px solid var(--line-2);padding:5px 8px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);background:var(--paper);border-radius:2px;font-family:"JetBrains Mono",monospace}
+  .switch-btn:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  /* Top bar */
+  .topbar{height:56px;border-bottom:1px solid var(--line);background:var(--paper);display:grid;grid-template-columns:1fr minmax(280px,440px) auto;align-items:center;gap:20px;padding:0 22px;position:sticky;top:0;z-index:5}
+  .crumb{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;flex-wrap:wrap}
+  .crumb strong{color:var(--ink);font-weight:600;font-size:13.5px}
+  .crumb .sep{color:var(--line-2)}
+  .crumb .pulse{display:inline-flex;align-items:center;gap:6px;font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--accent-2);padding:3px 7px;border:1px solid #D9BFA0;border-radius:2px;background:var(--warn-soft);letter-spacing:.04em}
+  .pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .search{display:flex;align-items:center;gap:8px;background:var(--paper-2);border:1px solid var(--line);border-radius:3px;padding:7px 10px;font-size:12.5px;color:var(--muted)}
+  .search:focus-within{border-color:var(--ink);background:var(--white)}
+  .search svg{flex:0 0 14px;color:var(--muted)}
+  .search input{border:0;background:transparent;outline:none;flex:1;font:inherit;color:var(--ink)}
+  .search kbd{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted);border:1px solid var(--line-2);border-radius:2px;padding:1px 5px;background:var(--paper)}
+  .top-actions{display:flex;align-items:center;gap:10px}
+  .icon-btn{width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line);border-radius:3px;background:var(--paper);color:var(--ink-2);position:relative}
+  .icon-btn:hover{border-color:var(--ink);color:var(--ink)}
+  .icon-btn .dot-badge{position:absolute;top:-3px;right:-3px;min-width:14px;height:14px;padding:0 3px;background:var(--accent);color:var(--white);font-family:"JetBrains Mono",monospace;font-size:9px;font-weight:600;border-radius:7px;display:grid;place-items:center;border:1.5px solid var(--paper)}
+  .role-pill{display:flex;align-items:center;gap:10px;padding:4px 10px 4px 4px;border:1px solid var(--line);border-radius:18px;background:var(--paper)}
+  .role-pill:hover{border-color:var(--ink)}
+  .role-pill .avatar{width:26px;height:26px;flex:0 0 26px;font-size:10px}
+  .role-pill .who{display:flex;flex-direction:column;line-height:1.15;text-align:left}
+  .role-pill .who b{font-size:12px;font-weight:600}
+  .role-pill .who span{font-size:10.5px;color:var(--muted)}
+  .role-pill .chev{color:var(--muted);margin-left:2px}
+
+  /* ─── Page ─── */
+  .content{padding:18px 24px 60px;max-width:1440px}
+
+  /* Buttons */
+  .btn{border:1px solid var(--line-2);background:var(--paper);padding:7px 12px;font-size:12px;color:var(--ink);border-radius:3px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  .btn:hover{border-color:var(--ink)}
+  .btn-primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .btn-primary:hover{background:var(--accent-2);border-color:var(--accent-2)}
+  .btn-disabled{opacity:.45;cursor:not-allowed;color:var(--muted)}
+  .btn-disabled:hover{border-color:var(--line-2)}
+  .btn-ghost{border-color:transparent;background:transparent;color:var(--muted)}
+  .btn-ghost:hover{color:var(--ink);border-color:var(--line-2)}
+  .btn .kbd{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted)}
+  .btn-primary .kbd{color:var(--paper-3)}
+  .btn-sm{padding:5px 9px;font-size:11.5px}
+  .btn-warn{border-color:#D9BFA0;background:var(--warn-soft);color:var(--accent-2)}
+  .btn-warn:hover{border-color:var(--accent);color:var(--accent-2)}
+
+  /* Pills */
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-family:"JetBrains Mono",monospace;letter-spacing:.04em;padding:2px 7px;border-radius:2px;border:1px solid var(--line-2);background:var(--paper);text-transform:uppercase}
+  .pill .pdot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+  .pill.p-pending{color:var(--warn);border-color:#E2C887;background:var(--warn-soft)}
+  .pill.p-pending .pdot{background:var(--warn)}
+  .pill.p-approved{color:var(--pos);border-color:#B2C8A8;background:var(--pos-soft)}
+  .pill.p-approved .pdot{background:var(--pos)}
+  .pill.p-rejected{color:var(--neg);border-color:#D6B0A8;background:var(--neg-soft)}
+  .pill.p-rejected .pdot{background:var(--neg)}
+  .pill.p-sentback{color:var(--info);border-color:#A4C0C8;background:var(--info-soft)}
+  .pill.p-sentback .pdot{background:var(--info)}
+  .pill.p-none{color:var(--muted)}
+  .pill.p-running{color:var(--info);border-color:#A4C0C8;background:var(--info-soft)}
+  .pill.p-running .pdot{background:var(--info);animation:bp 1.6s infinite}
+  .pill.p-draft{color:var(--ink-2);border-color:var(--line-2);background:var(--paper-2)}
+  .pill.p-ready{color:var(--pos);border-color:#B2C8A8;background:var(--pos-soft)}
+  .pill.p-ready .pdot{background:var(--pos)}
+  .pill.p-blocked{color:var(--neg);border-color:#D6B0A8;background:var(--neg-soft)}
+  .pill.p-blocked .pdot{background:var(--neg)}
+  @keyframes bp{50%{opacity:.3}}
+
+  /* ─── Page head ─── */
+  .page-head{
+    display:grid;grid-template-columns:1fr auto;gap:18px;align-items:flex-end;
+    padding-bottom:14px;border-bottom:1px solid var(--hairline);margin-bottom:14px;
+  }
+  .page-title{font-size:22px;font-weight:600;letter-spacing:-.01em;margin:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .page-title em{font-style:normal;color:var(--muted);font-weight:400;font-size:16px;margin-left:6px}
+  .page-sub{display:flex;gap:10px;color:var(--muted);font-size:12px;margin-top:6px;flex-wrap:wrap}
+  .page-sub .mono{color:var(--ink-2)}
+  .page-sub .sep{color:var(--line-2)}
+  .page-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+
+  /* Scenario toggle */
+  .scenario{
+    display:inline-flex;align-items:center;gap:0;background:var(--paper-2);
+    border:1px solid var(--line-2);border-radius:18px;padding:3px;
+    margin-right:6px;
+  }
+  .scenario-label{
+    font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+    padding:0 10px 0 6px;border-right:1px solid var(--line-2);height:24px;display:inline-flex;align-items:center;
+  }
+  .scenario-opt{
+    font-size:11.5px;padding:5px 11px;border-radius:14px;color:var(--ink-2);cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .scenario-opt.on{background:var(--ink);color:var(--paper)}
+  .scenario-opt .mono{font-size:10px;color:var(--muted)}
+  .scenario-opt.on .mono{color:var(--paper-3)}
+
+  /* ─── Process strip (linear progress 1..2..3) ─── */
+  .process{
+    background:var(--white);border:1px solid var(--line);
+    display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin-bottom:14px;
+  }
+  .process-step{
+    padding:12px 14px 12px 22px;border-right:1px solid var(--hairline);position:relative;min-width:0;
+  }
+  .process-step:last-child{border-right:0}
+  .process-step::before{
+    content:"";position:absolute;top:0;right:-14px;width:28px;height:100%;
+    background:inherit;clip-path:polygon(0 0, 50% 50%, 0 100%);
+    z-index:2;border-right:1px solid var(--hairline);
+  }
+  .process-step::after{
+    content:"";position:absolute;top:0;left:0;width:14px;height:100%;
+    background:var(--white);clip-path:polygon(0 0, 100% 50%, 0 100%);z-index:1;
+  }
+  .process-step:first-child{padding-left:14px}
+  .process-step:first-child::after{display:none}
+  .process-step:last-child::before{display:none}
+  .process-step.done{background:var(--paper-2)} .process-step.done::after{background:var(--paper-2)} .process-step.done::before{background:var(--paper-2)}
+  .process-step.cur{background:var(--accent-soft)} .process-step.cur::after{background:var(--accent-soft)} .process-step.cur::before{background:var(--accent-soft)}
+  .process-step.fut{background:var(--white)}
+  .ps-num{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.1em;color:var(--muted);position:relative;z-index:3;display:flex;align-items:center;gap:6px}
+  .process-step.cur .ps-num{color:var(--accent-2)}
+  .ps-num .dot{width:8px;height:8px;border-radius:50%;background:var(--line-2)}
+  .process-step.done .ps-num .dot{background:var(--pos)}
+  .process-step.cur .ps-num .dot{background:var(--accent);box-shadow:0 0 0 2px var(--accent-soft);animation:bp 1.6s infinite}
+  .process-step.fut .ps-num{color:var(--muted-2)}
+  .ps-label{font-size:13px;font-weight:500;margin-top:4px;position:relative;z-index:3}
+  .process-step.fut .ps-label{color:var(--muted)}
+  .ps-foot{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:.04em;position:relative;z-index:3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .process-step.cur .ps-foot{color:var(--accent-2)}
+  .process-step.done .ps-foot{color:var(--pos)}
+
+  /* ─── Workspace 2-col ─── */
+  .work{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:14px;align-items:flex-start}
+
+  /* Panel */
+  .panel{background:var(--white);border:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+  .panel + .panel{margin-top:14px}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--hairline);gap:10px}
+  .panel-title{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;display:flex;gap:10px;align-items:center}
+  .panel-title em{font-style:normal;font-family:"JetBrains Mono",monospace;color:var(--muted);font-weight:400;font-size:11px;letter-spacing:.02em;text-transform:none}
+  .panel-actions{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:11.5px;flex-wrap:wrap}
+  .panel-actions a{border-bottom:1px dotted var(--line-2);cursor:pointer}
+  .panel-actions a:hover{color:var(--ink);border-color:var(--ink)}
+
+  /* Snapshot grid */
+  .snap{
+    display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;
+  }
+  .snap-cell{padding:9px 14px;border-right:1px solid var(--hairline);border-bottom:1px solid var(--hairline);min-width:0}
+  .snap-cell:nth-child(5n){border-right:0}
+  .snap-cell:nth-last-child(-n+5){border-bottom:0}
+  .snap-l{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;display:flex;align-items:center;gap:6px}
+  .snap-v{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .snap-v small{color:var(--muted);font-weight:400;font-size:11.5px}
+  .snap-v.num{font-family:"JetBrains Mono",monospace;font-size:14.5px}
+  .snap-foot{padding:8px 14px;background:var(--paper-2);font-size:11px;color:var(--muted);display:flex;gap:10px;align-items:center;justify-content:space-between;font-family:"JetBrains Mono",monospace;letter-spacing:.02em;border-top:1px solid var(--hairline)}
+  .snap-foot .l{color:var(--muted-2);text-transform:uppercase;letter-spacing:.1em;font-size:10px}
+
+  /* Request type segmented cards */
+  .types{
+    display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;
+  }
+  .type-card{
+    padding:12px 14px;border-right:1px solid var(--hairline);cursor:pointer;
+    position:relative;background:var(--white);min-width:0;
+  }
+  .type-card:last-child{border-right:0}
+  .type-card:hover{background:var(--paper-2)}
+  .type-card.on{background:var(--accent-soft);outline:1.5px solid var(--accent);outline-offset:-1.5px;z-index:2}
+  .type-card-l{display:flex;justify-content:space-between;align-items:center;font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .type-card.on .type-card-l{color:var(--accent-2)}
+  .type-card-l .dot{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--line-2);background:var(--white)}
+  .type-card.on .type-card-l .dot{background:var(--accent);border-color:var(--accent-2)}
+  .type-card-nm{font-size:13.5px;font-weight:600;margin-top:6px;letter-spacing:-.005em}
+  .type-card.on .type-card-nm{color:var(--ink)}
+  .type-card-ds{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+
+  /* Form grid */
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .form-field{
+    padding:10px 14px;border-right:1px solid var(--hairline);border-bottom:1px solid var(--hairline);
+    min-width:0;display:flex;flex-direction:column;gap:5px;
+  }
+  .form-field.full{grid-column:1/-1;border-right:0}
+  .form-field:nth-child(2n){border-right:0}
+  .form-field:nth-last-child(-n+2){border-bottom:0}
+  .form-field.full:last-child{border-bottom:0}
+  .form-field.err{background:#FBEFE8}
+  .form-field label{font-size:11px;color:var(--muted);font-weight:500;display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .form-field label .req{color:var(--accent-2);font-family:"JetBrains Mono",monospace;font-size:10px}
+  .form-field label .tag-req{font-family:"JetBrains Mono",monospace;font-size:8.5px;letter-spacing:.06em;border:1px solid #D6B0A8;background:var(--neg-soft);color:var(--neg);padding:0 4px;border-radius:2px;text-transform:uppercase}
+  .form-field label .tag-pol{font-family:"JetBrains Mono",monospace;font-size:8.5px;letter-spacing:.06em;border:1px solid #D9BFA0;background:var(--warn-soft);color:var(--accent-2);padding:0 4px;border-radius:2px;text-transform:uppercase}
+  .form-field .ctl{
+    display:flex;align-items:center;gap:8px;background:var(--white);
+    border:1px solid var(--line);border-radius:3px;padding:7px 10px;font-size:13px;
+  }
+  .form-field .ctl:focus-within{border-color:var(--ink)}
+  .form-field.err .ctl{border-color:var(--neg)}
+  .form-field input,.form-field select,.form-field textarea{border:0;background:transparent;outline:none;width:100%;font:inherit;color:var(--ink);appearance:none}
+  .form-field textarea{resize:vertical;min-height:60px;line-height:1.5}
+  .form-field .ctl .chev{color:var(--muted)}
+  .form-field .ctl .pre{font-family:"JetBrains Mono",monospace;color:var(--muted);font-size:11.5px}
+  .form-field .hint{font-size:10.5px;color:var(--muted);font-family:"JetBrains Mono",monospace;letter-spacing:.02em}
+  .form-field .err-msg{font-size:11px;color:var(--neg);display:flex;align-items:center;gap:6px}
+  .form-field .err-msg .x{
+    width:12px;height:12px;display:grid;place-items:center;border:1.5px solid var(--neg);border-radius:50%;
+    color:var(--neg);font-size:8px;font-weight:600;flex-shrink:0;
+  }
+
+  /* Urgency radio row */
+  .urgency-row{display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:var(--white);border:1px solid var(--line);border-radius:3px;overflow:hidden}
+  .urgency-opt{
+    padding:7px 10px;border-right:1px solid var(--hairline);cursor:pointer;
+    display:flex;align-items:center;gap:8px;font-size:12px;
+  }
+  .urgency-opt:last-child{border-right:0}
+  .urgency-opt:hover{background:var(--paper-2)}
+  .urgency-opt.on{background:var(--accent-soft);color:var(--ink-2);font-weight:500}
+  .urgency-opt .ix{
+    width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line-2);background:var(--white);
+    flex-shrink:0;display:grid;place-items:center;
+  }
+  .urgency-opt.on .ix{border-color:var(--accent-2)}
+  .urgency-opt.on .ix::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent-2)}
+  .urgency-opt .lbl{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.08em;color:var(--muted);margin-left:auto}
+  .urgency-opt.on .lbl{color:var(--accent-2)}
+
+  /* Attachments placeholder */
+  .attach{
+    border:1px dashed var(--line-2);background:var(--paper-2);
+    padding:12px 14px;border-radius:3px;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
+  }
+  .attach .ic{
+    width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--line-2);background:var(--white);
+    font-family:"JetBrains Mono",monospace;font-size:10px;font-weight:600;color:var(--muted-2);
+  }
+  .attach .t{font-size:12.5px;font-weight:500}
+  .attach .s{font-size:11px;color:var(--muted);margin-top:2px;font-family:"JetBrains Mono",monospace;letter-spacing:.02em}
+  .attach-list{margin-top:8px;display:flex;flex-direction:column;gap:4px}
+  .attach-item{
+    display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;align-items:center;
+    padding:5px 10px;background:var(--white);border:1px solid var(--hairline);font-size:12px;
+  }
+  .attach-item .nm{font-weight:500}
+  .attach-item .sz{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted)}
+  .attach-item .x{color:var(--muted);font-family:"JetBrains Mono",monospace;font-size:11px;cursor:pointer;padding:0 4px}
+  .attach-item .x:hover{color:var(--neg)}
+
+  /* Form foot bar */
+  .form-foot{
+    padding:12px 14px;background:var(--paper-2);border-top:1px solid var(--hairline);
+    display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;
+  }
+  .form-foot .summary{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .form-foot .summary .mono{color:var(--ink-2)}
+  .form-foot .sep{color:var(--line-2)}
+  .form-foot .actions{display:flex;gap:8px;align-items:center}
+
+  /* Validation banner inside form */
+  .v-banner{
+    padding:11px 14px;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;
+    border-top:1px solid var(--hairline);
+  }
+  .v-banner.err{background:#FBEFE8;border-left:3px solid var(--neg)}
+  .v-banner.ok{background:var(--pos-soft);border-left:3px solid var(--pos)}
+  .v-banner-mark{
+    width:30px;height:30px;display:grid;place-items:center;border-radius:50%;
+    background:var(--white);border:1.5px solid var(--line-2);
+    font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:600;
+  }
+  .v-banner.err .v-banner-mark{border-color:var(--neg);color:var(--neg)}
+  .v-banner.ok  .v-banner-mark{border-color:var(--pos);color:var(--pos)}
+  .v-banner-body .t{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .v-banner-body .s{font-size:11.5px;color:var(--ink-2);margin-top:2px;line-height:1.45}
+  .v-banner-body .s .mono{color:var(--ink-2)}
+
+  /* Right column: Policy preview */
+  .policy-banner{
+    padding:12px 14px;background:var(--warn-soft);border-bottom:1px solid #E2C887;
+    display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;
+  }
+  .policy-mark{
+    width:34px;height:34px;border-radius:50%;background:var(--white);border:1.5px solid var(--warn);
+    display:grid;place-items:center;color:var(--accent-2);
+    font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600;
+  }
+  .policy-banner .l{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-2)}
+  .policy-banner .v{font-size:13.5px;font-weight:600;margin-top:1px}
+  .policy-banner .v small{font-family:"JetBrains Mono",monospace;color:var(--accent-2);font-weight:400;font-size:11px;margin-left:6px}
+
+  .pol-rules{display:flex;flex-direction:column}
+  .pol-rule{
+    display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center;
+    padding:9px 14px;border-bottom:1px solid var(--hairline);
+  }
+  .pol-rule:last-child{border-bottom:0}
+  .pol-rule .ix{
+    width:20px;height:20px;display:grid;place-items:center;border:1px solid var(--line-2);background:var(--paper);
+    font-family:"JetBrains Mono",monospace;font-size:9px;color:var(--muted);font-weight:600;
+  }
+  .pol-rule.match .ix{background:var(--pos-soft);border-color:var(--pos);color:var(--pos)}
+  .pol-rule .body .l{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .pol-rule .body .v{font-size:12.5px;font-weight:500;margin-top:1px}
+  .pol-rule .body .v .mono{font-weight:500}
+  .pol-rule .res{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.06em;color:var(--pos);text-transform:uppercase}
+  .pol-rule.miss .res{color:var(--muted)}
+
+  .pol-explain{
+    padding:12px 14px;background:var(--paper-2);border-top:1px solid var(--hairline);
+    font-size:12.5px;line-height:1.5;color:var(--ink-2);
+  }
+  .pol-explain .h{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+  .pol-explain p{margin:0}
+  .pol-explain p + p{margin-top:8px}
+
+  /* Approval chain preview */
+  .chain{padding:0}
+  .chain-step{
+    display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:flex-start;
+    padding:11px 14px;border-bottom:1px solid var(--hairline);position:relative;
+  }
+  .chain-step:last-child{border-bottom:0}
+  .chain-step::before{
+    content:"";position:absolute;left:32px;top:32px;bottom:-1px;width:1.5px;background:var(--line-2);
+  }
+  .chain-step:last-child::before{display:none}
+  .chain-mark{
+    width:28px;height:28px;border-radius:50%;background:var(--white);border:1.5px solid var(--line-2);
+    display:grid;place-items:center;color:var(--ink-2);
+    font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600;position:relative;z-index:2;
+  }
+  .chain-step.cur .chain-mark{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-2)}
+  .chain-step.fut .chain-mark{border-style:dashed;color:var(--muted-2)}
+  .chain-step.done .chain-mark{border-color:var(--pos);background:var(--pos-soft);color:var(--pos)}
+  .chain-step .body{min-width:0}
+  .chain-step .nm{font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .chain-step .who{font-size:11.5px;color:var(--muted);margin-top:2px;font-family:"JetBrains Mono",monospace;letter-spacing:.02em}
+  .chain-step .sla{font-size:11px;color:var(--muted);margin-top:3px}
+  .chain-step.fut .nm,.chain-step.fut .who{color:var(--muted)}
+  .chain-step.fut .nm{color:var(--ink-2);font-weight:500}
+  .chain-step .badge{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:1px 5px;border:1px solid var(--line-2);background:var(--paper);border-radius:2px;align-self:flex-start;white-space:nowrap}
+  .chain-step.cur .badge{color:var(--accent-2);background:var(--warn-soft);border-color:#D9BFA0}
+  .chain-step.done .badge{color:var(--pos);background:var(--pos-soft);border-color:#B2C8A8}
+
+  .chain-rule{
+    padding:10px 14px;background:var(--paper-2);border-top:1px solid var(--hairline);font-size:11.5px;color:var(--ink-2);
+    display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:flex-start;line-height:1.45;
+  }
+  .chain-rule .mono{color:var(--ink-2)}
+  .chain-rule .mk{font-family:"JetBrains Mono",monospace;font-size:9.5px;color:var(--accent-2);letter-spacing:.1em;background:var(--warn-soft);border:1px solid #D9BFA0;padding:1px 5px;border-radius:2px;text-transform:uppercase}
+
+  /* Lifecycle impact */
+  .life{padding:0}
+  .life-row{
+    display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:flex-start;
+    padding:10px 14px;border-bottom:1px solid var(--hairline);
+  }
+  .life-row:last-child{border-bottom:0}
+  .life-mk{
+    width:20px;height:20px;border:1px solid var(--line-2);background:var(--paper);display:grid;place-items:center;
+    font-family:"JetBrains Mono",monospace;font-size:9px;color:var(--muted);font-weight:600;border-radius:50%;
+  }
+  .life-row.lock .life-mk{background:var(--warn-soft);border-color:var(--warn);color:var(--accent-2)}
+  .life-row.audit .life-mk{background:var(--info-soft);border-color:var(--info);color:var(--info)}
+  .life-row .nm{font-size:12.5px;font-weight:500;line-height:1.4}
+  .life-row .ds{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+  .life-row .tg{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);align-self:flex-start;white-space:nowrap}
+
+  /* ─── Submitted success state ─── */
+  .success-card{
+    background:var(--white);border:1px solid var(--line);
+    padding:30px 32px;display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:center;
+    margin-bottom:14px;border-left:4px solid var(--pos);
+  }
+  .success-mark{
+    width:54px;height:54px;border-radius:50%;border:2px solid var(--pos);
+    display:grid;place-items:center;color:var(--pos);background:var(--pos-soft);font-size:24px;
+  }
+  .success-body .l{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--pos)}
+  .success-body .t{font-size:20px;font-weight:600;letter-spacing:-.01em;margin-top:3px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .success-body .t .reqid{font-family:"JetBrains Mono",monospace;font-size:14px;background:var(--accent-soft);color:var(--accent-2);padding:3px 9px;border-radius:2px;font-weight:600;letter-spacing:.04em}
+  .success-body .ds{font-size:12.5px;color:var(--ink-2);margin-top:8px;line-height:1.5;max-width:640px}
+  .success-actions{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+
+  .submitted-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--hairline);margin-top:18px}
+  .submitted-cell{padding:10px 14px;border-right:1px solid var(--hairline);min-width:0}
+  .submitted-cell:last-child{border-right:0}
+  .submitted-cell .l{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+  .submitted-cell .v{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .submitted-cell .v .mono{font-weight:500}
+
+  /* Blocked state card */
+  .blocked-card{
+    background:#FBEFE8;border:1px solid var(--neg);border-left:4px solid var(--neg);
+    padding:18px 22px;margin-bottom:14px;display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;
+  }
+  .blocked-mark{
+    width:46px;height:46px;border-radius:50%;background:var(--neg-soft);border:2px solid var(--neg);
+    display:grid;place-items:center;color:var(--neg);font-size:22px;
+  }
+  .blocked-body .l{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--neg)}
+  .blocked-body .t{font-size:17px;font-weight:600;letter-spacing:-.01em;margin-top:3px}
+  .blocked-body .ds{font-size:12.5px;color:var(--ink-2);margin-top:6px;line-height:1.5}
+  .blocked-body .ds .mono{color:var(--ink-2)}
+  .blocked-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+  .blocked-detail{
+    padding:0;background:var(--white);border:1px solid var(--line);margin-bottom:14px;
+  }
+  .blocked-detail .row{
+    display:grid;grid-template-columns:120px 1fr auto;gap:14px;align-items:center;
+    padding:9px 14px;border-bottom:1px solid var(--hairline);
+  }
+  .blocked-detail .row:last-child{border-bottom:0}
+  .blocked-detail .row .l{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .blocked-detail .row .v{font-size:12.5px;font-weight:500}
+  .blocked-detail .row .v .mono{color:var(--ink-2)}
+
+  /* Toast */
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 14px;font-size:12.5px;border-radius:3px;display:flex;align-items:center;gap:10px;z-index:70;box-shadow:0 10px 24px rgba(20,18,12,.2)}
+  .toast .ok{color:#9CC58F}
+
+  /* Foot ruler */
+  .foot-ruler{margin-top:18px;border-top:1px solid var(--hairline);padding-top:10px;display:flex;justify-content:space-between;color:var(--muted);font-size:11px;font-family:"JetBrains Mono",monospace;letter-spacing:.04em;flex-wrap:wrap;gap:10px}
+
+  /* Tablet */
+  @media (max-width:1180px){
+    .work{grid-template-columns:1fr}
+    .snap{grid-template-columns:repeat(3,1fr)}
+    .types{grid-template-columns:repeat(2,1fr)}
+    .process{grid-template-columns:repeat(2,1fr)}
+    .submitted-grid{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:980px){
+    .app{grid-template-columns:64px 1fr}
+    .sidebar .brand-name,.sidebar .tenant,.sidebar .nav-count,.sidebar .nav-label,.sidebar .user-meta,.sidebar .switch-btn{display:none}
+    .sidebar .nav-item{grid-template-columns:1fr;justify-items:center;padding:8px}
+    .sidebar .brand{justify-content:center;padding:18px 0}
+    .nav-title{display:none}
+    .user-block{justify-content:center;padding:12px 0}
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useEffect } = React;
+
+/* ─────────── Static ─────────── */
+
+const ANNA = { name:"Anna Petrova", role:"Sales Representative", initials:"AP", color:"bg-c", roleCode:"REP" };
+
+const MODULES = [
+  { key:"dashboard",  code:"DA", label:"Dashboard",      section:"workspace", count:null },
+  { key:"accounts",   code:"AC", label:"Accounts",       section:"workspace", count:412 },
+  { key:"contacts",   code:"CO", label:"Contacts",       section:"workspace", count:1843 },
+  { key:"opps",       code:"OP", label:"Opportunities",  section:"workspace", count:12 },
+  { key:"approvals",  code:"AP", label:"Approvals",      section:"governance",count:3, alert:true },
+  { key:"imports",    code:"IM", label:"Imports",        section:"data",      disabled:true },
+  { key:"duplicates", code:"DU", label:"Duplicates",     section:"data",      disabled:true },
+  { key:"metadata",   code:"MA", label:"Metadata Admin", section:"data",      disabled:true },
+  { key:"reports",    code:"RE", label:"Reports",        section:"insights",  disabled:true },
+  { key:"audit",      code:"AU", label:"Audit",          section:"insights",  disabled:true },
+];
+const SECTIONS = [
+  { key:"workspace",  label:"Workspace",   index:"01" },
+  { key:"governance", label:"Governance",  index:"02" },
+  { key:"data",       label:"Data & Quality", index:"03" },
+  { key:"insights",   label:"Insights",    index:"04" },
+];
+
+/* The opportunity context */
+const OPP = {
+  id:"OPP-2418",
+  title:"Q3 Equipment Renewal",
+  account:{ id:"AC-3318", name:"Acme Manufacturing" },
+  contact:{ id:"CT-7421", name:"Taylor Brooks", role:"VP Operations" },
+  owner:{ name:"Anna Petrova", initials:"AP" },
+  amount:145000,
+  stage:"Proposal",
+  close:"2026-06-28",
+  currentDiscount:4,
+  region:"DACH-North",
+  paymentRisk:"Medium",
+};
+
+/* Request types */
+const TYPES = [
+  { key:"discount",  code:"DSC", name:"Discount Exception",        desc:"Pricing discount above the auto-approved threshold.", policy:"DISCOUNT-A" },
+  { key:"terms",     code:"PMT", name:"Payment Terms Exception",   desc:"Non-standard payment terms (e.g. NET-60, NET-90).",   policy:"TERMS-B" },
+  { key:"legal",     code:"LEG", name:"Legal Exception",           desc:"Carve-outs or amendments to standard contract terms.",policy:"LEGAL-C" },
+  { key:"commercial",code:"COM", name:"Commercial Exception",      desc:"Non-standard SLA, scope or bundled commercial terms.",policy:"COMMERCIAL-D" },
+];
+
+/* ─────────── Helpers ─────────── */
+function fmtMoney(n){
+  return "$" + n.toLocaleString();
+}
+function Pill({ kind, children }){
+  return <span className={`pill p-${kind}`}><span className="pdot" />{children}</span>;
+}
+
+/* ─────────── Sidebar / Topbar ─────────── */
+
+function BrandMark(){ return <span className="brand-mark" aria-hidden /> }
+
+function Sidebar(){
+  return (
+    <aside className="sidebar">
+      <div className="brand">
+        <BrandMark />
+        <div className="brand-name">Sales Ops CRM<span>v2.4</span></div>
+      </div>
+      <div className="tenant">
+        <div className="tenant-label">Tenant</div>
+        <div className="tenant-row">
+          <div className="tenant-name">Orion Industrial</div>
+          <div className="tenant-env mono">LOCAL PILOT</div>
+        </div>
+        <div className="tenant-meta">
+          <span className="mono">EU-CENTRAL-1</span>
+          <span className="dot">·</span>
+          <span>184 seats</span>
+        </div>
+      </div>
+
+      <nav className="nav">
+        {SECTIONS.map(sec=>{
+          const items = MODULES.filter(m=>m.section===sec.key);
+          return (
+            <div key={sec.key} className="nav-section">
+              <div className="nav-title">{sec.label}<em>{sec.index}</em></div>
+              {items.map(m=>(
+                <div
+                  key={m.key}
+                  className={`nav-item ${m.key==="approvals"?"active":""} ${m.disabled?"disabled":""}`}
+                  title={m.disabled ? `${m.label} — not visible to ${ANNA.role}` : m.label}
+                >
+                  <span className="nav-mark mono">{m.code}</span>
+                  <span className="nav-label">{m.label}</span>
+                  <span className={`nav-count mono ${m.alert?"alert":""}`}>{m.count==null?"":m.count}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </nav>
+
+      <div className="user-block">
+        <div className={`avatar ${ANNA.color}`}>{ANNA.initials}</div>
+        <div className="user-meta">
+          <div className="user-name">{ANNA.name}</div>
+          <div className="user-role">{ANNA.role}</div>
+        </div>
+        <button className="switch-btn">Switch</button>
+      </div>
+    </aside>
+  );
+}
+
+function TopBar(){
+  return (
+    <div className="topbar">
+      <div className="crumb">
+        <span className="pulse"><span className="pulse-dot" /> LOCAL PILOT</span>
+        <span>Orion Industrial</span>
+        <span className="sep">/</span>
+        <span>Opportunities</span>
+        <span className="sep">/</span>
+        <span className="mono" style={{color:"var(--ink-2)"}}>OPP-2418</span>
+        <span className="sep">/</span>
+        <strong>Submit approval</strong>
+      </div>
+
+      <label className="search">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5"/></svg>
+        <input placeholder="Search accounts, opportunities, contacts, activities…" />
+        <kbd>⌘K</kbd>
+      </label>
+
+      <div className="top-actions">
+        <button className="icon-btn" aria-label="Notifications" title="Notifications">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M3.5 12h9l-1-1.5V7a3.5 3.5 0 0 0-7 0v3.5L3.5 12Z"/><path d="M6.5 13.5a1.5 1.5 0 0 0 3 0"/></svg>
+          <span className="dot-badge mono">4</span>
+        </button>
+        <button className="role-pill">
+          <span className={`avatar ${ANNA.color}`}>{ANNA.initials}</span>
+          <span className="who">
+            <b>Anna P.</b>
+            <span>{ANNA.role}</span>
+          </span>
+          <span className="chev">▾</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── Snapshot strip ─────────── */
+
+function Snapshot({ form }){
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <div className="panel-title">Opportunity snapshot<em>frozen at submit — approvers will see this</em></div>
+        <div className="panel-actions">
+          <span className="mono">v3 · auto-captured 09:11</span>
+          <a>Open opportunity ›</a>
+        </div>
+      </div>
+      <div className="snap">
+        <div className="snap-cell">
+          <div className="snap-l">Opportunity</div>
+          <div className="snap-v">{OPP.title}<small>· <span className="mono">{OPP.id}</span></small></div>
+        </div>
+        <div className="snap-cell">
+          <div className="snap-l">Account</div>
+          <div className="snap-v">{OPP.account.name}<small>· <span className="mono">{OPP.account.id}</span></small></div>
+        </div>
+        <div className="snap-cell">
+          <div className="snap-l">Primary contact</div>
+          <div className="snap-v">{OPP.contact.name}<small>· {OPP.contact.role}</small></div>
+        </div>
+        <div className="snap-cell">
+          <div className="snap-l">Owner</div>
+          <div className="snap-v"><span className="avatar bg-c" style={{width:18,height:18,fontSize:9,borderRadius:"50%"}}>AP</span>{OPP.owner.name}</div>
+        </div>
+        <div className="snap-cell">
+          <div className="snap-l">Stage</div>
+          <div className="snap-v"><Pill kind="pending">{OPP.stage}</Pill><small>since May 10</small></div>
+        </div>
+
+        <div className="snap-cell">
+          <div className="snap-l">Amount</div>
+          <div className="snap-v num">{fmtMoney(OPP.amount)}</div>
+        </div>
+        <div className="snap-cell">
+          <div className="snap-l">Close date</div>
+          <div className="snap-v"><span className="mono" style={{fontSize:13}}>{OPP.close}</span><small>· 47 days</small></div>
+        </div>
+        <div className="snap-cell">
+          <div className="snap-l">Current discount</div>
+          <div className="snap-v num">{OPP.currentDiscount}%</div>
+        </div>
+        <div className="snap-cell">
+          <div className="snap-l">Requested discount</div>
+          <div className="snap-v num" style={{color:"var(--accent-2)"}}>{form.discount || "—"}{form.discount ? "%" : ""}</div>
+        </div>
+        <div className="snap-cell">
+          <div className="snap-l">Payment terms</div>
+          <div className="snap-v"><span className="mono">{form.terms || "—"}</span><small>{form.terms ? "requested" : ""}</small></div>
+        </div>
+
+        <div className="snap-cell">
+          <div className="snap-l">Region</div>
+          <div className="snap-v"><span className="mono">{OPP.region}</span></div>
+        </div>
+        <div className="snap-cell">
+          <div className="snap-l">Payment risk</div>
+          <div className="snap-v"><Pill kind="pending">{OPP.paymentRisk}</Pill></div>
+        </div>
+        <div className="snap-cell">
+          <div className="snap-l">Forecast category</div>
+          <div className="snap-v">Best Case</div>
+        </div>
+        <div className="snap-cell">
+          <div className="snap-l">Probability</div>
+          <div className="snap-v num">60%</div>
+        </div>
+        <div className="snap-cell">
+          <div className="snap-l">Owner role</div>
+          <div className="snap-v"><span className="mono">REP</span><small>· DACH-North team</small></div>
+        </div>
+      </div>
+      <div className="snap-foot">
+        <span><span className="l">Snapshot policy</span> · immutable once submitted</span>
+        <span>SNAPSHOT-V3 · CAPTURED 2026-05-12 09:11 · OWNER AP</span>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────── Request type selector ─────────── */
+
+function TypeSelect({ value, onChange }){
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <div className="panel-title">Request type<em>choose what kind of exception you are asking for</em></div>
+        <div className="panel-actions">
+          <span className="mono">DEFAULT · DISCOUNT</span>
+          <a>Policy catalogue ›</a>
+        </div>
+      </div>
+      <div className="types">
+        {TYPES.map(t=>(
+          <button key={t.key} className={`type-card ${value===t.key?"on":""}`} onClick={()=>onChange(t.key)} aria-pressed={value===t.key}>
+            <div className="type-card-l">
+              <span>{t.code} · {t.policy}</span>
+              <span className="dot" />
+            </div>
+            <div className="type-card-nm">{t.name}</div>
+            <div className="type-card-ds">{t.desc}</div>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ─────────── Approval request form ─────────── */
+
+function RequestForm({ form, setForm, errors, validated, onValidate, onSubmit, canSubmit, type }){
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+  const filled = [
+    form.discount && "Discount",
+    form.terms && "Terms",
+    form.justification && "Justification",
+    form.urgency && "Urgency",
+    form.customerImpact && "Customer impact",
+    form.competition && "Competitive situation",
+  ].filter(Boolean);
+
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <div className="panel-title">Approval request<em>{TYPES.find(t=>t.key===type).name} · DRAFT</em></div>
+        <div className="panel-actions">
+          {validated === null && <Pill kind="draft">Draft</Pill>}
+          {validated === "err" && <Pill kind="blocked">Validation errors</Pill>}
+          {validated === "ok"  && <Pill kind="ready">Ready to submit</Pill>}
+          <a>Save as draft ›</a>
+        </div>
+      </div>
+
+      <div className="form-grid">
+        <div className={`form-field ${errors.discount?"err":""}`}>
+          <label>
+            <span>Requested discount <span className="req">*</span></span>
+            <span className="tag-pol mono">POLICY</span>
+          </label>
+          <div className="ctl">
+            <span className="pre">%</span>
+            <input value={form.discount} onChange={e=>set("discount",e.target.value)} placeholder="e.g. 8" />
+          </div>
+          <div className="hint">Current discount on opp: <span className="mono">{OPP.currentDiscount}%</span> · auto-approved threshold: <span className="mono">≤ 6%</span></div>
+          {errors.discount && <div className="err-msg"><span className="x">!</span>{errors.discount}</div>}
+        </div>
+
+        <div className={`form-field ${errors.terms?"err":""}`}>
+          <label>
+            <span>Requested payment terms</span>
+            <span className="tag-pol mono">POLICY</span>
+          </label>
+          <div className="ctl">
+            <select value={form.terms} onChange={e=>set("terms",e.target.value)}>
+              <option value="">— standard NET-30</option>
+              <option>NET-30</option>
+              <option>NET-45</option>
+              <option>NET-60</option>
+              <option>NET-90</option>
+              <option>Milestone-based</option>
+            </select>
+            <span className="chev">▾</span>
+          </div>
+          <div className="hint">Standard for region <span className="mono">DACH-North</span> · NET-30. Non-standard triggers terms review.</div>
+          {errors.terms && <div className="err-msg"><span className="x">!</span>{errors.terms}</div>}
+        </div>
+
+        <div className={`form-field full ${errors.justification?"err":""}`}>
+          <label>
+            <span>Business justification <span className="req">*</span></span>
+            <span style={{fontFamily:'"JetBrains Mono",monospace',fontSize:10.5,color:"var(--muted)"}}>{(form.justification||"").length} / 1000</span>
+          </label>
+          <textarea className="ctl" value={form.justification} onChange={e=>set("justification",e.target.value)}
+                    placeholder="Why is this exception necessary? Include strategic, competitive and customer-relationship context."
+                    style={{minHeight:84}} />
+          {errors.justification && <div className="err-msg"><span className="x">!</span>{errors.justification}</div>}
+        </div>
+
+        <div className={`form-field ${errors.urgency?"err":""}`}>
+          <label>
+            <span>Urgency <span className="req">*</span></span>
+          </label>
+          <div className="urgency-row">
+            {[
+              ["routine","Routine","≥ 7d"],
+              ["normal","Normal","3-5d"],
+              ["high","High","48h"],
+              ["critical","Critical","24h"],
+            ].map(([k,nm,sla])=>(
+              <button key={k} className={`urgency-opt ${form.urgency===k?"on":""}`} onClick={()=>set("urgency",k)} type="button">
+                <span className="ix" />
+                <span>{nm}</span>
+                <span className="lbl mono">{sla}</span>
+              </button>
+            ))}
+          </div>
+          <div className="hint">Approver SLA target adjusts to urgency. Critical alerts approvers immediately.</div>
+          {errors.urgency && <div className="err-msg"><span className="x">!</span>{errors.urgency}</div>}
+        </div>
+
+        <div className="form-field">
+          <label>
+            <span>Supporting notes</span>
+            <span style={{fontFamily:'"JetBrains Mono",monospace',fontSize:10.5,color:"var(--muted)"}}>optional</span>
+          </label>
+          <textarea className="ctl" value={form.notes} onChange={e=>set("notes",e.target.value)}
+                    placeholder="Internal context only. Not visible to the customer." />
+        </div>
+
+        <div className={`form-field ${errors.customerImpact?"err":""}`}>
+          <label>
+            <span>Customer impact <span className="req">*</span></span>
+          </label>
+          <textarea className="ctl" value={form.customerImpact} onChange={e=>set("customerImpact",e.target.value)}
+                    placeholder="What happens to the customer relationship if this exception is not granted?" />
+          {errors.customerImpact && <div className="err-msg"><span className="x">!</span>{errors.customerImpact}</div>}
+        </div>
+
+        <div className={`form-field ${errors.competition?"err":""}`}>
+          <label>
+            <span>Competitive situation <span className="req">*</span></span>
+          </label>
+          <textarea className="ctl" value={form.competition} onChange={e=>set("competition",e.target.value)}
+                    placeholder="Named competitor, observed offer / rebate, customer commitment, deal pressure." />
+          {errors.competition && <div className="err-msg"><span className="x">!</span>{errors.competition}</div>}
+        </div>
+
+        <div className="form-field full">
+          <label>
+            <span>Attachments</span>
+            <span style={{fontFamily:'"JetBrains Mono",monospace',fontSize:10.5,color:"var(--muted)"}}>2 of 5 attached</span>
+          </label>
+          <div className="attach">
+            <div className="ic">↑</div>
+            <div>
+              <div className="t">Drop files or click to attach</div>
+              <div className="s">PDF, DOCX, XLSX, PNG up to 20 MB · approvers receive read-only links</div>
+            </div>
+            <button className="btn btn-sm" type="button">Choose files</button>
+          </div>
+          <div className="attach-list">
+            <div className="attach-item">
+              <span className="mono" style={{fontSize:10,color:"var(--muted-2)"}}>PDF</span>
+              <span className="nm">revised_pricing_acme_q3.pdf</span>
+              <span className="sz">218 KB</span>
+              <span className="x">✕</span>
+            </div>
+            <div className="attach-item">
+              <span className="mono" style={{fontSize:10,color:"var(--muted-2)"}}>XLS</span>
+              <span className="nm">competitor_offer_summary.xlsx</span>
+              <span className="sz">42 KB</span>
+              <span className="x">✕</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {validated === "err" && (
+        <div className="v-banner err" role="alert">
+          <div className="v-banner-mark">!</div>
+          <div className="v-banner-body">
+            <div className="t">Validation failed — {Object.keys(errors).length} field{Object.keys(errors).length===1?"":"s"} need attention</div>
+            <div className="s">Fix the highlighted fields below and run <span className="mono">Validate request</span> again. Policy preview is updated based on entered values.</div>
+          </div>
+          <button className="btn btn-sm">Jump to first error ›</button>
+        </div>
+      )}
+      {validated === "ok" && (
+        <div className="v-banner ok">
+          <div className="v-banner-mark">✓</div>
+          <div className="v-banner-body">
+            <div className="t">Ready to submit · policy <span className="mono">DISCOUNT-A v18</span> matched</div>
+            <div className="s">All required fields are populated. Submitting will freeze the snapshot, route to Finance, and lock stage promotion until a decision is made.</div>
+          </div>
+          <Pill kind="ready">Ready</Pill>
+        </div>
+      )}
+
+      <div className="form-foot">
+        <div className="summary">
+          <span><span className="mono">{filled.length}/6</span> required fields populated</span>
+          <span className="sep">·</span>
+          <span><span className="mono">2</span> attachments</span>
+          <span className="sep">·</span>
+          <span><span className="mono">{(form.justification||"").length + (form.customerImpact||"").length + (form.competition||"").length}</span> chars in narrative</span>
+          <span className="sep">·</span>
+          <span>Owner <span className="mono">AP</span></span>
+        </div>
+        <div className="actions">
+          <button className="btn" type="button">Save draft</button>
+          <button className="btn" type="button" onClick={onValidate}>Validate request</button>
+          <button className={`btn ${canSubmit?"btn-primary":"btn-disabled"}`} aria-disabled={!canSubmit}
+                  onClick={()=>canSubmit && onSubmit()}
+                  title={canSubmit?"Submit approval request":"Validate first and fix errors"}>
+            Submit approval request
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────── Right column: policy preview ─────────── */
+
+function PolicyPanel({ form, type }){
+  const t = TYPES.find(x=>x.key===type);
+  /* compute matches based on current form */
+  const discountNum = parseFloat(form.discount) || 0;
+  const termsNonStd = form.terms && form.terms !== "NET-30" && form.terms !== "";
+
+  const rules = [
+    { ix:"01", l:"Trigger",       v:<><span className="mono">discount &gt; 6%</span> · request <span className="mono">{discountNum}%</span></>, match: discountNum > 6 },
+    { ix:"02", l:"Amount band",   v:<><span className="mono">$100K – $250K</span> · deal <span className="mono">$145,000</span></>, match: true },
+    { ix:"03", l:"Region",        v:<><span className="mono">DACH-North</span> · matches</>, match: true },
+    { ix:"04", l:"Payment risk",  v:<><span className="mono">Medium</span> · within band</>, match: true },
+    { ix:"05", l:"Terms",         v: termsNonStd
+                                       ? <><span className="mono">{form.terms}</span> · non-standard → adds <span className="mono">Legal</span> step</>
+                                       : <><span className="mono">standard NET-30</span> · no terms step</>,
+      match: termsNonStd },
+  ];
+
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <div className="panel-title">Policy matched<em>{t.policy} · auto-resolved</em></div>
+        <div className="panel-actions">
+          <span className="mono">v18 · 2026-04-02</span>
+        </div>
+      </div>
+
+      <div className="policy-banner">
+        <div className="policy-mark mono">P18</div>
+        <div>
+          <div className="l">Policy</div>
+          <div className="v">Discount Governance v18<small>· DISCOUNT-A</small></div>
+        </div>
+      </div>
+
+      <div className="pol-rules">
+        {rules.map((r,i)=>(
+          <div key={i} className={`pol-rule ${r.match?"match":"miss"}`}>
+            <div className="ix mono">{r.ix}</div>
+            <div className="body">
+              <div className="l">{r.l}</div>
+              <div className="v">{r.v}</div>
+            </div>
+            <div className="res">{r.match ? "MATCH" : "n/a"}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="pol-explain">
+        <div className="h"><span>Why is approval required?</span><span className="mono" style={{color:"var(--muted-2)"}}>plain language</span></div>
+        <p>
+          Anna requested an <strong>8% discount</strong>, which is above the auto-approved <span className="mono">6%</span> threshold for renewals.
+          The deal sits in the <span className="mono">$100K–$250K</span> band for the <span className="mono">DACH-North</span> region with
+          <span className="mono"> Medium</span> payment risk, which routes the request through Finance for margin sign-off
+          and — if non-standard terms are requested — Legal for terms review.
+        </p>
+        <p>
+          Required approval chain: <span className="mono">Finance Approver → Legal Approver</span>.
+          Combined SLA target: <span className="mono">48h</span> from submission.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────── Right column: approval chain preview ─────────── */
+
+function ChainPanel({ form }){
+  const termsNonStd = form.terms && form.terms !== "NET-30" && form.terms !== "";
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <div className="panel-title">Approval chain<em>sequential · 4 steps</em></div>
+        <div className="panel-actions">
+          <span className="mono">SLA · 48h</span>
+        </div>
+      </div>
+      <div className="chain">
+        <div className="chain-step done">
+          <div className="chain-mark">01</div>
+          <div className="body">
+            <div className="nm">Submitted by Anna Petrova<Pill kind="approved">you</Pill></div>
+            <div className="who mono">REP · DACH-North · 2026-05-12 09:14 (on submit)</div>
+            <div className="sla">Snapshot is captured and request becomes immutable.</div>
+          </div>
+          <span className="badge mono">Submit</span>
+        </div>
+
+        <div className="chain-step cur">
+          <div className="chain-mark">02</div>
+          <div className="body">
+            <div className="nm">Finance Review · Daria Smirnova<Pill kind="pending">first decision</Pill></div>
+            <div className="who mono">FIN · margin authority $50K–$500K · SLA 24h</div>
+            <div className="sla">Reviews requested discount, amount band, payment risk. May approve, reject, or send back with comments.</div>
+          </div>
+          <span className="badge mono">In review</span>
+        </div>
+
+        <div className="chain-step fut">
+          <div className="chain-mark">03</div>
+          <div className="body">
+            <div className="nm">Legal Review · Oleg Markov{termsNonStd && <Pill kind="pending">required</Pill>}{!termsNonStd && <span className="mono" style={{fontSize:10,color:"var(--muted)"}}>conditional</span>}</div>
+            <div className="who mono">LEG · contractual & terms authority · SLA 24h</div>
+            <div className="sla">Cannot decide until Finance completes step 2. Reviews payment terms and any legal carve-outs.</div>
+          </div>
+          <span className="badge mono">Waits for FIN</span>
+        </div>
+
+        <div className="chain-step fut">
+          <div className="chain-mark">04</div>
+          <div className="body">
+            <div className="nm">Final decision</div>
+            <div className="who mono">auto · once all required steps decide</div>
+            <div className="sla">Outcome is auto-applied to OPP-2418. Decision and reviewer comments are written to the immutable audit trail.</div>
+          </div>
+          <span className="badge mono">Auto</span>
+        </div>
+      </div>
+
+      <div className="chain-rule">
+        <span className="mk">RULE</span>
+        <span>Legal cannot start before Finance has decided. A send-back at any step returns the request to <span className="mono">Anna Petrova</span> with comments; she may revise and resubmit, which restarts the chain from <span className="mono">step 02</span>.</span>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────── Right column: lifecycle impact ─────────── */
+
+function LifecyclePanel(){
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <div className="panel-title">Opportunity lifecycle<em>what changes on OPP-2418</em></div>
+      </div>
+      <div className="life">
+        <div className="life-row">
+          <div className="life-mk mono">P</div>
+          <div>
+            <div className="nm">Stage stays at <span className="mono" style={{color:"var(--accent-2)"}}>Proposal</span></div>
+            <div className="ds">Submitting an approval does not change the current stage. The opportunity remains in Proposal until the chain decides.</div>
+          </div>
+          <span className="tg mono">no change</span>
+        </div>
+        <div className="life-row lock">
+          <div className="life-mk mono">🔒</div>
+          <div>
+            <div className="nm">Cannot move to Negotiation</div>
+            <div className="ds">Promotion to <span className="mono">Negotiation</span> is blocked while this request is pending or in <span className="mono">sent-back</span> state. The Move Stage action will show a blocking validation panel.</div>
+          </div>
+          <span className="tg mono">blocked</span>
+        </div>
+        <div className="life-row">
+          <div className="life-mk mono">↻</div>
+          <div>
+            <div className="nm">Approval state updates on decision</div>
+            <div className="ds">Approve → opportunity approval state becomes <span className="mono">Approved</span> and discount is persisted. Reject → state becomes <span className="mono">Rejected</span> and the opportunity returns to the prior commercial baseline. Send back → state becomes <span className="mono">Sent back</span> for revision.</div>
+          </div>
+          <span className="tg mono">on decision</span>
+        </div>
+        <div className="life-row audit">
+          <div className="life-mk mono">AU</div>
+          <div>
+            <div className="nm">Decision history is audit-logged</div>
+            <div className="ds">Every transition, comment and reviewer action is written to the immutable business audit trail. Owners and managers can review the chain at any time from the Opportunity Detail timeline.</div>
+          </div>
+          <span className="tg mono">audit</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────── Submitted success view ─────────── */
+
+function SubmittedView({ form, onBack }){
+  return (
+    <>
+      <div className="success-card">
+        <div className="success-mark">✓</div>
+        <div className="success-body">
+          <div className="l">Approval request submitted</div>
+          <div className="t">Request received <span className="reqid mono">REQ-1182</span></div>
+          <div className="ds">
+            Routing computed by policy <span className="mono">DISCOUNT-A v18</span>. <span className="mono">OPP-2418</span> snapshot
+            (amount, stage, custom fields) is frozen. <strong>Finance · Daria Smirnova</strong> has been notified and will respond within
+            the <span className="mono">24h</span> finance SLA. You'll receive a notification when the chain advances.
+          </div>
+        </div>
+        <div className="success-actions">
+          <button className="btn btn-primary" onClick={onBack}>Open opportunity ›</button>
+          <button className="btn" onClick={onBack}>View in approvals queue</button>
+        </div>
+      </div>
+
+      <section className="panel">
+        <div className="panel-head">
+          <div className="panel-title">Submitted request<em>REQ-1182 · Discount Exception · 8%</em></div>
+          <div className="panel-actions">
+            <Pill kind="pending">Pending Finance</Pill>
+            <span className="mono">SLA · 24h finance · 48h total</span>
+          </div>
+        </div>
+
+        <div className="chain">
+          <div className="chain-step done">
+            <div className="chain-mark">01</div>
+            <div className="body">
+              <div className="nm">Submitted by Anna Petrova</div>
+              <div className="who mono">2026-05-12 09:14 · snapshot frozen · attachments 2</div>
+              <div className="sla">Audit event <span className="mono">APPR.SUBMIT</span> written.</div>
+            </div>
+            <span className="badge mono">Done</span>
+          </div>
+          <div className="chain-step cur">
+            <div className="chain-mark">02</div>
+            <div className="body">
+              <div className="nm">Finance Review · Daria Smirnova<Pill kind="pending">in review</Pill></div>
+              <div className="who mono">notified 09:14 · responds within 24h</div>
+              <div className="sla">Reviewer can approve, reject, or send back with comments.</div>
+            </div>
+            <span className="badge mono">In review</span>
+          </div>
+          <div className="chain-step fut">
+            <div className="chain-mark">03</div>
+            <div className="body">
+              <div className="nm">Legal Review · Oleg Markov</div>
+              <div className="who mono">queued · cannot start before Finance decides</div>
+              <div className="sla">SLA 24h begins on Finance approval.</div>
+            </div>
+            <span className="badge mono">Waiting</span>
+          </div>
+          <div className="chain-step fut">
+            <div className="chain-mark">04</div>
+            <div className="body">
+              <div className="nm">Final decision</div>
+              <div className="who mono">auto-applied to OPP-2418</div>
+              <div className="sla">Approval state on the opportunity updates automatically.</div>
+            </div>
+            <span className="badge mono">Auto</span>
+          </div>
+        </div>
+
+        <div className="submitted-grid">
+          <div className="submitted-cell"><div className="l">Request ID</div><div className="v"><span className="mono">REQ-1182</span></div></div>
+          <div className="submitted-cell"><div className="l">Type</div><div className="v">Discount Exception · {form.discount || "8"}%</div></div>
+          <div className="submitted-cell"><div className="l">Opportunity</div><div className="v"><span className="mono">OPP-2418</span></div></div>
+          <div className="submitted-cell"><div className="l">Account</div><div className="v">Acme Manufacturing</div></div>
+          <div className="submitted-cell"><div className="l">Amount</div><div className="v num mono">$145,000</div></div>
+          <div className="submitted-cell"><div className="l">Submitted at</div><div className="v"><span className="mono">2026-05-12 09:14</span></div></div>
+          <div className="submitted-cell"><div className="l">SLA total</div><div className="v"><span className="mono">48h · 0d 19h until first SLA breach</span></div></div>
+          <div className="submitted-cell"><div className="l">Stage</div><div className="v"><Pill kind="pending">Proposal</Pill> <span className="mono" style={{color:"var(--muted)",fontSize:11}}>locked → Negotiation</span></div></div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ─────────── Blocked: existing active request ─────────── */
+
+function BlockedView({ onSwitchScenario }){
+  return (
+    <>
+      <div className="blocked-card">
+        <div className="blocked-mark">✕</div>
+        <div className="blocked-body">
+          <div className="l">Submission blocked</div>
+          <div className="t">An active approval request already exists on this opportunity</div>
+          <div className="ds">
+            <span className="mono">OPP-2418</span> currently has approval request <span className="mono">REQ-1182</span> pending Finance review.
+            Policy <span className="mono">DISCOUNT-A</span> does not allow more than one active request of the same scope per opportunity.
+            Wait for the current decision, withdraw it, or update the existing request — do not submit a second one.
+          </div>
+        </div>
+        <div className="blocked-actions">
+          <button className="btn btn-primary">View REQ-1182 ›</button>
+          <button className="btn" onClick={onSwitchScenario}>Switch to clean state</button>
+        </div>
+      </div>
+
+      <section className="panel" style={{marginBottom:14}}>
+        <div className="panel-head">
+          <div className="panel-title">Active request blocking submission<em>REQ-1182</em></div>
+          <div className="panel-actions">
+            <Pill kind="pending">Pending Finance</Pill>
+            <span className="mono">submitted 2d 04h ago</span>
+          </div>
+        </div>
+        <div className="blocked-detail">
+          <div className="row">
+            <span className="l">Request ID</span>
+            <span className="v"><span className="mono">REQ-1182</span></span>
+            <button className="btn btn-sm">Open</button>
+          </div>
+          <div className="row">
+            <span className="l">Type</span>
+            <span className="v">Discount Exception · <span className="mono">8%</span></span>
+            <span className="mono" style={{fontSize:10.5,color:"var(--muted)"}}>scope · DISCOUNT-A</span>
+          </div>
+          <div className="row">
+            <span className="l">Submitted by</span>
+            <span className="v">Anna Petrova · <span className="mono">2026-05-10 17:42</span></span>
+            <span className="mono" style={{fontSize:10.5,color:"var(--muted)"}}>2d 04h pending</span>
+          </div>
+          <div className="row">
+            <span className="l">Current step</span>
+            <span className="v">Finance Review · Daria Smirnova</span>
+            <Pill kind="pending">In review</Pill>
+          </div>
+          <div className="row">
+            <span className="l">Blocking reason</span>
+            <span className="v">One active request per <span className="mono">DISCOUNT</span> scope per opportunity (policy DISCOUNT-A · § 3.2)</span>
+            <span className="mono" style={{fontSize:10.5,color:"var(--neg)"}}>HARD-BLOCK</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-head">
+          <div className="panel-title">What you can do<em>3 options</em></div>
+        </div>
+        <div className="life">
+          <div className="life-row">
+            <div className="life-mk mono">1</div>
+            <div>
+              <div className="nm">Wait for the Finance decision</div>
+              <div className="ds">Daria Smirnova is the current reviewer. The 24h finance SLA leaves <span className="mono">~19h</span>. You'll be notified on approval, send-back or rejection.</div>
+            </div>
+            <span className="tg mono">recommended</span>
+          </div>
+          <div className="life-row">
+            <div className="life-mk mono">2</div>
+            <div>
+              <div className="nm">Withdraw the active request</div>
+              <div className="ds">Cancels <span className="mono">REQ-1182</span>, freeing the opportunity for a new submission. The withdrawn request and reason are kept in the audit trail.</div>
+            </div>
+            <span className="tg mono">submitter only</span>
+          </div>
+          <div className="life-row">
+            <div className="life-mk mono">3</div>
+            <div>
+              <div className="nm">Update the existing request</div>
+              <div className="ds">Edit justification or attachments on <span className="mono">REQ-1182</span> while it is in Finance review. Changing the requested discount, however, requires withdraw + resubmit.</div>
+            </div>
+            <span className="tg mono">limited fields</span>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ─────────── Page head + scenario toggle ─────────── */
+
+function PageHead({ scenario, setScenario, stepLabel, stateLabel, stateKind, hasSubmitted }){
+  return (
+    <div className="page-head">
+      <div>
+        <h1 className="page-title">
+          Submit approval request
+          <em>· {OPP.title} <span className="mono" style={{fontSize:13,color:"var(--ink-2)"}}>{OPP.id}</span></em>
+          {stateLabel && <Pill kind={stateKind} className="pill-lg">{stateLabel}</Pill>}
+        </h1>
+        <div className="page-sub">
+          <span className="mono">REP</span>
+          <span className="sep">/</span>
+          <span>Anna Petrova</span>
+          <span className="sep">·</span>
+          <span>Acme Manufacturing · Taylor Brooks (VP Operations)</span>
+          <span className="sep">·</span>
+          <span className="mono">{stepLabel}</span>
+        </div>
+      </div>
+      <div className="page-actions">
+        <div className="scenario" role="radiogroup" aria-label="Scenario">
+          <span className="scenario-label">Scenario</span>
+          <button className={`scenario-opt ${scenario==="normal"?"on":""}`} onClick={()=>setScenario("normal")}>
+            Valid request <span className="mono">{hasSubmitted?"· ✓ submitted":""}</span>
+          </button>
+          <button className={`scenario-opt ${scenario==="blocked"?"on":""}`} onClick={()=>setScenario("blocked")}>
+            Active request exists <span className="mono">· blocked</span>
+          </button>
+        </div>
+        <button className="btn">Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── Process strip ─────────── */
+
+function ProcessStrip({ phase }){
+  // phase: "draft" | "validated" | "submitted"
+  const stage = (k) => {
+    const order = ["draft","validate","submit","decision"];
+    if(phase === "submitted") return order.indexOf(k) < 3 ? "done" : (k==="decision" ? "cur" : "done");
+    if(phase === "validated") return k==="draft" ? "done" : k==="validate" ? "cur" : "fut";
+    /* draft */
+    return k==="draft" ? "cur" : "fut";
+  };
+  return (
+    <div className="process">
+      <div className={`process-step ${stage("draft")}`}>
+        <div className="ps-num mono"><span className="dot" />01 · DRAFT</div>
+        <div className="ps-label">Fill request form</div>
+        <div className="ps-foot">type · narrative · attachments</div>
+      </div>
+      <div className={`process-step ${stage("validate")}`}>
+        <div className="ps-num mono"><span className="dot" />02 · VALIDATE</div>
+        <div className="ps-label">Resolve policy & required fields</div>
+        <div className="ps-foot">policy DISCOUNT-A · chain preview</div>
+      </div>
+      <div className={`process-step ${stage("submit")}`}>
+        <div className="ps-num mono"><span className="dot" />03 · SUBMIT</div>
+        <div className="ps-label">Snapshot + route to Finance</div>
+        <div className="ps-foot">REQ-id assigned · audit written</div>
+      </div>
+      <div className={`process-step ${stage("decision")}`}>
+        <div className="ps-num mono"><span className="dot" />04 · DECISION</div>
+        <div className="ps-label">Approve · reject · send back</div>
+        <div className="ps-foot">applied to OPP-2418 · history kept</div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── App ─────────── */
+
+function App(){
+  const [scenario, setScenario] = useState("normal"); // normal | blocked
+  const [type, setType] = useState("discount");
+
+  /* Pre-fill defaults representative of the brief (Discount 8%, NET-45) */
+  const initialForm = {
+    discount:"8",
+    terms:"NET-45",
+    justification:"",  // intentionally empty so the validation-error state is reachable
+    urgency:"high",
+    notes:"Strategic renewal account; we cannot let competitor win this on price.",
+    customerImpact:"Customer signaled they would re-evaluate vendor if pricing is not adjusted. Renewal of $145K at risk and downstream service uplift of ~$60K becomes blocked.",
+    competition:"",
+  };
+  const [form, setForm] = useState(initialForm);
+  const [validated, setValidated] = useState(null); // null | "err" | "ok"
+  const [errors, setErrors] = useState({});
+  const [phase, setPhase] = useState("draft");      // draft | validated | submitted
+  const [toast, setToast] = useState(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  function flashToast(text){
+    setToast(text);
+    setTimeout(()=>setToast(null), 2800);
+  }
+
+  function runValidate(){
+    const e = {};
+    const d = parseFloat(form.discount);
+    if(!form.discount || isNaN(d)) e.discount = "Enter a discount percentage. Use a number (e.g. 8).";
+    else if(d > 25) e.discount = "Discount above 25% requires Executive approval — not supported via this form.";
+    if(!form.justification || form.justification.trim().length < 40) e.justification = "Provide at least 40 characters of business justification — approvers cannot review an empty case.";
+    if(!form.urgency) e.urgency = "Select an urgency level — this sets the approver SLA.";
+    if(!form.customerImpact || form.customerImpact.trim().length < 20) e.customerImpact = "Describe what happens to the customer relationship if the exception is not granted.";
+    if(!form.competition || form.competition.trim().length < 20) e.competition = "Name the competitor and the offer or pressure. ‘N/A’ is not accepted by policy DISCOUNT-A.";
+    setErrors(e);
+    const ok = Object.keys(e).length === 0;
+    setValidated(ok ? "ok" : "err");
+    setPhase(ok ? "validated" : "draft");
+    flashToast(ok ? "Validation passed · policy DISCOUNT-A resolved" : `Validation found ${Object.keys(e).length} issue${Object.keys(e).length===1?"":"s"} to fix`);
+  }
+
+  function runSubmit(){
+    setSubmitted(true);
+    setPhase("submitted");
+    flashToast("Approval request REQ-1182 submitted · routed to Finance · Daria Smirnova");
+  }
+
+  /* Header state pill */
+  let stepLabel, stateLabel, stateKind;
+  if(scenario === "blocked"){
+    stepLabel = "submission · blocked"; stateLabel = "Blocked"; stateKind = "blocked";
+  } else if(submitted){
+    stepLabel = "submitted · pending finance"; stateLabel = "Pending"; stateKind = "pending";
+  } else if(validated === "ok"){
+    stepLabel = "ready to submit"; stateLabel = "Ready"; stateKind = "ready";
+  } else if(validated === "err"){
+    stepLabel = "validation errors"; stateLabel = "Validation errors"; stateKind = "blocked";
+  } else {
+    stepLabel = "step 01 · draft request"; stateLabel = "Draft"; stateKind = "draft";
+  }
+
+  return (
+    <div className="app" data-screen-label="04 Submit Approval">
+      <Sidebar />
+      <div className="main">
+        <TopBar />
+
+        <div className="content" data-screen-label="04 Submit Approval Flow">
+          <PageHead
+            scenario={scenario}
+            setScenario={(s)=>{ setScenario(s); if(s==="normal"){ setSubmitted(false); setPhase("draft"); setValidated(null); setErrors({}); setForm(initialForm); } }}
+            stepLabel={stepLabel}
+            stateLabel={stateLabel}
+            stateKind={stateKind}
+            hasSubmitted={submitted}
+          />
+
+          {scenario === "blocked" ? (
+            <BlockedView onSwitchScenario={()=>{ setScenario("normal"); setSubmitted(false); setPhase("draft"); setValidated(null); setForm(initialForm); }} />
+          ) : submitted ? (
+            <>
+              <ProcessStrip phase="submitted" />
+              <Snapshot form={form} />
+              <div style={{height:14}} />
+              <SubmittedView form={form} onBack={()=>flashToast("Would navigate back to OPP-2418 detail")} />
+            </>
+          ) : (
+            <>
+              <ProcessStrip phase={phase} />
+              <Snapshot form={form} />
+              <div style={{height:14}} />
+              <div className="work">
+                <div>
+                  <TypeSelect value={type} onChange={setType} />
+                  <RequestForm
+                    type={type}
+                    form={form}
+                    setForm={(updater)=>{ setForm(updater); setValidated(null); }}
+                    errors={errors}
+                    validated={validated}
+                    onValidate={runValidate}
+                    onSubmit={runSubmit}
+                    canSubmit={validated === "ok"}
+                  />
+                </div>
+                <div>
+                  <PolicyPanel form={form} type={type} />
+                  <ChainPanel form={form} />
+                  <LifecyclePanel />
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className="foot-ruler">
+            <span>SALES OPS CRM · ORION INDUSTRIAL · LOCAL PILOT</span>
+            <span>OPP-2418 · OWNER AP · ROLE REP</span>
+            <span>POLICY DISCOUNT-A v18 · METADATA v42 · SHELL v2.4</span>
+          </div>
+        </div>
+      </div>
+
+      {toast && (
+        <div className="toast"><span className="ok">✓</span>{toast}</div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

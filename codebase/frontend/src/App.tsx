@@ -131,41 +131,33 @@ export default function App() {
 
   const authenticatedUser = currentUser;
 
+  if (authenticatedUser) {
+    return (
+      <div className="app app-auth">
+        <WorkspaceShell currentUser={authenticatedUser} onLogout={logout} />
+      </div>
+    );
+  }
+
   return (
-    <div className="app">
-      <header className="topbar">
+    <div className="app app-public">
+      <header className="public-topbar">
         <div>
-          <div className="eyebrow">Phase 0 Bootstrap</div>
-          <h1>Sales Ops CRM Shell</h1>
+          <div className="eyebrow">Local Pilot</div>
+          <h1>Sales Ops CRM</h1>
         </div>
-        {authenticatedUser ? (
-          <div className="topbar-actions">
-            <span className="chip">{authenticatedUser.tenantName}</span>
-            <span className="chip">{authenticatedUser.roleName}</span>
-            <button className="ghost-button" onClick={logout}>
-              Switch User
-            </button>
-          </div>
-        ) : (
-          <div className="topbar-actions">
-            <span className="chip">Shell session unresolved</span>
-          </div>
-        )}
+        <div className="topbar-actions">
+          <span className="chip">Shell session unresolved</span>
+        </div>
       </header>
 
-      <main className={authenticatedUser ? "workspace-layout" : "layout"}>
-        {authenticatedUser ? (
-          <section className="panel workspace-panel">
-            <WorkspaceShell currentUser={authenticatedUser} />
-          </section>
-        ) : (
-          <>
+      <main className="layout">
             <section className="panel hero-panel">
-              <div className="eyebrow">Intentional Bootstrap Boundary</div>
+              <div className="eyebrow">Pilot Workspace</div>
               <h2>What exists now</h2>
               <p>
-                This shell proves the runtime, tenant baseline, temporary demo auth, and role-aware
-                workspace framing before any Phase 2 CRM records or Phase 3 approval objects appear.
+                This local pilot contains demo authentication, role-aware workspaces, CRM records,
+                approval workflows, metadata administration, import operations, duplicate review, and reporting.
               </p>
               <ul className="bullet-list">
                 <li>tenant / user / role seed data</li>
@@ -189,21 +181,18 @@ export default function App() {
             </section>
 
             <section className="panel notes-panel">
-              <div className="eyebrow">Phase Handoff</div>
-              <h2>What comes next</h2>
+              <div className="eyebrow">Role Coverage</div>
+              <h2>Demo workspaces</h2>
               <ol className="ordered-list">
-                <li>Phase 1: tenant auth hardening and workspace shell</li>
-                <li>Phase 2: core CRM records and pipeline</li>
-                <li>Phase 3: approval workflow core</li>
-                <li>Phase 4+: metadata, sharing, import, reporting</li>
+                <li>Sales rep CRM workspace</li>
+                <li>Finance and legal approval queues</li>
+                <li>RevOps metadata, import, and duplicate operations</li>
+                <li>Manager and RevOps reporting</li>
               </ol>
               <p className="muted-copy notes-copy">
-                This slice keeps runtime proof separate. The current goal is a cleaner shell
-                boundary, not a broader product surface.
+                Select a demo user to enter the role-specific local pilot environment.
               </p>
             </section>
-          </>
-        )}
       </main>
     </div>
   );
