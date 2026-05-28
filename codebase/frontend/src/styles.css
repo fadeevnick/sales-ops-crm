@@ -6841,3 +6841,74 @@ button.record-row {
   border-bottom-color: var(--accent-2, #8B6F47);
 }
 .bulk-ops-grid--single { grid-template-columns: 1fr !important; }
+
+/* ── Duplicate Review Phase 2.9 — KPI band + tabs ──────────────────────── */
+.dup-workspace { display: flex; flex-direction: column; gap: 12px; }
+.dup-kpi-band {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--paper-2, #F5F2EC);
+  border: 1px solid var(--hairline, #DCD3C2);
+  border-radius: 4px;
+}
+.dup-kpi-cell { display: flex; flex-direction: column; gap: 2px; }
+.dup-kpi-l {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted, #847766);
+  font-weight: 600;
+}
+.dup-kpi-v {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink, #2A2316);
+}
+.dup-kpi-v.alert { color: var(--accent-2, #8B6F47); }
+.dup-kpi-foot {
+  font-size: 11px;
+  color: var(--muted, #847766);
+}
+.dup-tab-strip {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  border-bottom: 1px solid var(--hairline, #DCD3C2);
+  padding: 0 4px;
+}
+.dup-tab-spacer { flex: 1; }
+.dup-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--muted, #847766);
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition: color 0.12s, border-color 0.12s;
+}
+.dup-tab:hover { color: var(--ink, #2A2316); }
+.dup-tab.active {
+  color: var(--ink, #2A2316);
+  font-weight: 600;
+  border-bottom-color: var(--accent-2, #8B6F47);
+}
+.dup-tab-strip .primary-button,
+.dup-tab-strip .secondary-button {
+  margin: 4px 4px 4px 0;
+}
+.dup-action-group .duplicate-candidate-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dup-action-group .duplicate-candidate-row {
+  border: 1px solid var(--hairline, #DCD3C2);
+  border-radius: 4px;
+  padding: 12px 14px;
+  background: var(--paper, #FAF7F0);
+}

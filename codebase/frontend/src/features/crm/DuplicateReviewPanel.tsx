@@ -120,55 +120,85 @@ export function DuplicateReviewPanel({ currentUser }: DuplicateReviewPanelProps)
     }
   };
 
+  const highConfidenceCount = candidates.filter((c) => Number(c.matchScore) >= 0.85).length;
+  const lowConfidenceCount = candidates.filter((c) => Number(c.matchScore) < 0.85).length;
+  const averageScore = candidates.length
+    ? (
+        candidates.reduce((sum, c) => sum + Number(c.matchScore), 0) /
+        candidates.length
+      ).toFixed(2)
+    : "—";
+
   return (
-    <section className="crm-section duplicate-review-section">
+    <section className="crm-section duplicate-review-section dup-workspace">
       <div className="section-heading">
         <h3>Duplicate Review</h3>
-        <span>RevOps</span>
+        <span>RevOps · Merge & Reject</span>
+      </div>
+
+      <div className="dup-kpi-band">
+        <div className="dup-kpi-cell">
+          <div className="dup-kpi-l">Open candidates</div>
+          <div className={`dup-kpi-v mono${candidates.length > 0 ? " alert" : ""}`}>{candidates.length}</div>
+          <div className="dup-kpi-foot">{entityType} scope</div>
+        </div>
+        <div className="dup-kpi-cell">
+          <div className="dup-kpi-l">High confidence</div>
+          <div className="dup-kpi-v mono">{highConfidenceCount}</div>
+          <div className="dup-kpi-foot">score ≥ 0.85</div>
+        </div>
+        <div className="dup-kpi-cell">
+          <div className="dup-kpi-l">Needs review</div>
+          <div className="dup-kpi-v mono">{lowConfidenceCount}</div>
+          <div className="dup-kpi-foot">score &lt; 0.85</div>
+        </div>
+        <div className="dup-kpi-cell">
+          <div className="dup-kpi-l">Average score</div>
+          <div className="dup-kpi-v mono">{averageScore}</div>
+          <div className="dup-kpi-foot">across open</div>
+        </div>
+      </div>
+
+      <div className="dup-tab-strip" role="tablist">
+        {(["account", "contact"] as DuplicateCandidateEntityType[]).map((t) => (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={entityType === t}
+            className={`dup-tab${entityType === t ? " active" : ""}`}
+            onClick={() => {
+              setEntityType(t);
+              setMessage(null);
+              setErrorMessage(null);
+            }}
+          >
+            {t === "account" ? "Accounts" : "Contacts"}
+          </button>
+        ))}
+        <div className="dup-tab-spacer" />
+        <button
+          className="primary-button compact-button"
+          disabled={isSubmitting}
+          onClick={handleGenerate}
+          type="button"
+        >
+          Generate
+        </button>
+        <button
+          className="secondary-button compact-button"
+          disabled={isSubmitting}
+          onClick={() => void refreshCandidates()}
+          type="button"
+        >
+          Refresh
+        </button>
       </div>
 
       {errorMessage ? <div className="error-box">{errorMessage}</div> : null}
       {message ? <div className="success-box">{message}</div> : null}
 
-      <div className="action-group">
-        <label>
-          <span>Entity</span>
-          <select
-            value={entityType}
-            onChange={(event) => {
-              setEntityType(event.target.value as DuplicateCandidateEntityType);
-              setMessage(null);
-              setErrorMessage(null);
-            }}
-          >
-            <option value="account">Account</option>
-            <option value="contact">Contact</option>
-          </select>
-        </label>
-
-        <div className="button-row">
-          <button
-            className="primary-button compact-button"
-            disabled={isSubmitting}
-            onClick={handleGenerate}
-            type="button"
-          >
-            Generate
-          </button>
-          <button
-            className="secondary-button compact-button"
-            disabled={isSubmitting}
-            onClick={() => void refreshCandidates()}
-            type="button"
-          >
-            Refresh
-          </button>
-        </div>
-
-        <div className="job-summary">
-          <strong>{candidates.length} open</strong>
-          <span>{entityType}</span>
-        </div>
+      <div className="action-group dup-action-group">
 
         {candidates.length ? (
           <div className="duplicate-candidate-list">
