@@ -6706,3 +6706,83 @@ button.record-row {
     justify-content: center;
   }
 }
+
+/* ── Metadata Admin Phase 2.7 — tabs + version band ────────────────────── */
+.ma-workspace { display: flex; flex-direction: column; gap: 12px; }
+.ma-version-band {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--paper-2, #F5F2EC);
+  border: 1px solid var(--hairline, #DCD3C2);
+  border-radius: 4px;
+}
+.ma-version-cell { display: flex; flex-direction: column; gap: 2px; }
+.ma-version-l {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted, #847766);
+  font-weight: 600;
+}
+.ma-version-v {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink, #2A2316);
+}
+.ma-version-v.alert { color: var(--neg, #8A3F2D); }
+.ma-version-foot {
+  font-size: 11px;
+  color: var(--muted, #847766);
+}
+.ma-version-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.ma-tab-strip {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--hairline, #DCD3C2);
+  padding: 0 4px;
+}
+.ma-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--muted, #847766);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: -1px;
+  transition: color 0.12s, border-color 0.12s;
+}
+.ma-tab:hover { color: var(--ink, #2A2316); }
+.ma-tab.active {
+  color: var(--ink, #2A2316);
+  font-weight: 600;
+  border-bottom-color: var(--accent-2, #8B6F47);
+}
+.ma-tab .ct {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--paper-2, #F5F2EC);
+  border: 1px solid var(--hairline, #DCD3C2);
+  color: var(--muted, #847766);
+  font-style: normal;
+  line-height: 1.4;
+}
+.ma-tab.active .ct {
+  background: var(--accent-soft, #EDE0CD);
+  color: var(--accent-2, #8B6F47);
+  border-color: #D9BFA0;
+}

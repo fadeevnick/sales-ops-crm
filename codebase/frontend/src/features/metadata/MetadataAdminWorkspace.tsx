@@ -70,7 +70,19 @@ const emptyStageForm: StageFormState = {
   isClosed: false,
 };
 
+type MetadataAdminTab = "overview" | "fields" | "stages" | "rules" | "history" | "validation";
+
+const METADATA_ADMIN_TABS: { key: MetadataAdminTab; label: string }[] = [
+  { key: "overview", label: "Overview" },
+  { key: "fields", label: "Fields" },
+  { key: "stages", label: "Stages" },
+  { key: "rules", label: "Required Rules" },
+  { key: "history", label: "History" },
+  { key: "validation", label: "Validation" },
+];
+
 export function MetadataAdminWorkspace({ currentUser }: MetadataAdminWorkspaceProps) {
+  const [activeTab, setActiveTab] = useState<MetadataAdminTab>("overview");
   const [published, setPublished] = useState<PublishedMetadataResponse | null>(null);
   const [draft, setDraft] = useState<PublishedMetadataResponse | null>(null);
   const [configVersions, setConfigVersions] = useState<MetadataConfigVersionItem[]>([]);
@@ -440,7 +452,7 @@ export function MetadataAdminWorkspace({ currentUser }: MetadataAdminWorkspacePr
   const resolvedRequiredFieldKey = requiredFieldKey || draftOpportunityFields[0]?.fieldKey || "title";
 
   return (
-    <section className="metadata-workspace">
+    <section className="metadata-workspace ma-workspace">
       <div className="workspace-header metadata-header">
         <div>
           <span>{currentUser.displayName}</span>
@@ -452,12 +464,101 @@ export function MetadataAdminWorkspace({ currentUser }: MetadataAdminWorkspacePr
         </div>
       </div>
 
+      <div className="ma-version-band">
+        <div className="ma-version-cell">
+          <div className="ma-version-l">Published</div>
+          <div className="ma-version-v mono">v{published?.configVersion.versionNumber ?? "—"}</div>
+          <div className="ma-version-foot">
+            {published?.configVersion.publishedAt
+              ? new Date(published.configVersion.publishedAt).toLocaleDateString()
+              : "—"}
+          </div>
+        </div>
+        <div className="ma-version-cell">
+          <div className="ma-version-l">Draft</div>
+          <div className="ma-version-v mono">{draft ? `v${draft.configVersion.versionNumber}` : "—"}</div>
+          <div className="ma-version-foot">{draft ? draft.configVersion.status : "no draft"}</div>
+        </div>
+        <div className="ma-version-cell">
+          <div className="ma-version-l">Validation</div>
+          <div className={`ma-version-v mono${validation && !validation.valid ? " alert" : ""}`}>
+            {validation ? `${validationIssueCount} issues` : "Not run"}
+          </div>
+          <div className="ma-version-foot">
+            {validation
+              ? `${validation.errors.length} errors · ${validation.warnings.length} warnings`
+              : "Run validate before publishing"}
+          </div>
+        </div>
+        <div className="ma-version-actions">
+          {draft ? (
+            <>
+              <button
+                className="primary-button compact-button"
+                disabled={isSubmitting}
+                onClick={() => void validateDraft()}
+                type="button"
+              >
+                Validate
+              </button>
+              <button
+                className="secondary-button compact-button"
+                disabled={isSubmitting}
+                onClick={() => void publishDraft()}
+                type="button"
+              >
+                Publish
+              </button>
+              <button
+                className="secondary-button danger-button compact-button"
+                disabled={isSubmitting}
+                onClick={() => void discardDraft()}
+                type="button"
+              >
+                Discard
+              </button>
+            </>
+          ) : (
+            <button
+              className="primary-button compact-button"
+              disabled={isSubmitting || !published}
+              onClick={() => void createDraft()}
+              type="button"
+            >
+              Create Draft
+            </button>
+          )}
+        </div>
+      </div>
+
       {errorMessage ? <div className="error-box">{errorMessage}</div> : null}
       {message ? <div className="success-box">{message}</div> : null}
       {isLoading ? <div className="empty-row">Loading metadata configuration</div> : null}
 
+      <div className="ma-tab-strip" role="tablist">
+        {METADATA_ADMIN_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.key}
+            className={`ma-tab${activeTab === tab.key ? " active" : ""}`}
+            onClick={() => setActiveTab(tab.key)}
+          >
+            {tab.label}
+            {tab.key === "validation" && validationIssueCount > 0 ? (
+              <span className="ct">{validationIssueCount}</span>
+            ) : null}
+            {tab.key === "fields" ? <span className="ct">{orderedFields.length}</span> : null}
+            {tab.key === "stages" ? <span className="ct">{orderedStages.length}</span> : null}
+            {tab.key === "rules" ? <span className="ct">{requiredRuleCount}</span> : null}
+            {tab.key === "history" ? <span className="ct">{configVersions.length}</span> : null}
+          </button>
+        ))}
+      </div>
+
       <div className="metadata-grid">
-        <section className="crm-section metadata-summary-section">
+        {activeTab === "overview" ? <section className="crm-section metadata-summary-section">
           <div className="section-heading">
             <h3>Configuration</h3>
             <span>{activeConfig?.configVersion.status ?? "unknown"}</span>
@@ -493,9 +594,9 @@ export function MetadataAdminWorkspace({ currentUser }: MetadataAdminWorkspacePr
           ) : (
             <div className="empty-row">No metadata config available</div>
           )}
-        </section>
+        </section> : null}
 
-        <section className="crm-section metadata-action-section">
+        {activeTab === "overview" ? <section className="crm-section metadata-action-section">
           <div className="section-heading">
             <h3>Draft</h3>
             <span>{draft ? draft.configVersion.id : "none"}</span>
@@ -549,9 +650,9 @@ export function MetadataAdminWorkspace({ currentUser }: MetadataAdminWorkspacePr
               </button>
             </div>
           )}
-        </section>
+        </section> : null}
 
-        <section className="crm-section metadata-versions-section">
+        {activeTab === "history" ? <section className="crm-section metadata-versions-section">
           <div className="section-heading">
             <h3>Versions</h3>
             <span>{configVersions.length}</span>
@@ -595,9 +696,9 @@ export function MetadataAdminWorkspace({ currentUser }: MetadataAdminWorkspacePr
             {configVersions.length === 0 ? <div className="empty-row">No metadata versions available</div> : null}
             {draft ? <div className="empty-row">Rollback is locked while a draft is open.</div> : null}
           </div>
-        </section>
+        </section> : null}
 
-        <section className="crm-section metadata-stages-section">
+        {activeTab === "stages" ? <section className="crm-section metadata-stages-section">
           <div className="section-heading">
             <h3>Stages</h3>
             <span>{orderedStages.length}</span>
@@ -698,9 +799,9 @@ export function MetadataAdminWorkspace({ currentUser }: MetadataAdminWorkspacePr
             ))}
             {orderedStages.length === 0 ? <div className="empty-row">No stages configured</div> : null}
           </div>
-        </section>
+        </section> : null}
 
-        <section className="crm-section metadata-fields-section">
+        {activeTab === "fields" ? <section className="crm-section metadata-fields-section">
           <div className="section-heading">
             <h3>Fields</h3>
             <span>{orderedFields.length}</span>
@@ -852,9 +953,9 @@ export function MetadataAdminWorkspace({ currentUser }: MetadataAdminWorkspacePr
             ))}
             {orderedFields.length === 0 ? <div className="empty-row">No fields configured</div> : null}
           </div>
-        </section>
+        </section> : null}
 
-        <section className="crm-section metadata-required-section">
+        {activeTab === "rules" ? <section className="crm-section metadata-required-section">
           <div className="section-heading">
             <h3>Required Rules</h3>
             <span>{activeConfig?.requiredFields.length ?? 0}</span>
@@ -932,9 +1033,9 @@ export function MetadataAdminWorkspace({ currentUser }: MetadataAdminWorkspacePr
               <div className="empty-row">No required rules configured</div>
             ) : null}
           </div>
-        </section>
+        </section> : null}
 
-        <section className="crm-section metadata-validation-section">
+        {activeTab === "validation" ? <section className="crm-section metadata-validation-section">
           <div className="section-heading">
             <h3>Validation</h3>
             <span>{validation?.valid ? "valid" : "pending"}</span>
@@ -959,7 +1060,7 @@ export function MetadataAdminWorkspace({ currentUser }: MetadataAdminWorkspacePr
               <div className="success-box">No validation issues</div>
             ) : null}
           </div>
-        </section>
+        </section> : null}
       </div>
     </section>
   );
