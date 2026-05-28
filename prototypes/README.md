@@ -1,58 +1,48 @@
 # Prototypes
 
-Core flow prototypes для продукта:
+This directory is the current prototype source set for Sales Ops CRM.
 
-```text
-B2B Sales Operations CRM with approvals
-```
+There are no `ui-redesign/` or `ux_redesign/` subfolders anymore. The
+active prototype files now live directly in `prototypes/`.
 
-Назначение этого каталога:
+## What lives here
 
-- зафиксировать критичные UX flows до codebase bootstrap;
-- проверить, что product design chain дошёл до уровня экранов и пользовательских переходов;
-- удержать связь между UX, domain model, workflow state и access rules.
+1. Visual screen prototypes
 
-## Why these prototypes
+- `01_app_shell.html`
+- `02_sales_rep_workspace.html`
+- `03_opportunity_detail.html`
+- `04_submit_approval_flow.html`
+- `05_approver_inbox.html` + `05_approver_inbox.jsx`
+- `06_approval_decision_detail.html` + `06_approval_decision_detail.jsx`
+- `07_account_detail.html` + `07_account_detail.jsx`
+- `08_manager_pipeline.html` + `08_manager_pipeline.jsx`
+- `09_metadata_admin.html` + `09_metadata_admin.jsx`
+- `10_import_export_operations.html` + `10_import_export_operations.jsx`
+- `11_duplicate_review_merge.html` + `11_duplicate_review_merge.jsx`
+- `12_executive_dashboard.html` + `12_executive_dashboard.jsx`
 
-Ниже выбраны экраны, которые сильнее всего формируют будущую реализацию:
+2. Implementation handoff files
 
-1. `01_opportunity_workspace.html`
-2. `02_submit_approval.html`
-3. `03_approver_inbox.html`
-4. `04_admin_process_config.html`
-5. `05_import_review.html`
+- `CrmReadWorkspace.tsx` + `styles.phase2-1.css`
+- `OpportunityDetail.tsx` + `styles.phase2-2.css`
+- `ApproverInbox.tsx` + `styles.phase2-3.css`
+- `ApprovalDecisionDetail.tsx` + `styles.phase2-4.css`
+- `AccountDetail.tsx` + `styles.phase2-5.css`
+- `ManagerPipeline.tsx` + `styles.phase2-6.css`
+- `MetadataAdmin.tsx` + `styles.phase2-7.css`
+- `ImportExportOperations.tsx` + `styles.phase2-8.css`
+- `DuplicateReviewMerge.tsx` + `styles.phase2-9.css`
+- `ExecutiveDashboard.tsx` + `styles.phase2-10.css`
 
-Они закрывают:
+3. Shared redesign reference
 
-- core sales loop;
-- approval governance;
-- metadata-driven configuration;
-- data onboarding and quality control.
+- `UX Simplification Plan.html`
 
-## Prototype rules
+## Source-of-truth rule
 
-- Это не финальный visual design.
-- Это не production frontend.
-- Это UX and domain-shape artifacts before codebase bootstrap.
+- `prototypes/` = current prototype and redesign handoff artifacts
+- `codebase/frontend/src/` = real integrated product code
 
-Главная ценность:
-
-- увидеть, какие данные и действия реально должны быть first-class;
-- заранее заметить конфликты между metadata, approvals, sharing, import and audit;
-- облегчить Phase 0 and Phase 1 bootstrap.
-
-## Suggested reading order
-
-1. Opportunity workspace
-2. Submit approval
-3. Approver inbox
-4. Admin process config
-5. Import review
-
-## Expected next step
-
-После этих prototypes:
-
-- сделать codebase bootstrap;
-- реализовывать `06_implementation_guide.md` phase-by-phase;
-- сверять runtime behavior с flows, зафиксированными здесь.
+If a file in `prototypes/` is no longer current, remove it instead of
+creating another archive-style subfolder.
