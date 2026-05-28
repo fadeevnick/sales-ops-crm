@@ -6786,3 +6786,58 @@ button.record-row {
   color: var(--accent-2, #8B6F47);
   border-color: #D9BFA0;
 }
+
+/* ── Import / Export Operations Phase 2.8 — tabs + KPI band ─────────────── */
+.ieo-workspace { display: flex; flex-direction: column; gap: 12px; }
+.ieo-kpi-band {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--paper-2, #F5F2EC);
+  border: 1px solid var(--hairline, #DCD3C2);
+  border-radius: 4px;
+}
+.ieo-kpi-cell { display: flex; flex-direction: column; gap: 2px; }
+.ieo-kpi-l {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted, #847766);
+  font-weight: 600;
+}
+.ieo-kpi-v {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink, #2A2316);
+}
+.ieo-kpi-v.alert { color: var(--neg, #8A3F2D); }
+.ieo-kpi-foot {
+  font-size: 11px;
+  color: var(--muted, #847766);
+}
+.ieo-tab-strip {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--hairline, #DCD3C2);
+  padding: 0 4px;
+}
+.ieo-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--muted, #847766);
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition: color 0.12s, border-color 0.12s;
+}
+.ieo-tab:hover { color: var(--ink, #2A2316); }
+.ieo-tab.active {
+  color: var(--ink, #2A2316);
+  font-weight: 600;
+  border-bottom-color: var(--accent-2, #8B6F47);
+}
+.bulk-ops-grid--single { grid-template-columns: 1fr !important; }

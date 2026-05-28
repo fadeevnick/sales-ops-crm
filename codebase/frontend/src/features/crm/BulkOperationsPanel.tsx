@@ -16,6 +16,7 @@ type BulkOperationsPanelProps = {
 
 type ImportEntityType = "account" | "contact" | "opportunity";
 type ExportEntityType = "account" | "opportunity";
+type BulkOpsTab = "import" | "export";
 
 const defaultCsvByEntity: Record<ImportEntityType, string> = {
   account: "Account Name,Website\nPhase 6 UI Import Account,https://ui-import.example\n,https://missing-name.example",
@@ -32,6 +33,7 @@ const defaultFileNameByEntity: Record<ImportEntityType, string> = {
 };
 
 export function BulkOperationsPanel({ currentUser, onAccountsChanged }: BulkOperationsPanelProps) {
+  const [activeTab, setActiveTab] = useState<BulkOpsTab>("import");
   const [importEntityType, setImportEntityType] = useState<ImportEntityType>("account");
   const [csvContent, setCsvContent] = useState(defaultCsvByEntity.account);
   const [fileName, setFileName] = useState(defaultFileNameByEntity.account);
@@ -152,18 +154,66 @@ export function BulkOperationsPanel({ currentUser, onAccountsChanged }: BulkOper
     }
   };
 
+  const importingRows = visibleJob?.job.totalRows ?? 0;
+  const rejectedRows = visibleJob ? (visibleJob.job.invalidRows ?? 0) + (visibleJob.job.skippedRows ?? 0) : 0;
+  const exportRows = exportJob?.job.rowCount ?? 0;
+
   return (
-    <section className="crm-section bulk-ops-section">
+    <section className="crm-section bulk-ops-section ieo-workspace">
       <div className="section-heading">
         <h3>Data Operations</h3>
-        <span>RevOps</span>
+        <span>RevOps · Import & Export</span>
+      </div>
+
+      <div className="ieo-kpi-band">
+        <div className="ieo-kpi-cell">
+          <div className="ieo-kpi-l">Import status</div>
+          <div className="ieo-kpi-v mono">{visibleJob ? visibleJob.job.status : "idle"}</div>
+          <div className="ieo-kpi-foot">{visibleJob ? visibleJob.job.id : "no job"}</div>
+        </div>
+        <div className="ieo-kpi-cell">
+          <div className="ieo-kpi-l">Rows in batch</div>
+          <div className="ieo-kpi-v mono">{importingRows}</div>
+          <div className="ieo-kpi-foot">{visibleJob ? `${visibleJob.job.executedRows} executed` : "—"}</div>
+        </div>
+        <div className="ieo-kpi-cell">
+          <div className="ieo-kpi-l">Rejected / skipped</div>
+          <div className={`ieo-kpi-v mono${rejectedRows > 0 ? " alert" : ""}`}>{rejectedRows}</div>
+          <div className="ieo-kpi-foot">{visibleJob ? `${visibleJob.job.invalidRows} invalid` : "—"}</div>
+        </div>
+        <div className="ieo-kpi-cell">
+          <div className="ieo-kpi-l">Export ready</div>
+          <div className="ieo-kpi-v mono">{exportJob ? exportRows : "—"}</div>
+          <div className="ieo-kpi-foot">{exportJob ? exportJob.job.status : "no export"}</div>
+        </div>
+      </div>
+
+      <div className="ieo-tab-strip" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "import"}
+          className={`ieo-tab${activeTab === "import" ? " active" : ""}`}
+          onClick={() => setActiveTab("import")}
+        >
+          Import
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "export"}
+          className={`ieo-tab${activeTab === "export" ? " active" : ""}`}
+          onClick={() => setActiveTab("export")}
+        >
+          Export
+        </button>
       </div>
 
       {errorMessage ? <div className="error-box">{errorMessage}</div> : null}
       {message ? <div className="success-box">{message}</div> : null}
 
-      <div className="bulk-ops-grid">
-        <div className="action-group">
+      <div className="bulk-ops-grid bulk-ops-grid--single">
+        {activeTab === "import" ? <div className="action-group">
           <h4>Record Import</h4>
           <label>
             <span>Entity</span>
@@ -240,9 +290,9 @@ export function BulkOperationsPanel({ currentUser, onAccountsChanged }: BulkOper
               ))}
             </div>
           ) : null}
-        </div>
+        </div> : null}
 
-        <div className="action-group">
+        {activeTab === "export" ? <div className="action-group">
           <h4>Record Export</h4>
           <label>
             <span>Entity</span>
@@ -289,7 +339,7 @@ export function BulkOperationsPanel({ currentUser, onAccountsChanged }: BulkOper
               </label>
             </>
           ) : null}
-        </div>
+        </div> : null}
       </div>
     </section>
   );
