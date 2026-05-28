@@ -17,10 +17,20 @@ import type {
   ReportingStageMetric,
 } from "../../types/reporting";
 import type { CurrentUser } from "../../types/session";
+import {
+  ExecutiveDashboard,
+  type ApprovalQueue,
+  type ClosedQtd,
+  type DrillOpportunity,
+  type ExceptionType,
+  type PipelineStage,
+  type ProjectionHealth,
+} from "./ExecutiveDashboard";
 import { ManagerPipeline, type PipelineOpportunity, type TeamMember } from "./ManagerPipeline";
 
 type ReportingDashboardProps = {
   currentUser: CurrentUser;
+  onNavigateToApprovals?: () => void;
 };
 
 type DrillDownSelection = {
@@ -29,7 +39,7 @@ type DrillDownSelection = {
   value: string;
 };
 
-type ReportingTab = "pipeline" | "metrics";
+type ReportingTab = "pipeline" | "metrics" | "executive";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   currency: "USD",
@@ -42,7 +52,43 @@ const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
   timeStyle: "short",
 });
 
-export function ReportingDashboard({ currentUser }: ReportingDashboardProps) {
+// ── Stage position → single-letter code (Q D P N C …) ──────────────────────
+const STAGE_POS_CODES = ["Q", "D", "P", "N", "C", "F", "G", "H"];
+
+function stagePosCode(idx: number): string {
+  return STAGE_POS_CODES[idx] ?? String.fromCharCode(65 + (idx % 26));
+}
+
+// ── Approval state mapping for DrillOpportunity ──────────────────────────────
+
+function mapApprovalStatus(state: string): string {
+  switch (state) {
+    case "pending":   return "pending";
+    case "approved":  return "approved";
+    case "sent_back": return "sentback";
+    case "rejected":  return "rejected";
+    default:          return "none";
+  }
+}
+
+function mapApprovalLabel(state: string): string {
+  switch (state) {
+    case "pending":   return "Pending approval";
+    case "approved":  return "Approved";
+    case "sent_back": return "Sent back";
+    case "rejected":  return "Rejected";
+    default:          return "";
+  }
+}
+
+// ── Static fallbacks for data not available from API ─────────────────────────
+
+const EMPTY_QTD: ClosedQtd = { count: 0, value: 0, pctOfMax: 0 };
+const EMPTY_EXCEPTION_TYPES: ExceptionType[] = [];
+
+// ── Main component ────────────────────────────────────────────────────────────
+
+export function ReportingDashboard({ currentUser, onNavigateToApprovals }: ReportingDashboardProps) {
   const [activeTab, setActiveTab] = useState<ReportingTab>("pipeline");
 
   // Pipeline-tab data
@@ -52,7 +98,7 @@ export function ReportingDashboard({ currentUser }: ReportingDashboardProps) {
   const [pipelineLoading, setPipelineLoading] = useState(true);
   const [pipelineError, setPipelineError] = useState<string | null>(null);
 
-  // Metrics-tab data
+  // Metrics / executive-tab data (shared)
   const [projection, setProjection] = useState<ReportingDashboardResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -88,12 +134,11 @@ export function ReportingDashboard({ currentUser }: ReportingDashboardProps) {
       }
     };
     void load();
-    // Also kick off accounts cache (not strictly needed but warms cache for drill-downs)
     void fetchAccounts(currentUser.userId).catch(() => undefined);
     return () => { cancelled = true; };
   }, [currentUser.userId]);
 
-  // ── Metrics load (lazy on tab open) ─────────────────────────────────────
+  // ── Metrics load (lazy on metrics or executive tab open) ─────────────────
   const loadProjection = async () => {
     setIsLoading(true);
     setErrorMessage(null);
@@ -110,10 +155,11 @@ export function ReportingDashboard({ currentUser }: ReportingDashboardProps) {
   };
 
   useEffect(() => {
-    if (activeTab === "metrics" && !metricsLoaded) {
+    if ((activeTab === "metrics" || activeTab === "executive") && !metricsLoaded) {
       setMessage(null);
       void loadProjection();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, metricsLoaded, currentUser.userId]);
 
   const handleRefresh = async () => {
@@ -223,7 +269,9 @@ export function ReportingDashboard({ currentUser }: ReportingDashboardProps) {
       entry._opps.push(o);
       entry.openOppsCount = (entry.openOppsCount ?? 0) + 1;
       entry.pipelineTotal = (entry.pipelineTotal ?? 0) + (o.expectedAmount ?? 0);
-      entry.weightedPipeline = (entry.weightedPipeline ?? 0) + (o.expectedAmount ?? 0) * weightForStage(o.stageKey, stageOrder);
+      entry.weightedPipeline =
+        (entry.weightedPipeline ?? 0) +
+        (o.expectedAmount ?? 0) * weightForStage(o.stageKey, stageOrder);
       if (o.approvalState === "pending" || o.approvalState === "sent_back") {
         entry.pendingApprovals = (entry.pendingApprovals ?? 0) + 1;
       }
@@ -238,8 +286,131 @@ export function ReportingDashboard({ currentUser }: ReportingDashboardProps) {
     });
   }, [opportunities, stageOrder]);
 
+  // ── Executive Dashboard data adapters ────────────────────────────────────
+
   const stageBreakdown = projection?.metrics.stageBreakdown ?? [];
   const forecastByMonth = projection?.metrics.forecastByMonth ?? [];
+
+  const execStages = useMemo((): PipelineStage[] => {
+    if (!projection || stageOrder.length === 0) return [];
+    const maxVal = Math.max(...stageBreakdown.map((st) => Number(st.expectedAmount)), 1);
+    return stageOrder
+      .map((key, pos) => {
+        const metric = stageBreakdown.find((st) => st.stageKey === key);
+        if (!metric) return null;
+        const stage: PipelineStage = {
+          code: stagePosCode(pos),
+          stage: stageLabels.get(key) ?? key,
+          count: metric.opportunityCount,
+          value: Number(metric.expectedAmount),
+          pct: Math.round((Number(metric.expectedAmount) / maxVal) * 100),
+          stuck: 0,
+        };
+        return stage;
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== null);
+  }, [projection, stageBreakdown, stageOrder, stageLabels]);
+
+  const execDrillOpps = useMemo((): DrillOpportunity[] => {
+    const today = new Date();
+    return opportunities.map((o): DrillOpportunity => {
+      const stagePos = stageOrder.indexOf(o.stageKey);
+      const code = stagePosCode(stagePos >= 0 ? stagePos : 0);
+      const approvalStatus = mapApprovalStatus(o.approvalState);
+      const approvalLabel = mapApprovalLabel(o.approvalState);
+
+      let riskLabel = "";
+      let riskSev: "neg" | "warn" | "none" = "none";
+      if (o.approvalState === "sent_back") {
+        riskLabel = "Sent back";
+        riskSev = "warn";
+      } else if (o.closeDate) {
+        const close = new Date(o.closeDate);
+        if (!Number.isNaN(close.getTime())) {
+          const days = Math.round((close.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          if (days >= 0 && days <= 14 && o.approvalState !== "approved") {
+            riskLabel = "Closing soon";
+            riskSev = "warn";
+          }
+        }
+      }
+
+      return {
+        id: o.id,
+        title: o.title,
+        account: o.accountName,
+        owner: o.ownerName,
+        team: "",
+        stageCode: code,
+        stageIdx: stagePos >= 0 ? stagePos : 0,
+        amount: o.expectedAmount ?? 0,
+        close: o.closeDate ?? "—",
+        approvalStatus,
+        approvalLabel,
+        riskLabel,
+        riskSev,
+        notes: "",
+      };
+    });
+  }, [opportunities, stageOrder]);
+
+  const execApprovalQueues = useMemo((): ApprovalQueue[] => {
+    if (!projection) return [];
+    return [
+      {
+        dept: "All Queues",
+        abbr: "ALL",
+        badgeCls: "r-exe",
+        pending: projection.metrics.approvalBacklog.pendingRequests,
+        overdue: 0,
+        avgH: "n/a",
+        sla: "48h",
+        bottleneck: false,
+      },
+    ];
+  }, [projection]);
+
+  const execProjectionHealth = useMemo((): ProjectionHealth => {
+    if (!projection) {
+      return {
+        lastRefresh: "—",
+        refreshDuration: "n/a",
+        sourceEvents: "—",
+        pendingImports: 0,
+        pendingMerges: 0,
+      };
+    }
+    const ts = new Date(projection.refreshedAt);
+    const lastRefresh = Number.isNaN(ts.getTime())
+      ? projection.refreshedAt
+      : ts.toISOString().replace("T", " ").slice(0, 16);
+    const events =
+      projection.sourceCounters.opportunityCount +
+      projection.sourceCounters.approvalRequestCount;
+    return {
+      lastRefresh,
+      refreshDuration: "n/a",
+      sourceEvents: `${events} source records`,
+      pendingImports: 0,
+      pendingMerges: 0,
+    };
+  }, [projection]);
+
+  // Refresh handler for executive dashboard.
+  // - revops_admin: triggers backend recompute via refreshReportingDashboard.
+  // - sales_manager: re-fetches current stored projection (read-only).
+  // Both update local state and propagate API errors to the caller.
+  const handleExecRefresh = async (): Promise<void> => {
+    if (canRefresh) {
+      const res = await refreshReportingDashboard(currentUser.userId);
+      setProjection(res.projection);
+    } else {
+      const res = await fetchReportingDashboard(currentUser.userId);
+      setProjection(res);
+    }
+  };
+
+  // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <section className="reporting-workspace">
@@ -256,6 +427,15 @@ export function ReportingDashboard({ currentUser }: ReportingDashboardProps) {
         <button
           type="button"
           role="tab"
+          aria-selected={activeTab === "executive"}
+          className={activeTab === "executive" ? "rep-btn rep-btn-primary" : "rep-btn"}
+          onClick={() => setActiveTab("executive")}
+        >
+          Executive Dashboard
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={activeTab === "metrics"}
           className={activeTab === "metrics" ? "rep-btn rep-btn-primary" : "rep-btn"}
           onClick={() => setActiveTab("metrics")}
@@ -264,6 +444,7 @@ export function ReportingDashboard({ currentUser }: ReportingDashboardProps) {
         </button>
       </div>
 
+      {/* ── Team Pipeline tab ── */}
       {activeTab === "pipeline" ? (
         <>
           {pipelineError ? <div className="error-box">{pipelineError}</div> : null}
@@ -278,7 +459,33 @@ export function ReportingDashboard({ currentUser }: ReportingDashboardProps) {
             />
           )}
         </>
-      ) : (
+      ) : null}
+
+      {/* ── Executive Dashboard tab ── */}
+      {activeTab === "executive" ? (
+        <>
+          {isLoading || pipelineLoading ? (
+            <div className="empty-row">Loading executive dashboard…</div>
+          ) : errorMessage ? (
+            <div className="error-box">{errorMessage}</div>
+          ) : (
+            <ExecutiveDashboard
+              currentUser={currentUser}
+              pipelineStages={execStages}
+              closedQtd={EMPTY_QTD}
+              approvalQueues={execApprovalQueues}
+              exceptionTypes={EMPTY_EXCEPTION_TYPES}
+              projectionHealth={execProjectionHealth}
+              opportunities={execDrillOpps}
+              onRefresh={handleExecRefresh}
+              onOpenApprovals={onNavigateToApprovals}
+            />
+          )}
+        </>
+      ) : null}
+
+      {/* ── Aggregate Metrics tab ── */}
+      {activeTab === "metrics" ? (
         <>
           <div className="workspace-header">
             <div>
@@ -414,7 +621,7 @@ export function ReportingDashboard({ currentUser }: ReportingDashboardProps) {
             </div>
           ) : null}
         </>
-      )}
+      ) : null}
     </section>
   );
 }

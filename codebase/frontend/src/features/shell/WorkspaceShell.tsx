@@ -183,7 +183,14 @@ export function WorkspaceShell({ currentUser, onLogout }: WorkspaceShellProps) {
           {activeWorkspace === "approvals" && canUseApproverInbox ? (
             <ApproverInbox currentUser={currentUser} />
           ) : null}
-          {activeWorkspace === "reporting" && canUseReporting ? <ReportingDashboard currentUser={currentUser} /> : null}
+          {activeWorkspace === "reporting" && canUseReporting ? (
+            <ReportingDashboard
+              currentUser={currentUser}
+              onNavigateToApprovals={
+                canUseApproverInbox ? () => setActiveWorkspace("approvals") : undefined
+              }
+            />
+          ) : null}
           {activeWorkspace === "metadata" && canUseMetadataAdmin ? (
             <MetadataAdminWorkspace currentUser={currentUser} />
           ) : null}
