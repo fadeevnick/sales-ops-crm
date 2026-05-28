@@ -5859,3 +5859,850 @@ button.record-row {
     min-width: unset;
   }
 }
+
+/*
+ * styles.phase2-6.css
+ * =====================================================================
+ * Phase 2.6 — Manager Pipeline
+ *
+ * INSTRUCTIONS: Append this entire file to the end of styles.css.
+ * No existing lines in styles.css need to be modified.
+ * =====================================================================
+ */
+
+/* ======================================================================
+   Base class contract — intentionally inherited, NOT re-defined here
+
+   CHROME        rep-workspace, rep-foot-ruler, rep-toast
+   PANELS        rep-panel, rep-panel-head, rep-panel-title, rep-panel-actions
+   BUTTONS       rep-btn, rep-btn-primary, rep-btn-ghost, rep-btn[disabled]
+   STATUS PILLS  rep-pill, p-{pending|approved|rejected|sent_back|none}, .dot
+   TABLE         rep-table-scroll, rep-table, rep-cell-truncate, rep-cell-sub
+   EMPTY STATE   rep-empty, .icon, .ttl
+   MODAL SHELL   rep-scrim, rep-modal, rep-modal-card, .head, .body, .foot
+   UTILITY       mono, sep
+   ====================================================================== */
+
+/* ======================================================================
+   Workspace shell
+   ====================================================================== */
+
+.pipe-workspace {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+/* ======================================================================
+   Page head
+   ====================================================================== */
+
+.pipe-page-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 22px;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  min-height: 48px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.pipe-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  padding: 4px 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.pipe-back-btn:hover {
+  color: var(--ink);
+  border-color: var(--line-2);
+  background: var(--paper-2);
+}
+
+.pipe-crumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.pipe-crumb strong {
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.pipe-crumb .sep {
+  color: var(--line-2);
+}
+
+/*
+ * pipe-scope-chip — compact inline replacement for the full scope banner.
+ * Carries the full scope text as title="" so nothing is lost.
+ */
+.pipe-scope-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--paper-2);
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+  padding: 3px 8px;
+  cursor: default;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pipe-scope-lock {
+  font-size: 9px;
+  line-height: 1;
+}
+
+.pipe-team-toggle {
+  flex-shrink: 0;
+  font-size: 11.5px;
+}
+
+.pipe-team-toggle.active {
+  background: var(--paper-2);
+  border-color: var(--line-2);
+  color: var(--ink);
+}
+
+/* ======================================================================
+   KPI band — 4 metrics replacing the original 6-card strip
+   ====================================================================== */
+
+.pipe-kpi-band {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid var(--line);
+  background: var(--white);
+  flex-shrink: 0;
+}
+
+.pipe-kpi-item {
+  padding: 11px 18px;
+  border-right: 1px solid var(--hairline);
+}
+
+.pipe-kpi-item:last-child {
+  border-right: 0;
+}
+
+.pipe-kpi-l {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+  white-space: nowrap;
+}
+
+.pipe-kpi-v {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.pipe-kpi-v.accent { color: var(--accent-2); }
+.pipe-kpi-v.warn   { color: var(--accent-2); }
+.pipe-kpi-v.alert  { color: var(--neg); }
+
+.pipe-kpi-foot {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ======================================================================
+   Controls block: tabs + filter row
+   ====================================================================== */
+
+.pipe-controls {
+  background: var(--white);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+/* ── Tab strip ── */
+
+.pipe-tab-strip {
+  display: flex;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pipe-tab-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.pipe-tab {
+  padding: 9px 14px;
+  font: inherit;
+  font-size: 12.5px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pipe-tab:hover {
+  color: var(--ink);
+  background: var(--paper-2);
+}
+
+.pipe-tab.active {
+  color: var(--ink);
+  font-weight: 500;
+  border-bottom-color: var(--accent);
+  background: var(--paper);
+}
+
+.pipe-tab .ct {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10.5px;
+  color: var(--muted-2);
+  min-width: 16px;
+  text-align: center;
+}
+
+.pipe-tab.active .ct {
+  color: var(--accent-2);
+  font-weight: 600;
+}
+
+/* ── Filter row ── */
+
+.pipe-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  flex-wrap: wrap;
+}
+
+.pipe-filter-search {
+  flex: 1 1 200px;
+  max-width: 320px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 5px 9px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pipe-filter-search:focus-within {
+  border-color: var(--ink);
+  background: var(--white);
+  color: var(--ink);
+}
+
+.pipe-filter-search input {
+  border: 0;
+  background: transparent;
+  outline: 0;
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.pipe-filter-search input::placeholder {
+  color: var(--muted-2);
+}
+
+.pipe-filter-select {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 5px 8px;
+  font-size: 12px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pipe-filter-select:focus-within {
+  border-color: var(--ink);
+  background: var(--white);
+}
+
+.pipe-filter-lbl {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.pipe-filter-select select {
+  border: 0;
+  background: transparent;
+  outline: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink);
+  appearance: none;
+  cursor: pointer;
+}
+
+.pipe-filter-caret {
+  font-size: 10px;
+  color: var(--muted);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.pipe-clear-btn {
+  font-size: 11.5px;
+  padding: 4px 9px;
+  flex-shrink: 0;
+  color: var(--accent-2);
+  border-color: #D9BFA0;
+  background: var(--accent-soft);
+}
+
+.pipe-clear-btn:hover {
+  background: var(--accent-2);
+  color: var(--paper);
+  border-color: var(--accent-2);
+}
+
+/* ======================================================================
+   Body grid
+   ====================================================================== */
+
+.pipe-body-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 14px;
+  padding: 14px 14px 0;
+  align-items: flex-start;
+  flex: 1;
+}
+
+/* ======================================================================
+   Pipeline table panel
+   ====================================================================== */
+
+.pipe-table-panel {
+  padding: 0;
+  min-width: 0;
+}
+
+.pipe-table {
+  min-width: 960px;
+}
+
+/* Overdue row highlight */
+.pipe-row-overdue td {
+  background: #FBEFE8;
+}
+
+/* ======================================================================
+   Stage progress pip
+   ====================================================================== */
+
+.pipe-stage-pip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.pipe-stage-pip i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--paper-3);
+  border: 1px solid var(--line-2);
+  font-style: normal;
+  flex-shrink: 0;
+}
+
+.pipe-stage-pip i.on {
+  background: var(--muted-2);
+  border-color: var(--muted-2);
+}
+
+.pipe-stage-pip i.cur {
+  background: var(--accent);
+  border-color: var(--accent-2);
+  width: 9px;
+  height: 9px;
+}
+
+/* ======================================================================
+   Inline risk tag
+   ====================================================================== */
+
+.pipe-risk-tag {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+  padding: 2px 6px;
+  border-radius: 2px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+/* ======================================================================
+   Inline avatar
+   ====================================================================== */
+
+.pipe-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  display: grid;
+  place-items: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 8px;
+  font-weight: 700;
+  flex-shrink: 0;
+  letter-spacing: 0.04em;
+}
+
+/* Color key variants — map to bg-{a..f} from base styles */
+.pipe-avatar.bg-a { background: #4a7c66; }
+.pipe-avatar.bg-b { background: #4a6a8a; }
+.pipe-avatar.bg-c { background: #7a5a8a; }
+.pipe-avatar.bg-d { background: #8a6a4a; }
+.pipe-avatar.bg-e { background: #5a7a5a; }
+.pipe-avatar.bg-f { background: #8a4a5a; }
+
+/* ======================================================================
+   Opportunity preview panel (right column)
+   ====================================================================== */
+
+/*
+ * pipe-preview — extends rep-panel.
+ * position: sticky so panel stays visible while table scrolls.
+ */
+.pipe-preview {
+  padding: 0;
+  position: sticky;
+  top: 48px;
+  align-self: flex-start;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.pipe-preview::-webkit-scrollbar {
+  display: none;
+}
+
+/* Empty state */
+.pipe-preview-empty {
+  padding: 28px 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12.5px;
+  border-bottom: 1px solid var(--hairline);
+  flex: 1;
+}
+
+.pipe-preview-empty-icon {
+  width: 36px;
+  height: 36px;
+  border: 1px dashed var(--line-2);
+  background: var(--paper-2);
+  display: grid;
+  place-items: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9.5px;
+  color: var(--muted-2);
+}
+
+.pipe-preview-empty-title {
+  font-weight: 500;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+/* Risk summary (shown when no opp selected) */
+.pipe-risk-summary {
+  padding: 10px 14px 12px;
+}
+
+.pipe-risk-summary-head {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.pipe-risk-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.pipe-risk-item:last-child {
+  border-bottom: 0;
+}
+
+/* Preview header (when opp selected) */
+.pipe-pv-head {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--paper-2);
+  flex-shrink: 0;
+}
+
+.pipe-pv-id-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  flex-wrap: wrap;
+}
+
+.pipe-pv-id {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+.pipe-pv-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.pipe-pv-account {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pipe-pv-risk-alert {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border: 1px solid;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  border-radius: 2px;
+}
+
+/* Key fields 2×2 grid */
+.pipe-pv-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--hairline);
+  flex-shrink: 0;
+}
+
+.pipe-pv-field {
+  padding: 8px 12px;
+  border-right: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  min-width: 0;
+}
+
+.pipe-pv-field:nth-child(2n) { border-right: 0; }
+.pipe-pv-field:nth-last-child(-n+2) { border-bottom: 0; }
+
+.pipe-pv-fl {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.pipe-pv-fv {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pipe-pv-fv.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: -0.01em;
+}
+
+/* General section block */
+.pipe-pv-section {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--hairline);
+  flex-shrink: 0;
+}
+
+.pipe-pv-section-l {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pipe-pv-section-v {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+/* Approval section — warm tint */
+.pipe-pv-section-appr {
+  background: var(--warn-soft);
+  border-bottom-color: #D9BFA0;
+}
+
+.pipe-pv-appr-caveat {
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Notes block */
+.pipe-pv-notes {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.6;
+  padding: 8px 10px;
+  background: var(--paper-2);
+  border-left: 2px solid var(--line-2);
+}
+
+/* Actions section */
+.pipe-pv-actions {
+  padding: 12px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ======================================================================
+   Team summary (collapsible section below main grid)
+   ====================================================================== */
+
+.pipe-team-summary {
+  padding: 0;
+  margin: 14px 14px 0;
+}
+
+.pipe-team-total td {
+  background: var(--paper-2);
+}
+
+/* ======================================================================
+   Modal form elements
+   ====================================================================== */
+
+.pipe-modal-lbl {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.pipe-modal-required {
+  color: #9A3A2F;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+}
+
+.pipe-modal-err {
+  font-size: 11.5px;
+  color: #9A3A2F;
+  margin-top: 4px;
+}
+
+.pipe-modal-textarea {
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--white);
+}
+
+.pipe-modal-textarea:focus-within {
+  border-color: var(--ink);
+}
+
+.pipe-modal-textarea textarea {
+  display: block;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.5;
+  background: transparent;
+}
+
+/* Reassign owner radio options */
+.pipe-owner-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1.5px solid var(--line);
+  background: var(--white);
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.pipe-owner-option:hover {
+  border-color: var(--ink-2);
+  background: var(--paper-2);
+}
+
+.pipe-owner-option.selected {
+  border-color: var(--ink);
+  background: var(--paper-2);
+}
+
+/* Manager note template chips */
+.pipe-note-chip {
+  font: inherit;
+  font-size: 11px;
+  padding: 3px 9px;
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  background: var(--paper-2);
+  color: var(--ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pipe-note-chip:hover {
+  border-color: var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* ======================================================================
+   Responsive overrides
+   ====================================================================== */
+
+@media (max-width: 1280px) {
+  .pipe-body-grid {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+}
+
+@media (max-width: 1080px) {
+  .pipe-kpi-band {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pipe-kpi-item:nth-child(2) { border-right: 0; }
+  .pipe-kpi-item:nth-child(odd) { border-right: 1px solid var(--hairline); }
+  .pipe-kpi-item:nth-child(-n+2) { border-bottom: 1px solid var(--hairline); }
+}
+
+@media (max-width: 960px) {
+  .pipe-body-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pipe-preview {
+    position: relative;
+    top: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .pipe-filter-search {
+    max-width: none;
+    flex: 1 1 100%;
+  }
+}
+
+@media (max-width: 680px) {
+  .pipe-kpi-band {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pipe-page-head {
+    flex-wrap: wrap;
+  }
+
+  .pipe-scope-chip {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
