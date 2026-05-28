@@ -30,6 +30,7 @@ import type {
 } from "../../types/crm";
 import type { MetadataFieldDefinitionItem, MetadataStageDefinitionItem } from "../../types/metadata";
 import type { CurrentUser } from "../../types/session";
+import { AccountDetail, type AccountOpportunity, type AccountRecord } from "./AccountDetail";
 import { BulkOperationsPanel } from "./BulkOperationsPanel";
 import { CrmCreatePanel } from "./CrmCreatePanel";
 import type { CreateMode } from "./CrmCreatePanel";
@@ -75,6 +76,7 @@ export function CrmReadWorkspace({ currentUser }: CrmReadWorkspaceProps) {
   const [savedViewName, setSavedViewName] = useState("");
   const [savedViewVisibilityScope, setSavedViewVisibilityScope] = useState<"private" | "shared">("private");
   const [showDetailFull, setShowDetailFull] = useState(false);
+  const [accountDetailId, setAccountDetailId] = useState<string | null>(null);
   const [isLoadingLists, setIsLoadingLists] = useState(true);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isActionSubmitting, setIsActionSubmitting] = useState(false);
@@ -607,6 +609,64 @@ export function CrmReadWorkspace({ currentUser }: CrmReadWorkspaceProps) {
     ? normalizeApproval(selectedListItem.approvalState) === "none"
     : false;
 
+  // ── Account Detail drill-down ───────────────────────────────────────────
+  if (accountDetailId) {
+    const accountRecord = accounts.find((a) => a.id === accountDetailId);
+    if (accountRecord) {
+      const stageLabelLookup = new Map(stages.map((s) => [s.stageKey, s.displayName]));
+      const accountDetailRecord: AccountRecord = {
+        id: accountRecord.id,
+        name: accountRecord.name,
+        ownerId: accountRecord.ownerId,
+        ownerName: accountRecord.ownerName,
+        openOppsCount: accountRecord.openOpportunityCount,
+      };
+      const accountOpps: AccountOpportunity[] = opportunities
+        .filter((o) => o.accountId === accountDetailId)
+        .map((o) => {
+          const stageIndex = stages.findIndex((s) => s.stageKey === o.stageKey);
+          return {
+            id: o.id,
+            title: o.title,
+            stageKey: o.stageKey,
+            stageLabel: stageLabelLookup.get(o.stageKey) ?? o.stageKey,
+            stageIndex: stageIndex >= 0 ? stageIndex : undefined,
+            expectedAmount: o.expectedAmount ?? undefined,
+            closeDate: o.closeDate ?? undefined,
+            approvalState: normalizeApproval(o.approvalState),
+            approvalLabel: o.approvalState?.replace(/_/g, " "),
+            ownerName: o.ownerName,
+          };
+        });
+      const openPipeline = accountOpps.reduce((sum, o) => sum + (o.expectedAmount ?? 0), 0);
+      const inFlightApprovals = accountOpps.filter(
+        (o) => o.approvalState === "pending" || o.approvalState === "sent_back",
+      ).length;
+      accountDetailRecord.openPipeline = openPipeline;
+      accountDetailRecord.inFlightApprovals = inFlightApprovals;
+      return (
+        <AccountDetail
+          currentUser={currentUser}
+          account={accountDetailRecord}
+          opportunities={accountOpps}
+          activities={[]}
+          auditEvents={[]}
+          onBack={() => setAccountDetailId(null)}
+          onOpenOpportunity={(id) => {
+            setSelectedOpportunityId(id);
+            setAccountDetailId(null);
+            setShowDetailFull(true);
+          }}
+          onNewOpportunity={() => {
+            setSelectedAccountId(accountDetailId);
+            setAccountDetailId(null);
+            setDrawer({ kind: "create", mode: "opportunity" });
+          }}
+        />
+      );
+    }
+  }
+
   return (
     <div className="rep-workspace" data-screen-label="Sales Rep Workspace">
       <header className="rep-page-head">
@@ -768,6 +828,7 @@ export function CrmReadWorkspace({ currentUser }: CrmReadWorkspaceProps) {
             stageLabels={stageLabels}
             stages={stages}
             onActivityTitleChange={setActivityTitle}
+            onOpenAccount={(id) => setAccountDetailId(id)}
             onOpenDetail={() => setShowDetailFull(true)}
             onSubmitActivity={submitInlineActivity}
             onSubmitApproval={() => {
@@ -1268,6 +1329,7 @@ function OpportunityPreview({
   stageLabels,
   stages,
   onActivityTitleChange,
+  onOpenAccount,
   onOpenDetail,
   onSubmitActivity,
   onSubmitApproval,
@@ -1282,6 +1344,7 @@ function OpportunityPreview({
   stageLabels: Map<string, string>;
   stages: MetadataStageDefinitionItem[];
   onActivityTitleChange: (value: string) => void;
+  onOpenAccount: (accountId: string) => void;
   onOpenDetail: () => void;
   onSubmitActivity: () => void;
   onSubmitApproval: () => void;
@@ -1315,6 +1378,14 @@ function OpportunityPreview({
           <span className="mono">{listItem.accountId}</span>
           <span style={{ color: "var(--line-2)" }}>·</span>
           <span>{listItem.accountName}</span>
+          <button
+            className="rep-btn rep-btn-ghost"
+            style={{ marginLeft: "auto", fontSize: "0.7rem", padding: "2px 6px" }}
+            onClick={() => onOpenAccount(listItem.accountId)}
+            type="button"
+          >
+            Open account ›
+          </button>
         </div>
       </div>
 

@@ -5024,3 +5024,838 @@ button.record-row {
     justify-self: start;
   }
 }
+
+/*
+ * styles.phase2-5.css
+ * =====================================================================
+ * Phase 2.5 — Account Detail
+ *
+ * INSTRUCTIONS: Append this entire file to the end of styles.css.
+ * No existing lines in styles.css need to be modified.
+ * =====================================================================
+ */
+
+/* ======================================================================
+   Base class contract — intentionally inherited, NOT re-defined here
+
+   CHROME        rep-workspace, rep-foot-ruler, rep-toast
+   PANELS        rep-panel (border/bg/flex-col), rep-panel-head,
+                 rep-panel-title, rep-panel-actions
+   BUTTONS       rep-btn, rep-btn-primary, rep-btn-ghost,
+                 rep-btn[disabled]
+   STATUS PILLS  rep-pill, p-{pending|approved|rejected|sent_back|none},
+                 .dot
+   TABLE         rep-table-scroll, rep-table, rep-cell-truncate,
+                 rep-cell-sub
+   EMPTY STATE   rep-empty, .icon, .ttl
+   MODAL SHELL   rep-scrim, rep-modal, rep-modal-card
+   UTILITY       mono, sep
+   ====================================================================== */
+
+/* ======================================================================
+   Workspace shell
+   ====================================================================== */
+
+.acct-workspace {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 60px;
+  min-height: 100vh;
+}
+
+/* ======================================================================
+   Page head
+   ====================================================================== */
+
+.acct-page-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 22px;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  min-height: 48px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.acct-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  padding: 4px 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.acct-back-btn:hover {
+  color: var(--ink);
+  border-color: var(--line-2);
+  background: var(--paper-2);
+}
+
+.acct-crumb {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.acct-crumb strong {
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.acct-crumb .sep {
+  color: var(--line-2);
+}
+
+.acct-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+/* ======================================================================
+   Account header panel
+   ====================================================================== */
+
+/*
+ * acct-header extends rep-panel.
+ * padding: 0 ensures header body controls its own padding.
+ */
+.acct-header {
+  padding: 0;
+}
+
+.acct-header-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 16px 20px 14px;
+}
+
+.acct-header-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.acct-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 7px;
+}
+
+.acct-logo-mark {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  background: var(--ink);
+  color: var(--paper);
+  display: grid;
+  place-items: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--ink-2);
+}
+
+.acct-header-name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.acct-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.acct-header-meta .sep {
+  color: var(--line-2);
+}
+
+.acct-header-meta strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* KPI strip */
+.acct-kpi-strip {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--hairline);
+  background: var(--paper-2);
+  width: fit-content;
+  overflow: hidden;
+}
+
+.acct-kpi-item {
+  padding: 7px 16px;
+  border-right: 1px solid var(--hairline);
+  min-width: 110px;
+}
+
+.acct-kpi-item:last-child {
+  border-right: 0;
+}
+
+.acct-kpi-l {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+  white-space: nowrap;
+}
+
+.acct-kpi-v {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.acct-kpi-v.accent { color: var(--accent-2); }
+.acct-kpi-v.alert  { color: var(--neg); }
+
+/* Header actions column */
+.acct-header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+  align-items: stretch;
+  min-width: 144px;
+}
+
+.acct-header-actions-divider {
+  border-top: 1px solid var(--hairline);
+  margin: 3px 0;
+  padding-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* ======================================================================
+   Duplicate warning
+   ====================================================================== */
+
+.acct-dup-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 20px;
+  background: #FBEFE8;
+  border-top: 1px solid #E8C8B8;
+  border-bottom: 1px solid #E8C8B8;
+  border-left: 3px solid var(--neg);
+  font-size: 12.5px;
+  flex-wrap: wrap;
+}
+
+.acct-dup-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #F0DAD3;
+  border: 1px solid #D6B0A8;
+  display: grid;
+  place-items: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--neg);
+  margin-top: 1px;
+}
+
+.acct-dup-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.acct-dup-title {
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.acct-dup-sub {
+  font-size: 11.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.acct-dup-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ======================================================================
+   Two-column body grid
+   ====================================================================== */
+
+.acct-body-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 14px;
+  padding: 14px 14px 0;
+  align-items: flex-start;
+  flex: 1;
+}
+
+.acct-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.acct-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  position: sticky;
+  top: 48px;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.acct-sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ======================================================================
+   Section modifier (used with rep-panel)
+   ====================================================================== */
+
+/*
+ * acct-section: applied alongside rep-panel to ensure padding:0 so
+ * rep-panel-head and table contents render edge-to-edge.
+ */
+.acct-section {
+  padding: 0;
+}
+
+/* ======================================================================
+   Stage progress pip
+   ====================================================================== */
+
+.acct-stage-pip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  vertical-align: middle;
+}
+
+.acct-stage-pip i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--paper-3);
+  border: 1px solid var(--line-2);
+  font-style: normal;
+  flex-shrink: 0;
+}
+
+.acct-stage-pip i.on {
+  background: var(--muted-2);
+  border-color: var(--muted-2);
+}
+
+.acct-stage-pip i.cur {
+  background: var(--accent);
+  border-color: var(--accent-2);
+  width: 9px;
+  height: 9px;
+}
+
+/* ======================================================================
+   Influence badge
+   ====================================================================== */
+
+.acct-influence {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 2px;
+  border: 1px solid var(--line-2);
+  color: var(--muted);
+  background: var(--paper-2);
+  white-space: nowrap;
+}
+
+.acct-influence-decision  { color: var(--pos);     background: var(--pos-soft);   border-color: #B2C8A8; }
+.acct-influence-influencer { color: var(--info);    background: var(--info-soft);  border-color: #A4C0C8; }
+.acct-influence-technical  { color: var(--accent-2); background: var(--accent-soft); border-color: #D9BFA0; }
+.acct-influence-legal      { color: var(--neg);     background: #F0DAD3;           border-color: #D6B0A8; }
+
+/* ======================================================================
+   Contacts — expandable detail row
+   ====================================================================== */
+
+.acct-contact-expand {
+  background: var(--paper-2);
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 14px;
+}
+
+.acct-contact-expand-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.acct-contact-expand-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--hairline);
+  margin-bottom: 10px;
+}
+
+.acct-contact-expand-cell {
+  padding: 7px 10px;
+  border-right: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  min-width: 0;
+}
+
+.acct-contact-expand-cell:nth-child(2n) { border-right: 0; }
+.acct-contact-expand-cell:nth-last-child(-n+2) { border-bottom: 0; }
+
+.acct-contact-expand-l {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.acct-contact-expand-v {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acct-contact-notes {
+  font-size: 12px;
+  color: var(--ink-2);
+  padding: 7px 9px;
+  background: var(--white);
+  border-left: 2px solid var(--line-2);
+  line-height: 1.55;
+}
+
+.acct-contact-expand-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+/* ======================================================================
+   Activities list
+   ====================================================================== */
+
+.acct-activity-item {
+  display: grid;
+  grid-template-columns: 62px 20px 1fr auto;
+  gap: 0 10px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--hairline);
+  align-items: flex-start;
+}
+
+.acct-activity-item:last-child {
+  border-bottom: 0;
+}
+
+.acct-activity-item.overdue {
+  background: #FBEFE8;
+}
+
+.acct-activity-time {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.acct-activity-time small {
+  display: block;
+  font-size: 9.5px;
+  color: var(--muted-2);
+}
+
+.acct-activity-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 8px;
+  font-weight: 700;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.acct-activity-dot.done {
+  background: var(--pos-soft);
+  border: 1.5px solid var(--pos);
+  color: var(--pos);
+}
+
+.acct-activity-dot.overdue {
+  background: #F0DAD3;
+  border: 1.5px solid var(--neg);
+  color: var(--neg);
+}
+
+.acct-activity-dot.planned {
+  background: var(--paper-2);
+  border: 1.5px solid var(--line);
+  color: var(--muted);
+}
+
+.acct-activity-title {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  line-height: 1.35;
+}
+
+.acct-activity-overdue-tag {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--neg);
+}
+
+.acct-activity-sub {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.acct-activity-filter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.acct-filter-chip {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+  background: var(--paper-2);
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+}
+
+.acct-filter-chip.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+/* ======================================================================
+   Sidebar blocks
+   ====================================================================== */
+
+.acct-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 2px 0;
+}
+
+.acct-meta-cell {
+  padding: 7px 12px;
+  border-right: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  min-width: 0;
+}
+
+.acct-meta-cell:nth-child(2n) { border-right: 0; }
+.acct-meta-cell:nth-last-child(-n+2) { border-bottom: 0; }
+.acct-meta-cell.full { grid-column: 1 / -1; border-right: 0; }
+
+.acct-meta-l {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.acct-meta-v {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acct-meta-v.mono-val {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+}
+
+/* Manager action items */
+.acct-mgr-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--hairline);
+  margin-bottom: 5px;
+  cursor: pointer;
+  background: var(--paper-2);
+}
+
+.acct-mgr-action:last-child { margin-bottom: 0; }
+
+.acct-mgr-action.locked {
+  opacity: 0.48;
+  cursor: not-allowed;
+  background: var(--paper);
+}
+
+.acct-mgr-action-icon {
+  width: 18px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.acct-mgr-action-copy { flex: 1; min-width: 0; }
+
+.acct-mgr-action-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acct-mgr-action.locked .acct-mgr-action-label { color: var(--muted); }
+
+.acct-mgr-action-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.acct-mgr-lock-tag {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--muted-2);
+  flex-shrink: 0;
+}
+
+/* Audit items */
+.acct-audit-item {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 0 8px;
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--hairline);
+  align-items: flex-start;
+}
+
+.acct-audit-item:last-child { border-bottom: 0; }
+
+.acct-audit-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-size: 8px;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--muted);
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.acct-audit-desc {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.acct-audit-meta {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ======================================================================
+   Modal form fields
+   ====================================================================== */
+
+.acct-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.acct-modal-field-lbl {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.acct-modal-required {
+  color: #9A3A2F;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+}
+
+.acct-modal-input {
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--white);
+  padding: 7px 10px;
+}
+
+.acct-modal-input:focus-within {
+  border-color: var(--ink);
+}
+
+.acct-modal-input.err {
+  border-color: #9A3A2F;
+}
+
+.acct-modal-input input,
+.acct-modal-input select,
+.acct-modal-input textarea {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: transparent;
+}
+
+.acct-modal-input textarea {
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.5;
+  display: block;
+}
+
+.acct-modal-field-err {
+  font-size: 11.5px;
+  color: #9A3A2F;
+}
+
+.acct-modal-type-row {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+/* ======================================================================
+   Responsive overrides
+   ====================================================================== */
+
+@media (max-width: 1180px) {
+  .acct-body-grid {
+    grid-template-columns: minmax(0, 1fr) 290px;
+  }
+}
+
+@media (max-width: 960px) {
+  .acct-body-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .acct-sidebar {
+    position: relative;
+    top: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .acct-kpi-strip {
+    width: 100%;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 680px) {
+  .acct-header-body {
+    flex-direction: column;
+  }
+
+  .acct-header-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+    min-width: unset;
+  }
+}
