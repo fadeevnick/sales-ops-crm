@@ -1,0 +1,1039 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sales Ops CRM — Simplified Sales Rep Workspace</title>
+<meta name="viewport" content="width=1440" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --paper:#F4F1EB; --paper-2:#EEEAE0; --paper-3:#E6E1D4;
+  --ink:#17150F;   --ink-2:#3A372E;
+  --muted:#6E6A5C; --muted-2:#8C8779;
+  --line:#D6D0BF;  --line-2:#C4BDA8; --hairline:#E4DFD0;
+  --accent:#B57321; --accent-2:#8A5616; --accent-soft:#F2E3C8;
+  --pos:#3F6B3A;   --pos-soft:#E2EAD6;
+  --neg:#9A3A2F;   --neg-soft:#F0DAD3;
+  --warn:#A36A11;  --warn-soft:#F4E3C1;
+  --info:#2D5B6B;  --info-soft:#D6E1E4;
+  --white:#FBFAF6; --select:#FBF1DC;
+  font-family:"Geist","Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-feature-settings:"ss01","cv11","tnum";
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);}
+body{font-size:13px;line-height:1.4;-webkit-font-smoothing:antialiased}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-feature-settings:"tnum","ss02"}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+a{color:inherit;text-decoration:none}
+input,select,textarea{font:inherit;color:inherit}
+::selection{background:var(--accent-soft);color:var(--ink)}
+
+/* ── App shell ── */
+.app{display:grid;grid-template-columns:244px 1fr;min-height:100vh}
+.sidebar{background:var(--paper-2);border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.main{display:flex;flex-direction:column;min-width:0}
+
+/* ── Sidebar ── */
+.brand{padding:18px 18px 14px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px}
+.brand-mark{width:22px;height:22px;flex:0 0 22px;position:relative}
+.brand-mark::before,.brand-mark::after{content:"";position:absolute;inset:0;border:1.5px solid var(--ink)}
+.brand-mark::after{inset:5px;background:var(--accent);border-color:var(--accent-2)}
+.brand-name{font-weight:600;letter-spacing:.02em;font-size:14px}
+.brand-env{color:var(--muted);font-weight:400;margin-left:6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.tenant{padding:10px 18px;border-bottom:1px solid var(--hairline)}
+.tenant-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.tenant-row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.tenant-name{font-weight:600;font-size:13.5px}
+.tenant-env{font-family:"JetBrains Mono",monospace;font-size:10px;padding:2px 6px;border:1px solid #D9BFA0;border-radius:2px;color:var(--accent-2);background:var(--warn-soft);letter-spacing:.04em}
+.nav{flex:1;overflow:auto;padding:8px 0 12px}
+.nav-section-label{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-2);padding:12px 18px 4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:7px 18px 7px 14px;border-left:2px solid transparent;color:var(--ink-2);font-size:13px;cursor:pointer}
+.nav-item:hover{background:var(--paper-3);color:var(--ink)}
+.nav-item.active{background:var(--paper-3);border-left-color:var(--accent);color:var(--ink);font-weight:500}
+.nav-mark{width:22px;height:22px;display:grid;place-items:center;border:1px solid var(--line-2);background:var(--white);font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:600;letter-spacing:.04em;flex-shrink:0}
+.nav-item.active .nav-mark{border-color:var(--accent);color:var(--accent-2);background:var(--accent-soft)}
+.nav-badge{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);margin-left:auto}
+.nav-badge.alert{color:var(--accent-2);font-weight:600}
+.user-block{border-top:1px solid var(--line);padding:10px 14px;display:flex;align-items:center;gap:10px;background:var(--paper-2)}
+.avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--paper);font-size:11px;font-weight:600;flex:0 0 30px}
+.user-meta{display:flex;flex-direction:column;min-width:0;flex:1}
+.user-name{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:11px;color:var(--muted)}
+
+/* ── Top bar ── */
+.topbar{height:52px;border-bottom:1px solid var(--line);background:var(--paper);display:grid;grid-template-columns:1fr minmax(260px,400px) auto;align-items:center;gap:16px;padding:0 20px;position:sticky;top:0;z-index:10}
+.crumb{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;flex-wrap:nowrap}
+.crumb strong{color:var(--ink);font-weight:600;font-size:13px}
+.crumb .sep{color:var(--line-2)}
+.pulse-badge{display:inline-flex;align-items:center;gap:5px;font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--accent-2);padding:2px 6px;border:1px solid #D9BFA0;border-radius:2px;background:var(--warn-soft);letter-spacing:.04em}
+.pulse-dot{width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.search{display:flex;align-items:center;gap:8px;background:var(--paper-2);border:1px solid var(--line);border-radius:3px;padding:6px 10px;font-size:12.5px;color:var(--muted)}
+.search:focus-within{border-color:var(--ink);background:var(--white)}
+.search input{border:0;background:transparent;outline:none;flex:1;font:inherit;color:var(--ink)}
+.search kbd{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted);border:1px solid var(--line-2);border-radius:2px;padding:1px 4px;background:var(--paper)}
+.top-actions{display:flex;align-items:center;gap:8px}
+.icon-btn{width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line-2);background:var(--paper);border-radius:3px;position:relative;cursor:pointer}
+.icon-btn:hover{border-color:var(--ink)}
+.dot-badge{position:absolute;top:-3px;right:-3px;width:14px;height:14px;background:var(--accent);color:var(--white);font-family:"JetBrains Mono",monospace;font-size:9px;font-weight:600;border-radius:7px;display:grid;place-items:center;border:1.5px solid var(--paper)}
+.role-pill{display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border:1px solid var(--line);border-radius:18px;background:var(--paper);cursor:pointer}
+.role-pill:hover{border-color:var(--ink)}
+.role-pill .avatar{width:26px;height:26px;font-size:10px}
+.role-pill .who{display:flex;flex-direction:column;line-height:1.2}
+.role-pill .who b{font-size:12px;font-weight:600}
+.role-pill .who span{font-size:10.5px;color:var(--muted)}
+
+/* ── Buttons ── */
+.btn{border:1px solid var(--line-2);background:var(--paper);padding:6px 11px;font-size:12px;color:var(--ink);border-radius:3px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;cursor:pointer}
+.btn:hover{border-color:var(--ink)}
+.btn-primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.btn-primary:hover{background:var(--accent-2);border-color:var(--accent-2)}
+.btn-pos{background:var(--pos);color:var(--paper);border-color:var(--pos)}
+.btn-pos:hover{background:#2F5530;border-color:#2F5530}
+.btn-warn{border-color:#D9BFA0;background:var(--warn-soft);color:var(--accent-2)}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--muted)}
+.btn-ghost:hover{color:var(--ink);border-color:var(--line-2)}
+.btn-sm{padding:4px 8px;font-size:11.5px}
+/* Split button */
+.split-btn{display:flex;align-items:stretch;border-radius:3px;overflow:hidden;border:1px solid var(--ink)}
+.split-btn .main-action{background:var(--ink);color:var(--paper);padding:6px 11px;font-size:12px;font-family:inherit;display:inline-flex;align-items:center;gap:6px;border:0;cursor:pointer;border-right:1px solid rgba(255,255,255,.15)}
+.split-btn .main-action:hover{background:var(--accent-2)}
+.split-btn .caret{background:var(--ink);color:var(--paper);padding:6px 9px;font-size:11px;border:0;cursor:pointer;display:inline-flex;align-items:center}
+.split-btn .caret:hover{background:var(--accent-2)}
+
+/* ── Pills ── */
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-family:"JetBrains Mono",monospace;letter-spacing:.04em;padding:2px 7px;border-radius:2px;border:1px solid var(--line-2);background:var(--paper);text-transform:uppercase;white-space:nowrap}
+.pill .pdot{width:5px;height:5px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.pill.p-pending{color:var(--warn);border-color:#E2C887;background:var(--warn-soft)} .pill.p-pending .pdot{background:var(--warn)}
+.pill.p-approved{color:var(--pos);border-color:#B2C8A8;background:var(--pos-soft)} .pill.p-approved .pdot{background:var(--pos)}
+.pill.p-rejected{color:var(--neg);border-color:#D6B0A8;background:var(--neg-soft)} .pill.p-rejected .pdot{background:var(--neg)}
+.pill.p-sentback{color:var(--info);border-color:#A4C0C8;background:var(--info-soft)} .pill.p-sentback .pdot{background:var(--info)}
+.pill.p-none{color:var(--muted)}
+
+/* ── Stage pip ── */
+.stage-pip{display:inline-flex;gap:3px;align-items:center;vertical-align:middle}
+.stage-pip i{width:5px;height:10px;background:var(--line);display:block;flex-shrink:0}
+.stage-pip i.on{background:var(--ink)}
+.stage-pip i.flag{background:var(--accent)}
+
+/* ── Content area ── */
+.content{padding:16px 22px 48px;min-width:0}
+
+/* ── KPI strip — 3 cells ── */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);background:var(--white);margin-bottom:14px}
+.kpi{padding:12px 16px;border-right:1px solid var(--hairline)}
+.kpi:last-child{border-right:0}
+.kpi-label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.kpi-value{font-family:"JetBrains Mono",monospace;font-size:22px;font-weight:500;margin-top:3px;letter-spacing:-.01em}
+.kpi-foot{font-size:11px;color:var(--muted);margin-top:2px}
+.kpi.warn .kpi-value{color:var(--accent-2)}
+.kpi.alert .kpi-value{color:var(--neg)}
+
+/* ── Page head row ── */
+.page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px}
+.page-title{font-size:18px;font-weight:600;letter-spacing:-.01em}
+
+/* ── View tabs ── */
+.view-tabs{display:flex;align-items:center;gap:0;border-bottom:1px solid var(--line);margin-bottom:12px}
+.view-tab{padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.view-tab:hover{color:var(--ink)}
+.view-tab.active{color:var(--ink);font-weight:500;border-bottom-color:var(--accent)}
+.view-tab .ct{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted-2)}
+.view-tab.active .ct{color:var(--accent-2)}
+
+/* ── Filter bar ── */
+.filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.field-ctl{display:flex;align-items:center;gap:7px;background:var(--white);border:1px solid var(--line);border-radius:3px;padding:5px 9px;font-size:12.5px;color:var(--ink);min-width:0}
+.field-ctl:focus-within{border-color:var(--ink)}
+.field-ctl input,.field-ctl select{border:0;background:transparent;outline:none;font:inherit;color:var(--ink);appearance:none;min-width:0}
+.field-ctl select{padding-right:4px}
+.field-ctl .lbl{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.field-ctl .chev{color:var(--muted);font-size:10px;flex-shrink:0}
+.search-ctl{flex:1;min-width:200px;max-width:320px}
+.lock-chip{display:inline-flex;align-items:center;gap:5px;font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.04em;padding:5px 8px;border:1px solid var(--line-2);background:var(--paper-2);color:var(--muted);border-radius:3px;white-space:nowrap;margin-left:auto}
+.filter-active-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:11.5px;color:var(--muted)}
+.filter-active-row a{border-bottom:1px dotted var(--line-2);cursor:pointer}
+.filter-active-row a:hover{color:var(--ink)}
+
+/* ── Workspace split (table + preview) ── */
+.workspace{display:grid;gap:14px;transition:grid-template-columns .2s ease}
+.workspace.no-preview{grid-template-columns:1fr}
+.workspace.with-preview{grid-template-columns:minmax(0,1fr) 340px}
+
+/* ── Panel ── */
+.panel{background:var(--white);border:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--hairline);gap:10px}
+.panel-title{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;display:flex;gap:8px;align-items:center}
+.panel-title em{font-style:normal;font-family:"JetBrains Mono",monospace;color:var(--muted);font-weight:400;font-size:11px;text-transform:none;letter-spacing:.02em}
+.panel-actions{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:11.5px}
+.panel-actions a{border-bottom:1px dotted var(--line-2);cursor:pointer}
+.panel-actions a:hover{color:var(--ink)}
+
+/* ── Table ── */
+table.t{width:100%;border-collapse:collapse;table-layout:fixed}
+table.t th,table.t td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--hairline);font-size:12.5px;vertical-align:middle}
+table.t th{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:500;background:var(--paper-2);border-bottom:1px solid var(--line);padding:6px 12px}
+table.t td.mono{font-family:"JetBrains Mono",monospace;font-size:12px}
+table.t tr{cursor:pointer}
+table.t tr:hover td{background:#FBF7EB}
+table.t tr.selected td{background:var(--select);border-bottom-color:#E0CC9C}
+table.t tr.selected td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+table.t .truncate{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+table.t td .sub{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+table.t .num{font-family:"JetBrains Mono",monospace;text-align:right;font-variant-numeric:tabular-nums}
+table.t th.num{text-align:right}
+table.t .attn{color:var(--neg)}
+
+/* ── Empty state ── */
+.empty{padding:44px 20px;text-align:center;color:var(--muted)}
+.empty .icon{margin:0 auto 10px;width:38px;height:38px;border:1px dashed var(--line-2);display:grid;place-items:center;font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.1em;color:var(--muted-2)}
+.empty .ttl{color:var(--ink);font-size:13px;font-weight:500;margin-bottom:4px}
+.empty .act{display:inline-block;margin-top:12px;padding:5px 12px;border:1px solid var(--ink);font-size:12px;color:var(--ink);border-radius:3px}
+.empty .act:hover{background:var(--ink);color:var(--paper)}
+
+/* ── Preview panel ── */
+.preview{position:sticky;top:52px;align-self:start;max-height:calc(100vh - 68px);overflow-y:auto;display:flex;flex-direction:column}
+.preview-head{padding:14px 14px 12px;border-bottom:1px solid var(--hairline);background:var(--paper-2)}
+.preview-title{font-size:14.5px;font-weight:600;letter-spacing:-.01em;line-height:1.3;margin-bottom:2px}
+.preview-account{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.preview-close{width:26px;height:26px;display:grid;place-items:center;border:1px solid var(--line-2);background:var(--paper);border-radius:3px;color:var(--ink-2);cursor:pointer;flex-shrink:0}
+.preview-close:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.preview-head-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px}
+.pf-grid{display:grid;grid-template-columns:1fr 1fr}
+.pf{padding:9px 12px;border-bottom:1px solid var(--hairline);border-right:1px solid var(--hairline);min-width:0}
+.pf:nth-child(2n){border-right:0}
+.pf:nth-last-child(-n+2){border-bottom:0}
+.pf .l{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.pf .v{font-size:12.5px;font-weight:500;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.pf .v.num{font-family:"JetBrains Mono",monospace;font-size:14px}
+.pf-section{padding:10px 12px;border-bottom:1px solid var(--hairline)}
+.pf-section-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.next-act{display:grid;grid-template-columns:auto 1fr;gap:9px;align-items:start}
+.next-act .due{font-family:"JetBrains Mono",monospace;font-size:11px;padding:3px 7px;border:1px solid var(--line-2);background:var(--paper);color:var(--ink-2);white-space:nowrap}
+.next-act .due.overdue{color:var(--neg);border-color:#D6B0A8;background:var(--neg-soft)}
+.next-act .due.today{color:var(--accent-2);border-color:#D9BFA0;background:var(--warn-soft)}
+.next-act .ttl{font-size:12.5px;font-weight:500}
+.next-act .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.approval-banner{padding:9px 12px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:8px;background:var(--paper-2);font-size:12px;color:var(--ink-2)}
+.approval-banner.p-pending{background:var(--warn-soft)}
+.approval-banner.p-sentback{background:var(--info-soft)}
+.approval-banner.p-approved{background:var(--pos-soft)}
+.approval-banner.p-rejected{background:var(--neg-soft)}
+.preview-foot{padding:10px 12px;border-top:1px solid var(--line);background:var(--white);display:flex;gap:7px;align-items:center;justify-content:space-between;position:sticky;bottom:0}
+.preview-foot .right{display:flex;gap:7px}
+
+/* ── More filters popover ── */
+.popover-wrap{position:relative}
+.popover{position:absolute;top:calc(100% + 6px);left:0;background:var(--white);border:1px solid var(--line);box-shadow:0 8px 24px rgba(20,18,12,.14);z-index:30;width:300px;animation:pop .12s ease both}
+@keyframes pop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.popover-head{padding:10px 14px;border-bottom:1px solid var(--hairline);display:flex;justify-content:space-between;align-items:center}
+.popover-title{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.popover-body{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.popover-field{display:flex;flex-direction:column;gap:4px}
+.popover-field label{font-size:11px;color:var(--muted);font-weight:500}
+.popover-field .ctl{display:flex;align-items:center;gap:7px;background:var(--paper-2);border:1px solid var(--line);border-radius:3px;padding:6px 9px;font-size:12.5px}
+.popover-field .ctl:focus-within{border-color:var(--ink);background:var(--white)}
+.popover-field .ctl input,.popover-field .ctl select{border:0;background:transparent;outline:none;width:100%;font:inherit;color:var(--ink);appearance:none}
+.popover-field .ctl.locked{background:var(--paper-2);color:var(--muted)}
+.popover-foot{padding:8px 14px;border-top:1px solid var(--hairline);display:flex;gap:8px;justify-content:flex-end}
+
+/* ── Drawer ── */
+.scrim{position:fixed;inset:0;background:rgba(20,18,12,.3);z-index:50;backdrop-filter:blur(2px);animation:fade .15s ease both}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:520px;background:var(--paper);z-index:51;display:flex;flex-direction:column;box-shadow:-12px 0 32px rgba(20,18,12,.16);animation:drw .2s ease both}
+@keyframes drw{from{transform:translateX(24px);opacity:0}to{transform:translateX(0);opacity:1}}
+.drawer-head{padding:16px 20px 14px;border-bottom:1px solid var(--hairline);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;background:var(--paper-2)}
+.drawer-head .h-title{font-size:16px;font-weight:600;letter-spacing:-.01em}
+.drawer-head .h-sub{font-size:11.5px;color:var(--muted);margin-top:3px}
+.drawer-close{width:28px;height:28px;display:grid;place-items:center;border:1px solid var(--line-2);background:var(--paper);border-radius:3px;color:var(--ink-2);cursor:pointer;flex-shrink:0}
+.drawer-close:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.drawer-body{flex:1;overflow:auto;padding:18px 20px}
+.drawer-foot{padding:12px 20px;border-top:1px solid var(--line);background:var(--white);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.drawer-foot .hint{font-size:11.5px;color:var(--muted)}
+.form-section{margin-bottom:16px}
+.form-section h4{margin:0 0 8px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-grid .full{grid-column:1/-1}
+.form-field{display:flex;flex-direction:column;gap:4px}
+.form-field label{font-size:11px;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:4px}
+.form-field .req{color:var(--accent-2)}
+.form-field .ctl{display:flex;align-items:center;gap:7px;background:var(--white);border:1px solid var(--line);border-radius:3px;padding:7px 10px;font-size:13px}
+.form-field .ctl:focus-within{border-color:var(--ink)}
+.form-field input,.form-field select,.form-field textarea{border:0;background:transparent;outline:none;width:100%;font:inherit;color:var(--ink);appearance:none}
+.form-field textarea{resize:vertical;min-height:64px}
+.form-field .hint{font-size:10.5px;color:var(--muted);margin-top:2px}
+.form-field .ctl .pre{font-family:"JetBrains Mono",monospace;color:var(--muted);font-size:11.5px}
+.form-field .ctl .chev{color:var(--muted)}
+
+/* ── Submit modal ── */
+.modal{position:fixed;inset:0;display:grid;place-items:center;z-index:60}
+.modal-card{background:var(--white);border:1px solid var(--line);width:480px;max-width:90vw;box-shadow:0 20px 50px rgba(20,18,12,.2);animation:pop .15s ease both}
+.modal-card .mhead{padding:14px 18px;border-bottom:1px solid var(--hairline)}
+.modal-card .mhead h3{margin:0;font-size:14.5px;font-weight:600}
+.modal-card .mhead p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.modal-card .mbody{padding:14px 18px;display:flex;flex-direction:column;gap:10px}
+.modal-card .mfoot{padding:10px 18px;border-top:1px solid var(--hairline);background:var(--paper-2);display:flex;gap:8px;justify-content:flex-end}
+.snap{background:var(--paper-2);border:1px solid var(--hairline);padding:10px 12px;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:12px}
+.snap dt{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0}
+.snap dd{margin:0;font-family:"JetBrains Mono",monospace;font-size:12px}
+
+/* ── Create dropdown ── */
+.create-dropdown{position:absolute;top:calc(100% + 4px);right:0;background:var(--white);border:1px solid var(--line);box-shadow:0 8px 24px rgba(20,18,12,.14);z-index:30;min-width:160px;animation:pop .12s ease both}
+.create-dropdown-item{padding:8px 14px;font-size:12.5px;color:var(--ink-2);cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--hairline)}
+.create-dropdown-item:last-child{border-bottom:0}
+.create-dropdown-item:hover{background:var(--paper-2);color:var(--ink)}
+.create-dropdown-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:6px 14px 2px;font-weight:500}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 14px;font-size:12.5px;display:flex;align-items:center;gap:10px;z-index:80;box-shadow:0 10px 24px rgba(20,18,12,.22);border:1px solid var(--ink-2);animation:toast-in .18s ease both;white-space:nowrap}
+@keyframes toast-in{from{opacity:0;transform:translateX(-50%) translateY(6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.toast .ok{color:#9CC58F}
+
+/* ── Responsive ── */
+@media(max-width:1200px){.workspace.with-preview{grid-template-columns:1fr}}
+@media(max-width:980px){
+  .app{grid-template-columns:60px 1fr}
+  .sidebar .brand-name,.sidebar .tenant,.nav-badge,.nav-section-label,.user-meta{display:none}
+  .nav-item{justify-content:center;padding:8px}
+  .brand{justify-content:center;padding:14px 0}
+  .user-block{justify-content:center;padding:10px 0}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useRef, useEffect } = React;
+
+/* ─── Static data ─── */
+const STAGES = [
+  { code:"prospect",    label:"Prospect",     n:1 },
+  { code:"qualify",     label:"Qualify",      n:2 },
+  { code:"propose",     label:"Propose",      n:3 },
+  { code:"negotiate",   label:"Negotiate",    n:4 },
+  { code:"close",       label:"Close",        n:5 },
+];
+const STAGE_N = 5;
+
+const OPPS = [
+  { id:"OPP-2385", title:"Enterprise Licensing Renewal — Orion Industrial", account:"Orion Industrial", accountId:"ACC-0041", stage:"negotiate", amount:184000, close:"2026-05-28", approval:"sentback", approvalDetail:"APR-1142 · Sent back by Finance — resubmit with revised margin", next:{title:"Respond to finance comments",due:"2 days overdue",state:"overdue"}, eligible:true },
+  { id:"OPP-2401", title:"Professional Services Expansion", account:"Meridian Health", accountId:"ACC-0087", stage:"propose", amount:62000, close:"2026-06-12", approval:"pending", approvalDetail:"APR-1158 · Awaiting Finance review — step 1 of 2", next:{title:"Follow up on proposal review",due:"Due today",state:"today"}, eligible:false },
+  { id:"OPP-2317", title:"Platform Upgrade — West Region", account:"Apex Dynamics", accountId:"ACC-0023", stage:"negotiate", amount:98500, close:"2026-05-30", approval:"none", approvalDetail:"", next:{title:"Prepare discount justification",due:"Due today",state:"today"}, eligible:true },
+  { id:"OPP-2298", title:"Annual SaaS Subscription Renewal", account:"Crestline Corp", accountId:"ACC-0114", stage:"close", amount:41200, close:"2026-06-05", approval:"approved", approvalDetail:"APR-1101 · Approved by Finance + Legal", next:{title:"Send countersigned agreement",due:"Due Jun 5",state:"normal"}, eligible:false },
+  { id:"OPP-2356", title:"Data Analytics Add-on", account:"Orion Industrial", accountId:"ACC-0041", stage:"qualify", amount:28000, close:"2026-07-15", approval:"none", approvalDetail:"", next:{title:"Discovery call debrief",due:"Due Jun 4",state:"normal"}, eligible:false },
+  { id:"OPP-2419", title:"Custom Integration Project", account:"Vertex Partners", accountId:"ACC-0066", stage:"propose", amount:75000, close:"2026-06-30", approval:"none", approvalDetail:"", next:{title:"Send SOW for review",due:"Due Jun 10",state:"normal"}, eligible:true },
+  { id:"OPP-2388", title:"Security Compliance Module", account:"Meridian Health", accountId:"ACC-0087", stage:"qualify", amount:33000, close:"2026-08-01", approval:"none", approvalDetail:"", next:{title:"Schedule technical review",due:"Due Jun 7",state:"normal"}, eligible:false },
+  { id:"OPP-2375", title:"Multi-site Rollout — Phase 2", account:"Apex Dynamics", accountId:"ACC-0023", stage:"prospect", amount:210000, close:"2026-09-30", approval:"none", approvalDetail:"", next:{title:"Stakeholder alignment call",due:"Due Jun 18",state:"normal"}, eligible:false },
+];
+
+const ACCOUNTS = [...new Set(OPPS.map(o=>o.account))];
+
+const TODAY_STR = "2026-05-27";
+function daysDiff(closeStr){
+  const d1 = new Date(TODAY_STR), d2 = new Date(closeStr);
+  return Math.ceil((d2-d1)/(1000*60*60*24));
+}
+
+function needsAttention(o){
+  if(o.approval==="sentback") return true;
+  if(o.next.state==="overdue") return true;
+  if(o.approval==="none" && daysDiff(o.close) <= 30 && (o.stage==="negotiate"||o.stage==="close")) return true;
+  return false;
+}
+
+function fmtMoney(n){ return "$"+n.toLocaleString("en-US") }
+function fmtClose(s){ const d=new Date(s); return d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) }
+
+/* ─── Pill component ─── */
+function Pill({ kind, children }){
+  return <span className={`pill p-${kind}`}><span className="pdot" />{children}</span>;
+}
+
+/* ─── Stage pip ─── */
+function StagePip({ stage }){
+  const idx = STAGES.findIndex(s=>s.code===stage);
+  return (
+    <span className="stage-pip">
+      {STAGES.map((s,i)=>(
+        <i key={i} className={i<idx?"on":i===idx?"flag":""} />
+      ))}
+    </span>
+  );
+}
+
+/* ─── Sidebar ─── */
+function Sidebar(){
+  const navItems = [
+    { mark:"WS", label:"My Workspace",   badge:null,  active:true },
+    { mark:"AC", label:"Accounts",       badge:null,  active:false },
+    { mark:"CT", label:"Contacts",       badge:null,  active:false },
+    { mark:"OP", label:"Opportunities",  badge:"8",   active:false },
+    { mark:"AT", label:"Activities",     badge:"3",   active:false },
+    { mark:"AP", label:"Approvals",      badge:"2",   active:false, alertBadge:true },
+  ];
+  return (
+    <aside className="sidebar">
+      <div className="brand">
+        <div className="brand-mark" />
+        <div className="brand-name">Sales Ops CRM<span className="brand-env">Local Pilot</span></div>
+      </div>
+      <div className="tenant">
+        <div className="tenant-label">Organization</div>
+        <div className="tenant-row">
+          <span className="tenant-name">Orion Industrial</span>
+          <span className="tenant-env mono">LOCAL</span>
+        </div>
+      </div>
+      <nav className="nav">
+        <div className="nav-section-label">Workspace</div>
+        {navItems.map((item,i)=>(
+          <div key={i} className={`nav-item ${item.active?"active":""}`}>
+            <div className="nav-mark">{item.mark}</div>
+            <span>{item.label}</span>
+            {item.badge && <span className={`nav-badge ${item.alertBadge?"alert":""}`}>{item.badge}</span>}
+          </div>
+        ))}
+      </nav>
+      <div className="user-block">
+        <div className="avatar" style={{background:"#2A4655"}}>AP</div>
+        <div className="user-meta">
+          <div className="user-name">Anna Petrova</div>
+          <div className="user-role">Sales Representative</div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/* ─── Top bar ─── */
+function TopBar(){
+  return (
+    <div className="topbar">
+      <div className="crumb">
+        <span className="pulse-badge mono"><span className="pulse-dot" /> LOCAL PILOT</span>
+        <span className="sep">·</span>
+        <span>Orion Industrial</span>
+        <span className="sep">/</span>
+        <strong>My Workspace</strong>
+      </div>
+      <label className="search">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5"/></svg>
+        <input placeholder="Search accounts, opportunities…" />
+        <kbd>⌘K</kbd>
+      </label>
+      <div className="top-actions">
+        <button className="icon-btn">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M3.5 12h9l-1-1.5V7a3.5 3.5 0 0 0-7 0v3.5L3.5 12Z"/><path d="M6.5 13.5a1.5 1.5 0 0 0 3 0"/></svg>
+          <span className="dot-badge mono">4</span>
+        </button>
+        <button className="role-pill">
+          <div className="avatar" style={{background:"#2A4655",width:26,height:26,fontSize:10}}>AP</div>
+          <div className="who"><b>Anna P.</b><span>Sales Rep</span></div>
+          <span style={{color:"var(--muted)",fontSize:10,marginLeft:2}}>▾</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── KPI strip ─── */
+function KPIs({ opps }){
+  const open = opps.length;
+  const pipeline = opps.reduce((s,o)=>s+o.amount,0);
+  const pendingAppr = opps.filter(o=>o.approval==="pending"||o.approval==="sentback").length;
+  return (
+    <div className="kpis">
+      <div className="kpi">
+        <div className="kpi-label">Open opportunities</div>
+        <div className="kpi-value mono">{open}</div>
+        <div className="kpi-foot">All owned by you</div>
+      </div>
+      <div className="kpi">
+        <div className="kpi-label">Pipeline value</div>
+        <div className="kpi-value mono">{fmtMoney(pipeline)}</div>
+        <div className="kpi-foot">Across all open stages</div>
+      </div>
+      <div className={`kpi ${pendingAppr>0?"warn":""}`}>
+        <div className="kpi-label">Pending approvals</div>
+        <div className="kpi-value mono">{pendingAppr}</div>
+        <div className="kpi-foot">{pendingAppr>0?`${OPPS.filter(o=>o.approval==="sentback").length} sent back · ${OPPS.filter(o=>o.approval==="pending").length} awaiting decision`:"No active requests"}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── More filters popover ─── */
+function MoreFiltersPopover({ account, setAccount, close, setClose, onClose }){
+  const ref = useRef(null);
+  useEffect(()=>{
+    function handler(e){ if(ref.current && !ref.current.contains(e.target)) onClose(); }
+    document.addEventListener("mousedown", handler);
+    return ()=>document.removeEventListener("mousedown", handler);
+  },[]);
+  return (
+    <div className="popover" ref={ref}>
+      <div className="popover-head">
+        <span className="popover-title">More Filters</span>
+        <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+      </div>
+      <div className="popover-body">
+        <div className="popover-field">
+          <label>Account</label>
+          <div className="ctl">
+            <select value={account} onChange={e=>setAccount(e.target.value)}>
+              <option value="">All accounts</option>
+              {ACCOUNTS.map(a=><option key={a} value={a}>{a}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="popover-field">
+          <label>Close date</label>
+          <div className="ctl">
+            <select value={close} onChange={e=>setClose(e.target.value)}>
+              <option value="">Any time</option>
+              <option value="14">Next 14 days</option>
+              <option value="30">Next 30 days</option>
+              <option value="60">Next 60 days</option>
+              <option value="90">Next 90 days</option>
+            </select>
+          </div>
+        </div>
+        <div className="popover-field">
+          <label>Owner</label>
+          <div className="ctl locked" style={{background:"var(--paper-2)",color:"var(--muted)"}}>
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4"><rect x="2.5" y="5.5" width="7" height="5" rx="0.5"/><path d="M4 5.5V3.8a2 2 0 1 1 4 0V5.5"/></svg>
+            Anna Petrova — locked by policy
+          </div>
+        </div>
+      </div>
+      <div className="popover-foot">
+        <button className="btn btn-sm" onClick={()=>{setAccount("");setClose("");}}>Reset</button>
+        <button className="btn btn-primary btn-sm" onClick={onClose}>Apply</button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Create dropdown ─── */
+function CreateDropdown({ onNewOpp, onClose }){
+  const ref = useRef(null);
+  useEffect(()=>{
+    function handler(e){ if(ref.current && !ref.current.contains(e.target)) onClose(); }
+    document.addEventListener("mousedown", handler);
+    return ()=>document.removeEventListener("mousedown", handler);
+  },[]);
+  return (
+    <div className="create-dropdown" ref={ref}>
+      <div className="create-dropdown-label">Create</div>
+      <div className="create-dropdown-item" onClick={()=>{ onNewOpp(); onClose(); }}>
+        <span className="mono" style={{fontSize:10,border:"1px solid var(--line-2)",padding:"1px 4px",color:"var(--muted)"}}>OP</span>
+        New Account
+      </div>
+      <div className="create-dropdown-item" onClick={onClose}>
+        <span className="mono" style={{fontSize:10,border:"1px solid var(--line-2)",padding:"1px 4px",color:"var(--muted)"}}>CT</span>
+        New Contact
+      </div>
+    </div>
+  );
+}
+
+/* ─── Preview panel ─── */
+function Preview({ opp, onClose, onSubmit }){
+  if(!opp) return null;
+  const stageData = STAGES.find(s=>s.code===opp.stage);
+  return (
+    <section className="panel preview">
+      <div className="preview-head">
+        <div className="preview-head-top">
+          <div style={{flex:1,minWidth:0}}>
+            <div className="preview-title">{opp.title}</div>
+            <div className="preview-account">
+              <span className="mono" style={{fontSize:11,color:"var(--muted-2)"}}>{opp.accountId}</span>
+              <span style={{color:"var(--line-2)"}}>·</span>
+              <span>{opp.account}</span>
+            </div>
+          </div>
+          <button className="preview-close" onClick={onClose} title="Close preview">✕</button>
+        </div>
+        <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",marginTop:4}}>
+          <span className="mono" style={{fontSize:10.5,color:"var(--muted-2)",letterSpacing:".04em"}}>{opp.id}</span>
+        </div>
+      </div>
+
+      {opp.approval!=="none" && (
+        <div className={`approval-banner p-${opp.approval}`}>
+          <Pill kind={opp.approval}>{opp.approval}</Pill>
+          <span style={{fontSize:11.5}}>{opp.approvalDetail}</span>
+        </div>
+      )}
+
+      <div className="pf-grid">
+        <div className="pf">
+          <div className="l">Stage</div>
+          <div className="v">
+            <StagePip stage={opp.stage} />
+            <span style={{fontSize:12,color:"var(--ink-2)",marginLeft:4}}>{stageData?.label}</span>
+          </div>
+        </div>
+        <div className="pf">
+          <div className="l">Amount</div>
+          <div className="v num">{fmtMoney(opp.amount)}</div>
+        </div>
+        <div className="pf" style={{borderBottom:0}}>
+          <div className="l">Close date</div>
+          <div className="v mono" style={{fontSize:12}}>{fmtClose(opp.close)}</div>
+        </div>
+        <div className="pf" style={{borderBottom:0}}>
+          <div className="l">Approval</div>
+          <div className="v">
+            {opp.approval==="none"
+              ? <span style={{color:"var(--muted)",fontSize:12}}>No request</span>
+              : <Pill kind={opp.approval}>{opp.approval}</Pill>}
+          </div>
+        </div>
+      </div>
+
+      <div className="pf-section">
+        <div className="pf-section-label">
+          Next activity
+          <button className="btn btn-ghost btn-sm" style={{fontSize:11}}>+ Add</button>
+        </div>
+        <div className="next-act">
+          <span className={`due ${opp.next.state}`}>{opp.next.due}</span>
+          <div>
+            <div className="ttl">{opp.next.title}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="preview-foot">
+        <button className="btn btn-primary btn-sm" style={{fontSize:12}}>Open detail →</button>
+        <div className="right">
+          {opp.eligible && (
+            <button className="btn btn-warn btn-sm" onClick={()=>onSubmit(opp)}>Submit for approval</button>
+          )}
+          {opp.approval==="sentback" && (
+            <button className="btn btn-sm" style={{borderColor:"var(--info)",color:"var(--info)",background:"var(--info-soft)",fontSize:11}} onClick={()=>onSubmit(opp)}>Resubmit</button>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── New Opportunity drawer ─── */
+function NewOppDrawer({ onClose, onSave }){
+  const [saved, setSaved] = useState(false);
+  const [form, setForm] = useState({ title:"", account:"", stage:"qualify", amount:"", close:"", notes:"" });
+  function handleSave(){
+    if(!form.title || !form.account) return;
+    setSaved(true);
+    setTimeout(()=>{ onSave(); onClose(); },1600);
+  }
+  return (
+    <>
+      <div className="scrim" onClick={onClose} />
+      <div className="drawer">
+        <div className="drawer-head">
+          <div>
+            <div className="h-title">New Opportunity</div>
+            <div className="h-sub">Owned by Anna Petrova · Orion Industrial</div>
+          </div>
+          <button className="drawer-close" onClick={onClose}>✕</button>
+        </div>
+        {saved ? (
+          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32,textAlign:"center",gap:12}}>
+            <div style={{width:44,height:44,borderRadius:"50%",border:"1.5px solid var(--pos)",color:"var(--pos)",display:"grid",placeItems:"center",fontSize:20,margin:"0 auto"}}>✓</div>
+            <div style={{fontSize:16,fontWeight:600}}>Opportunity created</div>
+            <div style={{fontSize:13,color:"var(--muted)"}}>Added to My Open</div>
+          </div>
+        ) : (
+          <>
+            <div className="drawer-body">
+              <div className="form-section">
+                <h4>Opportunity details</h4>
+                <div className="form-grid">
+                  <div className="form-field full">
+                    <label>Title <span className="req">*</span></label>
+                    <div className="ctl"><input placeholder="e.g. Enterprise Licensing — Acme Corp" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} /></div>
+                  </div>
+                  <div className="form-field full">
+                    <label>Account <span className="req">*</span></label>
+                    <div className="ctl">
+                      <select value={form.account} onChange={e=>setForm(f=>({...f,account:e.target.value}))}>
+                        <option value="">Select account…</option>
+                        {ACCOUNTS.map(a=><option key={a} value={a}>{a}</option>)}
+                      </select>
+                      <span className="chev">▾</span>
+                    </div>
+                  </div>
+                  <div className="form-field">
+                    <label>Stage</label>
+                    <div className="ctl">
+                      <select value={form.stage} onChange={e=>setForm(f=>({...f,stage:e.target.value}))}>
+                        {STAGES.map(s=><option key={s.code} value={s.code}>{s.label}</option>)}
+                      </select>
+                      <span className="chev">▾</span>
+                    </div>
+                  </div>
+                  <div className="form-field">
+                    <label>Expected amount</label>
+                    <div className="ctl"><span className="pre">$</span><input type="number" placeholder="0" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))} /></div>
+                  </div>
+                  <div className="form-field">
+                    <label>Close date</label>
+                    <div className="ctl"><input type="date" value={form.close} onChange={e=>setForm(f=>({...f,close:e.target.value}))} /></div>
+                  </div>
+                </div>
+              </div>
+              <div className="form-section">
+                <h4>Notes</h4>
+                <div className="form-field">
+                  <div className="ctl"><textarea placeholder="Initial context, source, next steps…" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} /></div>
+                </div>
+              </div>
+            </div>
+            <div className="drawer-foot">
+              <div className="hint">Required fields are marked <span style={{color:"var(--accent-2)"}}>*</span></div>
+              <div style={{display:"flex",gap:8}}>
+                <button className="btn" onClick={onClose}>Cancel</button>
+                <button className="btn btn-primary" onClick={handleSave} disabled={!form.title||!form.account} style={{opacity:(!form.title||!form.account)?.5:1}}>Create opportunity</button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
+/* ─── Submit approval modal ─── */
+function SubmitModal({ opp, onClose, onSubmitted }){
+  const [done, setDone] = useState(false);
+  function handleSubmit(){
+    setDone(true);
+    setTimeout(()=>{ onSubmitted(); onClose(); },1600);
+  }
+  return (
+    <>
+      <div className="scrim" onClick={onClose} />
+      <div className="modal">
+        <div className="modal-card">
+          <div className="mhead">
+            <h3>{opp.approval==="sentback"?"Resubmit Approval Request":"Submit for Approval"}</h3>
+            <p>Request will be routed to Finance for review based on tenant policy.</p>
+          </div>
+          {done ? (
+            <div className="mbody" style={{padding:"28px 18px",textAlign:"center",gap:10}}>
+              <div style={{width:40,height:40,borderRadius:"50%",border:"1.5px solid var(--pos)",color:"var(--pos)",display:"grid",placeItems:"center",fontSize:18,margin:"0 auto 10px"}}>✓</div>
+              <div style={{fontWeight:600,fontSize:14}}>Submitted successfully</div>
+              <div style={{fontSize:12.5,color:"var(--muted)"}}>Approvers have been notified</div>
+            </div>
+          ) : (
+            <>
+              <div className="mbody">
+                <dl className="snap">
+                  <dt>Opportunity</dt><dd>{opp.title}</dd>
+                  <dt>Account</dt><dd>{opp.account}</dd>
+                  <dt>Amount</dt><dd>{fmtMoney(opp.amount)}</dd>
+                  <dt>Close date</dt><dd>{fmtClose(opp.close)}</dd>
+                </dl>
+                <div className="form-field">
+                  <label>Justification <span className="req">*</span></label>
+                  <div className="ctl"><textarea placeholder="Describe the reason for this approval request…" style={{minHeight:72}} /></div>
+                </div>
+              </div>
+              <div className="mfoot">
+                <button className="btn" onClick={onClose}>Cancel</button>
+                <button className="btn btn-primary" onClick={handleSubmit}>Submit request</button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ─── Main workspace ─── */
+const VIEWS = [
+  { key:"attention", label:"Needs Attention" },
+  { key:"open",      label:"My Open" },
+  { key:"closing",   label:"Closing Soon" },
+  { key:"all",       label:"All" },
+];
+
+function App(){
+  const [view, setView] = useState("attention");
+  const [q, setQ] = useState("");
+  const [stage, setStage] = useState("");
+  const [appr, setAppr] = useState("");
+  const [account, setAccount] = useState("");
+  const [close, setClose] = useState("");
+  const [selectedId, setSelectedId] = useState(null);
+  const [showMore, setShowMore] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [showNewOpp, setShowNewOpp] = useState(false);
+  const [submitOpp, setSubmitOpp] = useState(null);
+  const [toast, setToast] = useState(null);
+  const createRef = useRef(null);
+
+  function showToast(msg){ setToast(msg); setTimeout(()=>setToast(null),2400); }
+
+  const viewFiltered = useMemo(()=>{
+    let base = OPPS;
+    if(view==="attention") base = base.filter(needsAttention);
+    if(view==="closing") base = base.filter(o=>daysDiff(o.close)<=30);
+    return base;
+  },[view]);
+
+  const filtered = useMemo(()=>{
+    let res = viewFiltered;
+    if(q) res = res.filter(o=>o.title.toLowerCase().includes(q.toLowerCase())||o.account.toLowerCase().includes(q.toLowerCase()));
+    if(stage) res = res.filter(o=>o.stage===stage);
+    if(appr) res = res.filter(o=>o.approval===appr);
+    if(account) res = res.filter(o=>o.account===account);
+    if(close){ const days=parseInt(close); res = res.filter(o=>daysDiff(o.close)<=days); }
+    return res;
+  },[viewFiltered,q,stage,appr,account,close]);
+
+  const viewCounts = useMemo(()=>({
+    attention: OPPS.filter(needsAttention).length,
+    open: OPPS.length,
+    closing: OPPS.filter(o=>daysDiff(o.close)<=30).length,
+    all: OPPS.length,
+  }),[]);
+
+  const selectedOpp = OPPS.find(o=>o.id===selectedId) || null;
+  const hasMoreFilters = account||close;
+  const hasAnyFilter = q||stage||appr||account||close;
+
+  function resetFilters(){ setQ(""); setStage(""); setAppr(""); setAccount(""); setClose(""); }
+
+  return (
+    <>
+      <div className="app">
+        <Sidebar />
+        <div className="main">
+          <TopBar />
+          <div className="content">
+            <KPIs opps={OPPS} />
+
+            {/* Page head */}
+            <div className="page-head">
+              <div className="page-title">Opportunities</div>
+              <div style={{display:"flex",gap:8,alignItems:"center",position:"relative"}}>
+                <div className="split-btn" ref={createRef}>
+                  <button className="main-action" onClick={()=>{ setShowNewOpp(true); setShowCreate(false); }}>
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M6 1v10M1 6h10"/></svg>
+                    New Opportunity
+                  </button>
+                  <button className="caret" onClick={()=>setShowCreate(v=>!v)}>▾</button>
+                </div>
+                {showCreate && (
+                  <CreateDropdown
+                    onNewOpp={()=>setShowNewOpp(true)}
+                    onClose={()=>setShowCreate(false)}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* View tabs */}
+            <div className="view-tabs">
+              {VIEWS.map(v=>(
+                <button key={v.key} className={`view-tab ${view===v.key?"active":""}`}
+                  onClick={()=>{ setView(v.key); setSelectedId(null); resetFilters(); }}>
+                  {v.label}
+                  <span className="ct">{viewCounts[v.key]}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Filter bar */}
+            <div className="filter-bar">
+              <label className="field-ctl search-ctl">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5"/></svg>
+                <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Filter by title or account…" style={{minWidth:0}} />
+              </label>
+              <label className="field-ctl">
+                <span className="lbl">Stage</span>
+                <select value={stage} onChange={e=>setStage(e.target.value)}>
+                  <option value="">All</option>
+                  {STAGES.map(s=><option key={s.code} value={s.code}>{s.label}</option>)}
+                </select>
+                <span className="chev">▾</span>
+              </label>
+              <label className="field-ctl">
+                <span className="lbl">Approval</span>
+                <select value={appr} onChange={e=>setAppr(e.target.value)}>
+                  <option value="">Any</option>
+                  <option value="none">None</option>
+                  <option value="pending">Pending</option>
+                  <option value="sentback">Sent back</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+                <span className="chev">▾</span>
+              </label>
+              <div className="popover-wrap" style={{position:"relative"}}>
+                <button className={`btn btn-sm ${hasMoreFilters?"btn-warn":""}`} onClick={()=>setShowMore(v=>!v)}>
+                  Filters{hasMoreFilters?" ·":""}{hasMoreFilters?" "+[account&&"Account",close&&"Close date"].filter(Boolean).join(", "):""}
+                  {!hasMoreFilters && " ▾"}
+                </button>
+                {showMore && (
+                  <MoreFiltersPopover
+                    account={account} setAccount={setAccount}
+                    close={close} setClose={setClose}
+                    onClose={()=>setShowMore(false)}
+                  />
+                )}
+              </div>
+              {hasAnyFilter && (
+                <button className="btn-ghost btn btn-sm" onClick={resetFilters}>Clear filters</button>
+              )}
+              <span className="lock-chip">
+                <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4"><rect x="2.5" y="5.5" width="7" height="5" rx="0.5"/><path d="M4 5.5V3.8a2 2 0 1 1 4 0V5.5"/></svg>
+                OWNER · ANNA PETROVA
+              </span>
+            </div>
+
+            {/* Workspace */}
+            <div className={`workspace ${selectedOpp?"with-preview":"no-preview"}`}>
+              {/* Table */}
+              {filtered.length===0 ? (
+                <div className="panel">
+                  <div className="panel-head">
+                    <div className="panel-title">Opportunities <em>0 of {viewFiltered.length}</em></div>
+                  </div>
+                  <div className="empty">
+                    <div className="icon">∅</div>
+                    {hasAnyFilter ? (
+                      <>
+                        <div className="ttl">No opportunities match your filters</div>
+                        <div style={{fontSize:12.5}}>Try removing a filter or switching the view tab.</div>
+                        <a className="act" onClick={resetFilters}>Clear filters</a>
+                      </>
+                    ) : view==="attention" ? (
+                      <>
+                        <div className="ttl">You're all caught up</div>
+                        <div style={{fontSize:12.5}}>No opportunities need attention right now.</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="ttl">No opportunities yet</div>
+                        <a className="act" onClick={()=>setShowNewOpp(true)}>Create your first opportunity</a>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <section className="panel">
+                  <div className="panel-head">
+                    <div className="panel-title">
+                      Opportunities
+                      <em>{filtered.length}{filtered.length<viewFiltered.length?` of ${viewFiltered.length}`:""}</em>
+                    </div>
+                    <div className="panel-actions">
+                      <a>Columns</a>
+                      <a>Export</a>
+                    </div>
+                  </div>
+                  <div style={{overflowX:"auto"}}>
+                    <table className="t" style={{minWidth:680}}>
+                      <colgroup>
+                        <col />
+                        <col style={{width:"18%"}} />
+                        <col style={{width:110}} />
+                        <col style={{width:100}} />
+                        <col style={{width:110}} />
+                        <col style={{width:106}} />
+                      </colgroup>
+                      <thead><tr>
+                        <th>Opportunity</th>
+                        <th>Account</th>
+                        <th>Stage</th>
+                        <th className="num">Amount</th>
+                        <th>Close date</th>
+                        <th>Approval</th>
+                      </tr></thead>
+                      <tbody>
+                        {filtered.map(o=>{
+                          const closing = daysDiff(o.close) <= 14;
+                          return (
+                            <tr key={o.id} className={selectedId===o.id?"selected":""} onClick={()=>setSelectedId(id=>id===o.id?null:o.id)}>
+                              <td>
+                                <div className="truncate">{o.title}</div>
+                                <span className="sub mono">{o.id}</span>
+                              </td>
+                              <td className="truncate">{o.account}</td>
+                              <td>
+                                <StagePip stage={o.stage} />
+                                <span className="sub mono" style={{marginTop:2}}>{STAGES.find(s=>s.code===o.stage)?.label}</span>
+                              </td>
+                              <td className="num">{fmtMoney(o.amount)}</td>
+                              <td className={`mono ${closing?"attn":""}`} style={{fontSize:12}}>
+                                {fmtClose(o.close)}
+                                {closing && <span className="sub" style={{color:"var(--neg)"}}>In {daysDiff(o.close)}d</span>}
+                              </td>
+                              <td>
+                                {o.approval==="none"
+                                  ? <span style={{color:"var(--muted)",fontFamily:"JetBrains Mono,monospace",fontSize:11}}>—</span>
+                                  : <Pill kind={o.approval}>{o.approval}</Pill>}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              )}
+
+              {/* Preview */}
+              {selectedOpp && (
+                <Preview
+                  opp={selectedOpp}
+                  onClose={()=>setSelectedId(null)}
+                  onSubmit={o=>setSubmitOpp(o)}
+                />
+              )}
+            </div>
+
+          </div>{/* /content */}
+        </div>{/* /main */}
+      </div>{/* /app */}
+
+      {/* Drawers / modals */}
+      {showNewOpp && (
+        <NewOppDrawer
+          onClose={()=>setShowNewOpp(false)}
+          onSave={()=>showToast("Opportunity created")}
+        />
+      )}
+      {submitOpp && (
+        <SubmitModal
+          opp={submitOpp}
+          onClose={()=>setSubmitOpp(null)}
+          onSubmitted={()=>showToast("Approval request submitted")}
+        />
+      )}
+      {toast && (
+        <div className="toast"><span className="ok">✓</span>{toast}</div>
+      )}
+    </>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+</body>
+</html>

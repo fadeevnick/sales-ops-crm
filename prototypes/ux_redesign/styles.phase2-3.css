@@ -1,0 +1,1017 @@
+/*
+ * styles.phase2-3.css
+ * =====================================================================
+ * Phase 2.3 — Approver Inbox Redesign
+ *
+ * INSTRUCTIONS: Append this entire file to the end of styles.css.
+ * No existing lines in styles.css need to be modified — all changes
+ * are additive and override prior rules only via cascade order or
+ * specificity where a behavioural change is intentional.
+ * =====================================================================
+ */
+
+/* ======================================================================
+   Base class contract — intentionally inherited, NOT re-defined here
+   ======================================================================
+
+   The following class families are used in ApproverInbox.tsx and come
+   from styles.css (base). This patch does not override them; it depends
+   on them being present. Listing them here makes the dependency explicit
+   rather than appearing as gaps.
+
+   CHROME (not redesigned in this pass)
+     rep-workspace, rep-page-head, rep-page-title, rep-page-sub,
+     rep-page-actions, rep-foot-ruler, rep-toast
+
+   BUTTONS (shared app-wide)
+     rep-btn, rep-btn-primary, appr-btn-pos, appr-btn-neg, appr-btn-info
+
+   STATUS PILLS (shared app-wide)
+     rep-pill, p-pending, p-approved, p-rejected, p-sent_back, p-none, .dot
+
+   TABLE INTERNALS (shared app-wide)
+     rep-table-scroll, rep-table, rep-cell-truncate, rep-cell-sub,
+     appr-row-locked, appr-row-decided
+     (appr-row-over is new — defined in this patch)
+
+   EMPTY / LOADING STATES (shared)
+     rep-empty, .icon, .ttl, .reset
+
+   DECISION MODAL (unchanged)
+     rep-scrim, rep-modal, rep-modal-card, appr-modal-card,
+     appr-modal-head, appr-modal-field, appr-modal-ctl,
+     appr-modal-reasons, appr-modal-reason, appr-modal-impact,
+     appr-modal-foot, appr-modal-foothint, appr-required,
+     appr-modal-err, rep-snap
+
+   UTILITY
+     mono, sep
+
+   PANEL OUTER SHELL
+     rep-panel  — provides border, background, min-width:0, flex-column.
+     appr3-panel (defined below) anchors to that shell and forces
+     padding:0 so appr3-* section children sit edge-to-edge inside it.
+
+   SLA BADGES (UNIFIED)
+     appr3-sla + tone modifier (.warn / .overdue / .ok / none)
+     Used by both SlaPill component (preview) and inline table cells.
+     The old appr-sla-pill / appr-sla-{tone} classes are NOT used in
+     ApproverInbox.tsx Phase 2.3 — SlaPill was updated to emit appr3-sla.
+
+   ====================================================================== */
+
+/* ======================================================================
+   Layout: two-pane approver workspace
+   ====================================================================== */
+
+/*
+ * appr3-panel — applied alongside rep-panel on both pane containers.
+ * rep-panel contributes border, background, display:flex, flex-direction:column.
+ * appr3-panel resets padding to 0 so appr3-* section children render
+ * edge-to-edge (scope note, queue head, tabs, filter row, table scroll).
+ */
+.appr3-panel {
+  padding: 0;
+}
+
+/* Override the appr-grid to a tighter queue-first split */
+.appr3-split-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+/* ======================================================================
+   Scope note — compact single-line replacement for the accbox banner
+   ====================================================================== */
+
+.appr3-scope-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--info-soft);
+  font-size: 11.5px;
+  color: var(--ink-2);
+  flex-shrink: 0;
+}
+
+.appr3-scope-note .mk {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--info);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.appr3-scope-note .txt {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.appr3-scope-note .role-key {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+/* ======================================================================
+   Queue panel head — title + inline stats
+   ====================================================================== */
+
+.appr3-queue-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--hairline);
+  gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.appr3-queue-head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.appr3-queue-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.appr3-queue-title em {
+  font-style: normal;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 400;
+  font-size: 10.5px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+/* Inline stats strip */
+.appr3-stats {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  background: var(--paper-2);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.appr3-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 10px;
+  border-right: 1px solid var(--hairline);
+  min-width: 48px;
+}
+
+.appr3-stat:last-child {
+  border-right: 0;
+}
+
+.appr3-stat-val {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.appr3-stat-val.alert {
+  color: var(--neg);
+}
+
+.appr3-stat-val.warn {
+  color: var(--accent-2);
+}
+
+.appr3-stat-lbl {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-2);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.appr3-sort-hint {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  flex-shrink: 0;
+}
+
+/* ======================================================================
+   View tabs (tab strip inside queue panel)
+   ====================================================================== */
+
+.appr3-tabs {
+  display: flex;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper-2);
+  overflow-x: auto;
+  flex-shrink: 0;
+  /* hide scrollbar on webkit */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.appr3-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.appr3-tab {
+  padding: 8px 13px;
+  font: inherit;
+  font-size: 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.appr3-tab:hover {
+  color: var(--ink);
+  background: var(--paper-3);
+}
+
+.appr3-tab.active {
+  color: var(--ink);
+  font-weight: 500;
+  border-bottom-color: var(--accent);
+  background: var(--white);
+}
+
+.appr3-tab .ct {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10.5px;
+  color: var(--muted-2);
+}
+
+.appr3-tab.active .ct {
+  color: var(--accent-2);
+  font-weight: 600;
+}
+
+/* Highlight tabs that relate to "my" work */
+.appr3-tab.mine .ct {
+  color: var(--accent-2);
+}
+
+/* ======================================================================
+   Filter row (compact single line)
+   ====================================================================== */
+
+.appr3-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--white);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.appr3-filter-search {
+  flex: 1 1 160px;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.appr3-filter-search:focus-within {
+  border-color: var(--ink);
+  background: var(--white);
+}
+
+.appr3-filter-search input {
+  border: 0;
+  background: transparent;
+  outline: 0;
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.appr3-filter-search input::placeholder {
+  color: var(--muted-2);
+}
+
+.appr3-filter-select {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 4px 7px;
+  font-size: 12px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.appr3-filter-select:focus-within {
+  border-color: var(--ink);
+  background: var(--white);
+}
+
+.appr3-filter-lbl {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.appr3-filter-select select {
+  border: 0;
+  background: transparent;
+  outline: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink);
+  appearance: none;
+  cursor: pointer;
+}
+
+.appr3-filter-row-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border: 1px solid var(--line-2);
+  background: var(--paper-2);
+  color: var(--muted);
+  border-radius: 2px;
+  white-space: nowrap;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.appr3-reset-btn {
+  font-size: 11px;
+  color: var(--accent-2);
+  padding: 4px 7px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.appr3-reset-btn:hover {
+  border-color: #D9BFA0;
+  background: var(--accent-soft);
+}
+
+/* ======================================================================
+   Queue table: tighter padding
+   ====================================================================== */
+
+.appr3-queue-tbl th,
+.appr3-queue-tbl td {
+  padding: 7px 10px;
+}
+
+.appr3-queue-tbl th {
+  padding: 5px 10px;
+}
+
+/* Overdue row state (addition to existing appr-row-locked / appr-row-decided) */
+.appr-row-over td {
+  background: #FBEFE8 !important;
+}
+
+/* SLA pill used inside queue table cells */
+.appr3-sla {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: 2px;
+  border: 1px solid var(--line-2);
+  background: var(--paper-2);
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.appr3-sla.warn {
+  color: var(--accent-2);
+  border-color: #D9BFA0;
+  background: var(--warn-soft);
+}
+
+.appr3-sla.overdue {
+  color: var(--neg);
+  border-color: #D6B0A8;
+  background: var(--neg-soft);
+  font-weight: 600;
+}
+
+.appr3-sla.ok {
+  color: var(--pos);
+  border-color: #B2C8A8;
+  background: var(--pos-soft);
+}
+
+/* ======================================================================
+   Preview panel — column-flex with sticky header and scrollable body
+   ====================================================================== */
+
+.appr3-preview {
+  position: sticky;
+  top: 72px;
+  align-self: flex-start;
+  max-height: calc(100vh - 90px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.appr3-preview-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Preview header ── */
+
+.appr3-pv-head {
+  padding: 11px 14px 10px;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--paper-2);
+  flex-shrink: 0;
+}
+
+.appr3-pv-id-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  flex-wrap: wrap;
+}
+
+.appr3-pv-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10.5px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.appr3-pv-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.appr3-pv-acct {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.appr3-pv-acct .sep {
+  color: var(--line-2);
+}
+
+/* ── Status banner ── */
+
+.appr3-banner {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--hairline);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.appr3-banner-yours  { background: var(--warn-soft);  border-bottom-color: #D9BFA0;  }
+.appr3-banner-locked { background: var(--paper-2); }
+.appr3-banner-approved { background: var(--pos-soft); border-bottom-color: #B2C8A8; }
+.appr3-banner-rejected { background: var(--neg-soft); border-bottom-color: #D6B0A8; }
+.appr3-banner-sentback { background: var(--info-soft); border-bottom-color: #A4C0C8; }
+.appr3-banner-pending  { background: var(--paper-2); }
+
+.appr3-banner-mk {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--white);
+  border: 1.5px solid var(--line-2);
+  display: grid;
+  place-items: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 1px;
+}
+
+.appr3-banner-yours   .appr3-banner-mk { border-color: var(--warn);   color: var(--accent-2); }
+.appr3-banner-approved .appr3-banner-mk { border-color: var(--pos);   color: var(--pos);       }
+.appr3-banner-rejected .appr3-banner-mk { border-color: var(--neg);   color: var(--neg);       }
+.appr3-banner-sentback .appr3-banner-mk { border-color: var(--info);  color: var(--info);      }
+.appr3-banner-locked   .appr3-banner-mk { border-color: var(--muted-2); color: var(--muted);   }
+
+.appr3-banner-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.appr3-banner-eyebrow {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.appr3-banner-headline {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.appr3-banner-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.02em;
+}
+
+/* ── Decision action bar (pinned below banner, visible without scrolling) ── */
+
+.appr3-action-bar {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--white);
+  flex-shrink: 0;
+}
+
+.appr3-action-hint {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  flex: 1;
+  min-width: 0;
+}
+
+.appr3-action-bar .btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ── Scrollable detail sections ── */
+
+.appr3-pv-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--hairline);
+  flex-shrink: 0;
+}
+
+.appr3-pv-cell {
+  padding: 8px 12px;
+  border-right: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  min-width: 0;
+}
+
+.appr3-pv-cell:nth-child(2n) {
+  border-right: 0;
+}
+
+.appr3-pv-cell:nth-last-child(-n+2) {
+  border-bottom: 0;
+}
+
+.appr3-pv-l {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.appr3-pv-v {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.appr3-pv-v small {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 11px;
+}
+
+.appr3-pv-v.mono-val {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+}
+
+/* ── Section blocks ── */
+
+.appr3-section {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.appr3-section:last-of-type {
+  border-bottom: 0;
+}
+
+.appr3-section-title {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.appr3-section-title em {
+  font-style: normal;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--muted-2);
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-size: 9.5px;
+}
+
+/* Justification body */
+.appr3-just {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  padding: 8px 10px;
+  background: var(--paper-2);
+  border-left: 2px solid var(--line-2);
+  text-wrap: pretty;
+}
+
+/* ── Snapshot grid ── */
+
+.appr3-snap-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--hairline);
+  background: var(--white);
+}
+
+.appr3-snap-cell {
+  padding: 7px 10px;
+  border-right: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  min-width: 0;
+}
+
+.appr3-snap-cell:nth-child(2n) {
+  border-right: 0;
+}
+
+.appr3-snap-cell:nth-last-child(-n+2) {
+  border-bottom: 0;
+}
+
+.appr3-snap-l {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.appr3-snap-v {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+
+.appr3-snap-v small {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 10.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.appr3-snap-v.mono-val {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+}
+
+.appr3-snap-v.num-val {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+}
+
+/* ── Approval chain ── */
+
+.appr3-chain {
+  display: flex;
+  flex-direction: column;
+}
+
+.appr3-chain-step {
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  gap: 8px;
+  padding: 8px 0;
+  position: relative;
+  align-items: flex-start;
+}
+
+.appr3-chain-step + .appr3-chain-step::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: -8px;
+  height: 8px;
+  width: 1.5px;
+  background: var(--line-2);
+}
+
+.appr3-chain-mk {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--white);
+  border: 1.5px solid var(--line-2);
+  display: grid;
+  place-items: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  position: relative;
+  z-index: 1;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.appr3-chain-step.cur  .appr3-chain-mk { border-color: var(--warn); background: var(--warn-soft);  color: var(--accent-2); }
+.appr3-chain-step.done .appr3-chain-mk { border-color: var(--pos);  background: var(--pos-soft);   color: var(--pos);      }
+.appr3-chain-step.fut  .appr3-chain-mk { border-style: dashed;      color: var(--muted-2);          }
+
+.appr3-chain-nm {
+  font-size: 12.5px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  line-height: 1.3;
+}
+
+.appr3-chain-who {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.02em;
+  margin-top: 2px;
+}
+
+.appr3-chain-badge {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 1px 5px;
+  border: 1px solid var(--line-2);
+  background: var(--paper);
+  border-radius: 2px;
+  white-space: nowrap;
+  align-self: flex-start;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.appr3-chain-step.cur  .appr3-chain-badge { color: var(--accent-2); background: var(--warn-soft);  border-color: #D9BFA0;  }
+.appr3-chain-step.done .appr3-chain-badge { color: var(--pos);       background: var(--pos-soft);   border-color: #B2C8A8;  }
+
+/* ── History / audit ── */
+
+.appr3-hist-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--hairline);
+}
+
+.appr3-hist-row:last-child {
+  border-bottom: 0;
+}
+
+.appr3-hist-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.appr3-hist-title {
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  line-height: 1.3;
+}
+
+.appr3-hist-by {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10.5px;
+  color: var(--muted-2);
+}
+
+.appr3-hist-meta {
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 2px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.02em;
+}
+
+.appr3-hist-comment {
+  font-size: 11.5px;
+  color: var(--ink-2);
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: var(--paper-2);
+  border-left: 2px solid var(--line-2);
+  line-height: 1.5;
+}
+
+.appr3-hist-ts {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ── Open full detail CTA (bottom of preview) ── */
+
+.appr3-open-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: var(--paper-2);
+  color: var(--ink-2);
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  flex-shrink: 0;
+}
+
+.appr3-open-cta:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.appr3-open-cta:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: var(--paper-2);
+  color: var(--muted);
+}
+
+/* ======================================================================
+   Responsive overrides
+   ====================================================================== */
+
+@media (max-width: 1200px) {
+  .appr3-split-grid {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .appr3-split-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .appr3-preview {
+    position: relative;
+    top: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .appr3-preview-body {
+    overflow: visible;
+  }
+}
+
+@media (max-width: 760px) {
+  .appr3-stats {
+    display: none;
+  }
+
+  .appr3-filter-search {
+    flex-basis: 100%;
+  }
+}

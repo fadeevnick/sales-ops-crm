@@ -1,0 +1,533 @@
+/*
+ * styles.phase2-2.css
+ * =====================================================================
+ * Phase 2.2 — Opportunity Detail redesign
+ *
+ * INSTRUCTIONS: Append this entire file to the end of styles.css.
+ * No existing opp-* rules are removed — all new rules either add
+ * new selectors or use higher specificity to override specific
+ * base values where the layout changes.
+ *
+ * New additions:
+ *   .opp-head-v2 and sub-elements (replaces .opp-head for Phase 2.2)
+ *   .opp-layout two-column grid
+ *   .opp-main and .opp-ctx-col column containers
+ *   .opp-alert-badge contextual warn/neg badges in header
+ *   .opp-audit-collapse <details> accordion
+ *   .opp-drawer-wide wider drawer variant for edit + approval
+ *   .opp-appr-drawer-foot sticky footer for approval drawer
+ *   .opp-collapse-toggle for completed activities toggle
+ *   .opp-approval-summary compact inline section
+ *
+ * Existing opp-* rules that remain fully in use (unchanged):
+ *   .opp-stages-panel, .opp-stages, .opp-stage-cell, .opp-stagepop
+ *   .opp-panel, .opp-panel-head, .opp-panel-title, .opp-panel-actions
+ *   .opp-composer, .opp-composer-row, .opp-composer-foot
+ *   .opp-acts, .opp-act, .opp-act-time, .opp-act-title, .opp-act-meta
+ *   .opp-section-sub
+ *   .opp-appr-banner, .opp-appr-summary
+ *   .opp-blocked, .opp-blocked-mark
+ *   .opp-process, .opp-process-step
+ *   .opp-snap, .opp-snap-cell
+ *   .opp-submit-form, .opp-submit-types, .opp-submit-type
+ *   .opp-urgency-row, .opp-urgency-opt
+ *   .opp-form-field, .opp-v-banner
+ *   .opp-submit-foot, .opp-submit-summary
+ *   .opp-chain, .opp-chain-step, .opp-chain-mark, .opp-chain-body
+ *   .opp-timeline, .opp-tl-item, .opp-tl-time, .opp-tl-node, etc.
+ *   .opp-ctx-head, .opp-ctx-row, .opp-ctx-name, .opp-ctx-sub
+ *   .opp-ctx-rel, .opp-mgr-block, .opp-mgr-head, .opp-mgr-actions
+ *   .opp-field, .opp-field-l, .opp-field-v, .opp-field-tag
+ *   .opp-fields, .opp-fields-foot
+ * =====================================================================
+ */
+
+/* ======================================================================
+   Two-column page layout
+   ====================================================================== */
+
+/* Override Phase 2 single-column stacked layout */
+.opp-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.opp-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 0 14px;
+  align-items: start;
+  margin-top: 14px;
+}
+
+.opp-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.opp-ctx-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 56px; /* below app topbar */
+  max-height: calc(100vh - 72px);
+  overflow-y: auto;
+}
+
+/* ======================================================================
+   Simplified header (replaces .opp-head for Phase 2.2)
+   ====================================================================== */
+
+.opp-head-v2 {
+  background: var(--white);
+  border: 1px solid var(--line);
+  padding: 16px 20px 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+/* Main title area */
+.opp-head-v2-main {
+  min-width: 0;
+}
+
+/* Title row: kind badge + h1 + ID + stage pill + approval pill + alert badges */
+/* Reuses existing .opp-head-title-row, .opp-kind, .opp-title, .opp-id */
+
+/* Alert badges — contextual, only rendered when there is an issue */
+.opp-alert-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 2px;
+  border: 1px solid var(--line-2);
+  white-space: nowrap;
+}
+
+.opp-alert-badge.warn {
+  background: #fdf5e3;
+  border-color: #d9bfa0;
+  color: var(--accent-2);
+}
+
+.opp-alert-badge.neg {
+  background: #fbeae3;
+  border-color: #d6b0a8;
+  color: #9a3a2f;
+}
+
+/* Sub-header — canonical location for owner/account/amount/close/contact */
+.opp-head-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+
+.opp-head-sub .item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.opp-head-sub .lbl {
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.opp-head-sub .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.opp-head-sub .sub {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.opp-head-sub .sep {
+  color: var(--line-2);
+  font-size: 0.7rem;
+}
+
+/* Action bar */
+.opp-head-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.opp-head-actions > .rep-btn,
+.opp-head-actions > .rep-btn-primary,
+.opp-head-actions > .rep-btn-disabled {
+  width: 100%;
+  justify-content: center;
+}
+
+.opp-head-env {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.64rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  padding-top: 4px;
+}
+
+.opp-head-env .sep { color: var(--line-2); }
+
+/* ======================================================================
+   Audit timeline accordion
+   ====================================================================== */
+
+.opp-audit-collapse {
+  background: var(--white);
+  border: 1px solid var(--line);
+}
+
+.opp-audit-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  gap: 10px;
+}
+
+.opp-audit-summary::-webkit-details-marker { display: none; }
+
+.opp-audit-summary::before {
+  content: "▸";
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  transition: transform 0.15s;
+  display: inline-block;
+}
+
+.opp-audit-collapse[open] .opp-audit-summary::before {
+  transform: rotate(90deg);
+}
+
+.opp-audit-collapse[open] .opp-audit-summary {
+  border-bottom: 1px solid var(--hairline);
+}
+
+.opp-audit-summary-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.opp-audit-summary-ct {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-left: auto;
+  margin-right: 6px;
+}
+
+/* ======================================================================
+   Wider drawer variant (edit + approval)
+   ====================================================================== */
+
+.opp-drawer-wide {
+  width: 680px;
+}
+
+/* Sticky footer for approval drawer */
+.opp-appr-drawer-foot {
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+  background: var(--paper-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.opp-appr-drawer-foot .summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.opp-appr-drawer-foot .summary .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.opp-appr-drawer-foot .summary .sep { color: var(--line-2); }
+
+.opp-appr-drawer-foot .actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ======================================================================
+   Completed activities collapse toggle
+   ====================================================================== */
+
+.opp-collapse-toggle {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 0.74rem;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.opp-collapse-toggle:hover { color: var(--ink); }
+
+/* ======================================================================
+   Responsive overrides
+   ====================================================================== */
+
+@media (max-width: 1200px) {
+  .opp-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .opp-ctx-col {
+    position: relative;
+    top: auto;
+    max-height: none;
+    overflow-y: visible;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .opp-ctx-col > * {
+    flex: 1 1 280px;
+    min-width: 0;
+  }
+
+  .opp-head-v2 {
+    grid-template-columns: 1fr;
+  }
+
+  .opp-head-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .opp-head-actions > .rep-btn,
+  .opp-head-actions > .rep-btn-primary,
+  .opp-head-actions > .rep-btn-disabled {
+    width: auto;
+  }
+
+  .opp-drawer-wide {
+    width: 100%;
+    max-width: 680px;
+  }
+}
+
+@media (max-width: 720px) {
+  .opp-head-sub {
+    gap: 4px;
+  }
+
+  .opp-drawer-wide {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* ======================================================================
+   Deal overview panel — read-only field inspection surface
+   ====================================================================== */
+
+/* Required-fields missing banner */
+.opp-missing-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #fbeae3;
+  border-bottom: 1px solid #d6b0a8;
+  border-left: 3px solid #9a3a2f;
+  font-size: 0.78rem;
+  color: #9a3a2f;
+  line-height: 1.45;
+}
+
+.opp-missing-banner .mark {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.opp-missing-banner .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+}
+
+/* Field rows */
+.opp-ov-fields {
+  display: flex;
+  flex-direction: column;
+}
+
+.opp-ov-row {
+  display: grid;
+  grid-template-columns: 148px 1fr;
+  gap: 8px 12px;
+  align-items: baseline;
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--hairline);
+  min-width: 0;
+}
+
+.opp-ov-row:last-child {
+  border-bottom: 0;
+}
+
+.opp-ov-row.missing {
+  background: #fdf5f3;
+}
+
+.opp-ov-row .l {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.opp-ov-row.missing .l {
+  color: #9a3a2f;
+}
+
+.opp-ov-row .v {
+  font-size: 0.82rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.opp-ov-row .v.mono,
+.opp-ov-row .v .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.82rem;
+}
+
+.opp-ov-row .v.empty {
+  color: var(--muted);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.opp-ov-row .v small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 400;
+}
+
+/* ======================================================================
+   Context panel — IDs only (names are canonical in the header)
+   ====================================================================== */
+
+.opp-ctx-ids {
+  display: flex;
+  flex-direction: column;
+}
+
+.opp-ctx-id-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--hairline);
+  min-width: 0;
+}
+
+.opp-ctx-id-row:last-child {
+  border-bottom: 0;
+}
+
+.opp-ctx-id-row .mark {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line-2);
+  background: var(--paper-2);
+  border-radius: 2px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.opp-ctx-id-row.current .mark {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-2);
+}
+
+.opp-ctx-id-row .l {
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.opp-ctx-id-row .v {
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.opp-ctx-id-row .v.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--ink-2);
+  font-size: 0.76rem;
+  letter-spacing: 0.02em;
+}

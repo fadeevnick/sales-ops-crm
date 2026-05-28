@@ -1,0 +1,1333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sales Ops CRM — UX Simplification Plan</title>
+<meta name="viewport" content="width=1440" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #F4F1EB;
+    --paper-2: #EEEAE0;
+    --paper-3: #E6E1D4;
+    --ink: #17150F;
+    --ink-2: #3A372E;
+    --muted: #6E6A5C;
+    --muted-2: #8C8779;
+    --line: #D6D0BF;
+    --hairline: #E4DFD0;
+    --accent: #B57321;
+    --accent-2: #8A5616;
+    --accent-soft: #F2E3C8;
+    --pos: #3F6B3A;
+    --pos-soft: #E2EAD6;
+    --neg: #9A3A2F;
+    --neg-soft: #F0DAD3;
+    --warn: #A36A11;
+    --warn-soft: #F4E3C1;
+    --info: #2D5B6B;
+    --info-soft: #D6E1E4;
+    --white: #FBFAF6;
+    font-family: "Geist", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-feature-settings: "ss01", "cv11";
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body { font-size: 13px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .mono { font-family: "JetBrains Mono", monospace; }
+  ::selection { background: var(--accent-soft); color: var(--ink); }
+
+  /* ─── Layout ─── */
+  .shell { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+
+  /* ─── Left nav ─── */
+  .sidenav {
+    background: var(--paper-2);
+    border-right: 1px solid var(--line);
+    position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column;
+    overflow-y: auto;
+  }
+  .sidenav-head {
+    padding: 20px 20px 14px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .sidenav-title {
+    font-size: 11px; font-weight: 600; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 4px;
+  }
+  .sidenav-doc {
+    font-size: 14px; font-weight: 600; letter-spacing: -.01em;
+    color: var(--ink);
+  }
+  .sidenav-meta {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px; color: var(--muted); margin-top: 6px;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .sidenav-meta .env {
+    padding: 1px 5px; border: 1px solid #D9BFA0;
+    background: var(--warn-soft); color: var(--accent-2); border-radius: 2px;
+    font-size: 9px; letter-spacing: .06em; text-transform: uppercase;
+  }
+  .nav-list { padding: 10px 0 20px; flex: 1; }
+  .nav-group-label {
+    font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--muted-2); padding: 14px 20px 4px;
+  }
+  .nav-group-label:first-child { padding-top: 8px; }
+  .nav-link {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 20px; cursor: pointer;
+    color: var(--ink-2); font-size: 12.5px;
+    border-left: 2px solid transparent;
+    text-decoration: none;
+  }
+  .nav-link:hover { background: var(--paper-3); color: var(--ink); }
+  .nav-link.active {
+    background: var(--paper-3); border-left-color: var(--accent);
+    color: var(--ink); font-weight: 500;
+  }
+  .nav-link .num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9.5px; color: var(--muted);
+    margin-left: auto;
+  }
+  .nav-link.active .num { color: var(--accent-2); }
+
+  /* ─── Main content ─── */
+  .main { min-width: 0; padding: 0 0 80px; }
+
+  /* ─── Top bar ─── */
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--paper); border-bottom: 1px solid var(--line);
+    padding: 14px 32px;
+    display: flex; align-items: center; gap: 16px; justify-content: space-between;
+  }
+  .topbar-title { font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+  .topbar-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .topbar-meta { display: flex; gap: 12px; align-items: center; }
+  .tag {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase;
+    padding: 2px 6px; border-radius: 2px; border: 1px solid var(--line);
+    color: var(--muted); background: var(--paper-2);
+  }
+
+  /* ─── Doc intro ─── */
+  .doc-intro {
+    padding: 28px 32px 24px;
+    border-bottom: 1px solid var(--hairline);
+    background: var(--white);
+  }
+  .intro-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+    border: 1px solid var(--line); margin-top: 20px;
+  }
+  .intro-cell {
+    padding: 14px 16px; border-right: 1px solid var(--hairline);
+  }
+  .intro-cell:last-child { border-right: 0; }
+  .intro-cell-label {
+    font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 6px;
+  }
+  .intro-cell-body { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; }
+
+  /* ─── Global rules ─── */
+  .global-rules {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .section-label {
+    font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after {
+    content: ""; flex: 1; height: 1px; background: var(--hairline);
+  }
+  .rules-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+  }
+  .rule {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 12px; background: var(--white); border: 1px solid var(--line);
+  }
+  .rule-num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px; color: var(--accent-2);
+    background: var(--accent-soft); border: 1px solid #D9BFA0;
+    width: 20px; height: 20px; display: grid; place-items: center;
+    flex-shrink: 0; font-weight: 600; margin-top: 1px;
+  }
+  .rule-text { font-size: 12.5px; color: var(--ink-2); line-height: 1.45; }
+
+  /* ─── Screen sections ─── */
+  .screen-section {
+    border-bottom: 1px solid var(--hairline);
+    scroll-margin-top: 60px;
+  }
+  .screen-header {
+    padding: 24px 32px 20px;
+    background: var(--white);
+    border-bottom: 1px solid var(--hairline);
+    display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: start;
+  }
+  .screen-num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px; font-weight: 600; letter-spacing: .06em;
+    color: var(--muted-2); background: var(--paper-2);
+    border: 1px solid var(--line); padding: 4px 8px;
+    height: 28px; display: grid; place-items: center; flex-shrink: 0;
+  }
+  .screen-name { font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+  .screen-job {
+    font-size: 12.5px; color: var(--muted); margin-top: 4px;
+    font-style: italic;
+  }
+  .role-tags { display: flex; gap: 6px; align-items: flex-start; flex-wrap: wrap; justify-content: flex-end; }
+  .role-tag {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9.5px; letter-spacing: .05em; text-transform: uppercase;
+    padding: 3px 7px; border-radius: 2px; border: 1px solid var(--line-2);
+    background: var(--paper-2); color: var(--ink-2);
+    white-space: nowrap;
+  }
+  .role-tag.rep { background: var(--info-soft); border-color: #A4C0C8; color: var(--info); }
+  .role-tag.approver { background: var(--pos-soft); border-color: #B2C8A8; color: var(--pos); }
+  .role-tag.manager { background: var(--warn-soft); border-color: #D9BFA0; color: var(--accent-2); }
+  .role-tag.admin { background: var(--neg-soft); border-color: #D6B0A8; color: var(--neg); }
+  .role-tag.exec { background: var(--paper-3); border-color: var(--line-2); color: var(--ink-2); }
+
+  /* ─── Screen body grid ─── */
+  .screen-body {
+    padding: 20px 32px 28px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .plan-card {
+    background: var(--white); border: 1px solid var(--line);
+    display: flex; flex-direction: column;
+  }
+  .plan-card.full { grid-column: 1 / -1; }
+  .plan-card.half { grid-column: span 2; }
+  .plan-card-head {
+    padding: 9px 12px; border-bottom: 1px solid var(--hairline);
+    background: var(--paper-2);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .plan-card-icon {
+    width: 18px; height: 18px; display: grid; place-items: center;
+    font-size: 11px; flex-shrink: 0;
+  }
+  .plan-card-label {
+    font-size: 10px; font-weight: 600; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .plan-card-body { padding: 10px 12px; flex: 1; }
+
+  /* Category colors */
+  .card-visible .plan-card-head { background: var(--pos-soft); border-color: #B2C8A8; }
+  .card-visible .plan-card-label { color: var(--pos); }
+  .card-drawer .plan-card-head { background: var(--info-soft); border-color: #A4C0C8; }
+  .card-drawer .plan-card-label { color: var(--info); }
+  .card-collapsed .plan-card-head { background: var(--paper-3); }
+  .card-collapsed .plan-card-label { color: var(--ink-2); }
+  .card-hidden .plan-card-head { background: var(--neg-soft); border-color: #D6B0A8; }
+  .card-hidden .plan-card-label { color: var(--neg); }
+  .card-cta .plan-card-head { background: var(--accent-soft); border-color: #D9BFA0; }
+  .card-cta .plan-card-label { color: var(--accent-2); }
+
+  /* Items */
+  .item-list { display: flex; flex-direction: column; gap: 5px; }
+  .item {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: 12.5px; color: var(--ink-2); line-height: 1.4;
+    padding: 5px 0; border-bottom: 1px solid var(--hairline);
+  }
+  .item:last-child { border-bottom: 0; padding-bottom: 0; }
+  .item-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--line); flex-shrink: 0; margin-top: 5px;
+  }
+  .card-visible .item-dot { background: var(--pos); }
+  .card-drawer .item-dot { background: var(--info); }
+  .card-collapsed .item-dot { background: var(--muted); }
+  .card-hidden .item-dot { background: var(--neg); }
+  .card-cta .item-dot { background: var(--accent); }
+
+  .item-sub { font-size: 11px; color: var(--muted); margin-top: 1px; font-family: "JetBrains Mono", monospace; }
+
+  /* CTA row */
+  .cta-row {
+    padding: 12px 32px 16px;
+    display: flex; gap: 16px; align-items: flex-start;
+    border-bottom: 1px solid var(--hairline);
+    background: var(--paper-2);
+  }
+  .cta-block { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .cta-block-label {
+    font-size: 10px; font-weight: 600; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .cta-primary {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12.5px; font-weight: 500; padding: 7px 12px;
+    background: var(--ink); color: var(--paper);
+    border: 1px solid var(--ink); border-radius: 3px;
+    width: fit-content;
+  }
+  .cta-secondary {
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .cta-sec-item {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; padding: 5px 10px;
+    background: var(--white); color: var(--ink-2);
+    border: 1px solid var(--line); border-radius: 3px;
+  }
+
+  /* Current state callout */
+  .current-state {
+    padding: 10px 12px;
+    background: #FBEFE8; border: 1px solid #E8C8B8;
+    border-left: 3px solid var(--neg);
+    font-size: 12px; color: var(--ink-2); line-height: 1.5;
+    margin-bottom: 12px;
+  }
+  .current-state strong { color: var(--neg); }
+
+  /* ─── Legend ─── */
+  .legend {
+    display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+    padding: 12px 32px; background: var(--paper);
+    border-bottom: 1px solid var(--hairline);
+    position: sticky; top: 61px; z-index: 8;
+  }
+  .legend-label { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11.5px; color: var(--ink-2);
+  }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .ld-visible { background: var(--pos); }
+  .ld-drawer { background: var(--info); }
+  .ld-collapsed { background: var(--muted); }
+  .ld-hidden { background: var(--neg); }
+  .ld-cta { background: var(--accent); }
+
+  /* ─── Scroll target links ─── */
+  a[href^="#"] { text-decoration: none; color: inherit; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ─── Left nav ─── -->
+<nav class="sidenav">
+  <div class="sidenav-head">
+    <div class="sidenav-title">Sales Ops CRM</div>
+    <div class="sidenav-doc">UX Simplification Plan</div>
+    <div class="sidenav-meta">
+      <span class="env">Local Pilot</span>
+      May 2026
+    </div>
+  </div>
+  <div class="nav-list">
+    <div class="nav-group-label">Foundations</div>
+    <a href="#intro" class="nav-link active">Overview &amp; Principles</a>
+    <a href="#global" class="nav-link">Global UX Rules</a>
+    <div class="nav-group-label">Screens</div>
+    <a href="#s01" class="nav-link">01 App Shell / Navigation <span class="num">all</span></a>
+    <a href="#s02" class="nav-link">02 Sales Rep Workspace <span class="num">rep</span></a>
+    <a href="#s03" class="nav-link">03 Opportunity Detail <span class="num">rep</span></a>
+    <a href="#s04" class="nav-link">04 Submit Approval Flow <span class="num">rep</span></a>
+    <a href="#s05" class="nav-link">05 Approver Inbox <span class="num">apr</span></a>
+    <a href="#s06" class="nav-link">06 Approval Decision Detail <span class="num">apr</span></a>
+    <a href="#s07" class="nav-link">07 Account Detail <span class="num">rep/mgr</span></a>
+    <a href="#s08" class="nav-link">08 Manager Pipeline <span class="num">mgr</span></a>
+    <a href="#s09" class="nav-link">09 Metadata Admin <span class="num">adm</span></a>
+    <a href="#s10" class="nav-link">10 Import / Export <span class="num">adm</span></a>
+    <a href="#s11" class="nav-link">11 Duplicate Review / Merge <span class="num">adm</span></a>
+    <a href="#s12" class="nav-link">12 Executive Dashboard <span class="num">exec</span></a>
+  </div>
+</nav>
+
+<!-- ─── Main ─── -->
+<main class="main">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">UX Simplification Plan</div>
+      <div class="topbar-sub">Sales Ops CRM · LOCAL PILOT · 12 screens covered</div>
+    </div>
+    <div class="topbar-meta">
+      <span class="tag">v1.0</span>
+      <span class="tag">May 27 2026</span>
+    </div>
+  </div>
+
+  <!-- Legend (sticky) -->
+  <div class="legend">
+    <span class="legend-label">Key</span>
+    <span class="legend-item"><span class="legend-dot ld-visible"></span>Visible by default</span>
+    <span class="legend-item"><span class="legend-dot ld-drawer"></span>Move to drawer / modal</span>
+    <span class="legend-item"><span class="legend-dot ld-collapsed"></span>Collapsed by default</span>
+    <span class="legend-item"><span class="legend-dot ld-hidden"></span>Role-hidden</span>
+    <span class="legend-item"><span class="legend-dot ld-cta"></span>Primary CTA / actions</span>
+  </div>
+
+  <!-- ─── Intro ─── -->
+  <section id="intro">
+    <div class="doc-intro">
+      <div class="section-label">Problem Statement</div>
+      <p style="font-size:14px;line-height:1.6;max-width:760px;margin:0;color:var(--ink-2);">
+        Across all screens, Sales Ops CRM currently exposes too many capabilities on the first viewport.
+        The product reads as a dense technical dashboard rather than a focused operational tool.
+        This plan defines — concretely — what stays visible, what moves behind progressive disclosure,
+        and what is hidden by role. The governing principle: <strong>each screen has one primary job.</strong>
+      </p>
+      <div class="intro-grid">
+        <div class="intro-cell">
+          <div class="intro-cell-label">Scope</div>
+          <div class="intro-cell-body">12 screens · App Shell through Executive Dashboard · all roles</div>
+        </div>
+        <div class="intro-cell">
+          <div class="intro-cell-label">Environment</div>
+          <div class="intro-cell-body">LOCAL PILOT · desktop-first at 1440px · keyboard &amp; mouse primary</div>
+        </div>
+        <div class="intro-cell">
+          <div class="intro-cell-label">Disclosure Primitives</div>
+          <div class="intro-cell-body">Right drawer · centered modal · collapsed accordion · contextual side panel · detail drilldown page</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Global rules ─── -->
+  <section id="global">
+    <div class="global-rules">
+      <div class="section-label">10 Global UX Rules — apply to every screen</div>
+      <div class="rules-grid">
+        <div class="rule"><div class="rule-num">01</div><div class="rule-text">Overview screens show: list, 3–5 key metrics, filters, next obvious action. Nothing else on load.</div></div>
+        <div class="rule"><div class="rule-num">02</div><div class="rule-text">Detail screens show: record summary (name, status, key numbers) + primary actions. Secondary fields on scroll or tab.</div></div>
+        <div class="rule"><div class="rule-num">03</div><div class="rule-text">Multi-step workflows live in drawers or modals — not inline as stacked page sections.</div></div>
+        <div class="rule"><div class="rule-num">04</div><div class="rule-text">Audit log, change history, and system events are collapsed by default behind an "Activity" accordion.</div></div>
+        <div class="rule"><div class="rule-num">05</div><div class="rule-text">Admin metadata, field IDs, sync status, and debug info are hidden unless the user opens "Admin details".</div></div>
+        <div class="rule"><div class="rule-num">06</div><div class="rule-text">Role-specific actions are only rendered when the current session role matches. No grayed-out inaccessible buttons.</div></div>
+        <div class="rule"><div class="rule-num">07</div><div class="rule-text">Right-side context panels show a preview only (summary, quick facts). Full detail always opens in a drawer.</div></div>
+        <div class="rule"><div class="rule-num">08</div><div class="rule-text">Tables show max 6 columns by default. Column chooser available in a popover. Dense mode opt-in per user.</div></div>
+        <div class="rule"><div class="rule-num">09</div><div class="rule-text">Empty states show one action only: the next step the user should take. No product feature descriptions.</div></div>
+        <div class="rule"><div class="rule-num">10</div><div class="rule-text">No nested cards. No "everything dashboard" panels. One level of nesting max: page → card/panel.</div></div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════
+       01 APP SHELL
+  ═══════════════════════════════════════════════ -->
+  <section class="screen-section" id="s01">
+    <div class="screen-header">
+      <div class="screen-num">01</div>
+      <div>
+        <div class="screen-name">App Shell / Navigation</div>
+        <div class="screen-job">Primary job: orient the user by role and surface the most important pending item.</div>
+      </div>
+      <div class="role-tags">
+        <span class="role-tag rep">Rep</span>
+        <span class="role-tag approver">Approver</span>
+        <span class="role-tag manager">Manager</span>
+        <span class="role-tag admin">Admin</span>
+        <span class="role-tag exec">Exec</span>
+      </div>
+    </div>
+    <div class="screen-body">
+      <div class="plan-card card-visible">
+        <div class="plan-card-head"><div class="plan-card-icon">●</div><div class="plan-card-label">Visible by default</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Brand mark + product name only (no tagline)</div></div>
+            <div class="item"><div class="item-dot"></div><div>Tenant name + LOCAL PILOT badge</div></div>
+            <div class="item"><div class="item-dot"></div><div>Role-filtered navigation — only sections the current role can access are rendered; no disabled/grayed items</div></div>
+            <div class="item"><div class="item-dot"></div><div>Active section highlighted; unread badge count on Inbox and Approvals items only</div></div>
+            <div class="item"><div class="item-dot"></div><div>User avatar + role label at bottom of sidebar</div></div>
+            <div class="item"><div class="item-dot"></div><div>Global search bar in top bar (always visible)</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-drawer">
+        <div class="plan-card-head"><div class="plan-card-icon">▶</div><div class="plan-card-label">Move to drawer / modal</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Role switcher → popover triggered from user block (only show when user has multiple roles)</div></div>
+            <div class="item"><div class="item-dot"></div><div>User settings / preferences → right drawer from avatar</div></div>
+            <div class="item"><div class="item-dot"></div><div>Keyboard shortcuts reference → modal via <span class="mono" style="font-size:11px">?</span> key</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-collapsed">
+        <div class="plan-card-head"><div class="plan-card-icon">▼</div><div class="plan-card-label">Collapsed by default</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Sub-navigation groups (e.g., "Admin" section) — collapsed until opened; state persisted per session</div></div>
+            <div class="item"><div class="item-dot"></div><div>Environment/tenant selector (only relevant in multi-tenant setups)</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-hidden">
+        <div class="plan-card-head"><div class="plan-card-icon">✕</div><div class="plan-card-label">Role-hidden</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Metadata Admin nav item — hidden for Rep, Approver, Exec</div></div>
+            <div class="item"><div class="item-dot"></div><div>Import / Export nav item — hidden for Rep, Approver, Exec</div></div>
+            <div class="item"><div class="item-dot"></div><div>Duplicate Review nav item — hidden for Rep, Exec</div></div>
+            <div class="item"><div class="item-dot"></div><div>Executive Dashboard nav item — hidden for Rep, Approver</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cta-row">
+      <div class="cta-block">
+        <div class="cta-block-label">Primary CTA</div>
+        <div class="cta-primary">+ New Opportunity <span style="font-family:monospace;font-size:10px;opacity:.6">Rep only</span></div>
+      </div>
+      <div class="cta-block">
+        <div class="cta-block-label">Secondary actions</div>
+        <div class="cta-secondary">
+          <span class="cta-sec-item">Global search (⌘K)</span>
+          <span class="cta-sec-item">Notification bell</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════
+       02 SALES REP WORKSPACE
+  ═══════════════════════════════════════════════ -->
+  <section class="screen-section" id="s02">
+    <div class="screen-header">
+      <div class="screen-num">02</div>
+      <div>
+        <div class="screen-name">Sales Rep Workspace</div>
+        <div class="screen-job">Primary job: show the rep their open opportunities and what needs action today.</div>
+      </div>
+      <div class="role-tags"><span class="role-tag rep">Rep</span></div>
+    </div>
+    <div class="screen-body">
+      <div class="plan-card card-visible">
+        <div class="plan-card-head"><div class="plan-card-icon">●</div><div class="plan-card-label">Visible by default</div></div>
+        <div class="plan-card-body">
+          <div class="current-state"><strong>Current problem:</strong> KPI strip (5 metrics) + saved views row + 7-column filter bar + table + 380px right panel all shown simultaneously. First viewport is overwhelmed.</div>
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>3 metrics max in a compact strip: Open Opportunities, Total Pipeline Value, Pending Approvals<div class="item-sub">Remove: avg deal size, win rate — not actionable from this screen</div></div></div>
+            <div class="item"><div class="item-dot"></div><div>Saved views as pill tabs (My Queue, All Active, Needs Attention)</div></div>
+            <div class="item"><div class="item-dot"></div><div>Search field + Stage filter + Owner filter — 3 controls maximum</div></div>
+            <div class="item"><div class="item-dot"></div><div>Opportunity table: Name, Account, Stage (pip), Value, Approval Status, Last Updated — 6 columns max</div></div>
+            <div class="item"><div class="item-dot"></div><div>Right panel: collapsed by default; opens as a 320px inline preview when a row is clicked</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-drawer">
+        <div class="plan-card-head"><div class="plan-card-icon">▶</div><div class="plan-card-label">Move to drawer / modal</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Advanced filters (Close date range, Amount range, Product type, Region) → "More filters" popover</div></div>
+            <div class="item"><div class="item-dot"></div><div>Bulk actions (reassign, export, archive) → appear in a toolbar above table only when rows are selected</div></div>
+            <div class="item"><div class="item-dot"></div><div>Column chooser → popover from table header menu</div></div>
+            <div class="item"><div class="item-dot"></div><div>Create new opportunity → right drawer (not a new page)</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-collapsed">
+        <div class="plan-card-head"><div class="plan-card-icon">▼</div><div class="plan-card-label">Collapsed by default</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Closed / Lost opportunities — separate "Closed" saved view, not shown in default list</div></div>
+            <div class="item"><div class="item-dot"></div><div>System IDs, CRM sync status fields — accessible via column chooser</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-hidden">
+        <div class="plan-card-head"><div class="plan-card-icon">✕</div><div class="plan-card-label">Role-hidden</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Team/owner filter — hidden for reps who can only see their own records</div></div>
+            <div class="item"><div class="item-dot"></div><div>Export all / admin controls — hidden; Rep can export own records only from overflow menu</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cta-row">
+      <div class="cta-block">
+        <div class="cta-block-label">Primary CTA</div>
+        <div class="cta-primary">+ New Opportunity</div>
+      </div>
+      <div class="cta-block">
+        <div class="cta-block-label">Secondary actions</div>
+        <div class="cta-secondary">
+          <span class="cta-sec-item">Save current view</span>
+          <span class="cta-sec-item">Export (own records)</span>
+          <span class="cta-sec-item">Refresh</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════
+       03 OPPORTUNITY DETAIL
+  ═══════════════════════════════════════════════ -->
+  <section class="screen-section" id="s03">
+    <div class="screen-header">
+      <div class="screen-num">03</div>
+      <div>
+        <div class="screen-name">Opportunity Detail</div>
+        <div class="screen-job">Primary job: show the rep the status of one deal and let them take the next action (edit, advance stage, or submit for approval).</div>
+      </div>
+      <div class="role-tags"><span class="role-tag rep">Rep</span><span class="role-tag manager">Manager</span></div>
+    </div>
+    <div class="screen-body">
+      <div class="plan-card card-visible half">
+        <div class="plan-card-head"><div class="plan-card-icon">●</div><div class="plan-card-label">Visible by default</div></div>
+        <div class="plan-card-body">
+          <div class="current-state"><strong>Current problem:</strong> 1,945-line file. Inline stage-move validation panel (stagepop), 5-column snapshot grid, 360px right panel with stacked panels — all shown at once. The screen has at least 4 competing focal points.</div>
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div><strong>Header row:</strong> Opportunity name, Account link, current Stage pill, Approval Status pill, Close Date, ARR value</div></div>
+            <div class="item"><div class="item-dot"></div><div><strong>Stage progress bar:</strong> horizontal stepper — compact, single row, no inline validation panel by default</div></div>
+            <div class="item"><div class="item-dot"></div><div><strong>Tab bar below header:</strong> Overview · Line Items · Contacts · Documents · Activity<div class="item-sub">Only Overview tab is open on load</div></div></div>
+            <div class="item"><div class="item-dot"></div><div><strong>Overview tab content:</strong> Deal snapshot (5–6 key fields in 2-column grid) + Approval chain summary (status only, not full history)</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-drawer">
+        <div class="plan-card-head"><div class="plan-card-icon">▶</div><div class="plan-card-label">Move to drawer / modal</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Stage advance confirmation + validation checklist → modal (not inline stagepop)</div></div>
+            <div class="item"><div class="item-dot"></div><div>Edit opportunity fields → right drawer (680px)</div></div>
+            <div class="item"><div class="item-dot"></div><div>Submit for approval → opens Submit Approval drawer (screen 04 becomes a drawer, not a separate page)</div></div>
+            <div class="item"><div class="item-dot"></div><div>Full approval history → "View approval history" link opens right drawer</div></div>
+            <div class="item"><div class="item-dot"></div><div>Related contacts detail, document upload → via their respective tabs</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-collapsed">
+        <div class="plan-card-head"><div class="plan-card-icon">▼</div><div class="plan-card-label">Collapsed by default</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Activity log → "Activity" tab, collapsed accordion within it</div></div>
+            <div class="item"><div class="item-dot"></div><div>System metadata (record ID, created by, source, sync status) → collapsed "System info" section at page bottom</div></div>
+            <div class="item"><div class="item-dot"></div><div>Custom fields not mapped to core workflow → collapsed "Additional fields" accordion in Overview tab</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-hidden">
+        <div class="plan-card-head"><div class="plan-card-icon">✕</div><div class="plan-card-label">Role-hidden</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Approval routing config, rule override options → hidden for Rep; visible for Manager only</div></div>
+            <div class="item"><div class="item-dot"></div><div>Delete opportunity → hidden for Rep; Manager/Admin only, behind overflow menu</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cta-row">
+      <div class="cta-block">
+        <div class="cta-block-label">Primary CTA</div>
+        <div class="cta-primary">Submit for Approval</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Context-sensitive: changes to "Advance Stage" or "Edit" when approval is not the next step</div>
+      </div>
+      <div class="cta-block">
+        <div class="cta-block-label">Secondary actions</div>
+        <div class="cta-secondary">
+          <span class="cta-sec-item">Edit</span>
+          <span class="cta-sec-item">Clone</span>
+          <span class="cta-sec-item">Add note</span>
+          <span class="cta-sec-item">⋯ More</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════
+       04 SUBMIT APPROVAL FLOW
+  ═══════════════════════════════════════════════ -->
+  <section class="screen-section" id="s04">
+    <div class="screen-header">
+      <div class="screen-num">04</div>
+      <div>
+        <div class="screen-name">Submit Approval Flow</div>
+        <div class="screen-job">Primary job: let the rep configure and submit one approval request with minimum friction.</div>
+      </div>
+      <div class="role-tags"><span class="role-tag rep">Rep</span></div>
+    </div>
+    <div class="screen-body">
+      <div class="plan-card card-visible half">
+        <div class="plan-card-head"><div class="plan-card-icon">●</div><div class="plan-card-label">Visible by default</div></div>
+        <div class="plan-card-body">
+          <div class="current-state"><strong>Current problem:</strong> 1,542-line page. The entire flow is inline: 4-step process strip + 5-column opportunity snapshot + 4-option request type selector + full form grid + urgency row + right rail + submit bar — all visible simultaneously. This is a wizard that became a wall.</div>
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div><strong>Redesign as a right drawer (680px) triggered from Opportunity Detail.</strong> The drawer is the submission surface — no separate full page.</div></div>
+            <div class="item"><div class="item-dot"></div><div><strong>Drawer step 1 — Request type:</strong> 4 type cards (full width in drawer). Opportunity name + ARR shown as a compact header, not a full snapshot grid.</div></div>
+            <div class="item"><div class="item-dot"></div><div><strong>Drawer step 2 — Form:</strong> Only required fields visible by default. Urgency selector inline. Justification textarea at bottom.</div></div>
+            <div class="item"><div class="item-dot"></div><div><strong>Drawer step 3 — Review:</strong> Summary of what will be submitted. Routing chain preview (who will approve). Submit button.</div></div>
+            <div class="item"><div class="item-dot"></div><div>Step indicator: simple 3-step pill strip at the top of the drawer — not a full-width arrow-process strip</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-drawer">
+        <div class="plan-card-head"><div class="plan-card-icon">▶</div><div class="plan-card-label">Move to drawer / modal</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Full approval routing logic explanation → "How is routing determined?" link → small informational modal</div></div>
+            <div class="item"><div class="item-dot"></div><div>Optional fields (attachments, secondary reviewers, CC list) → "Advanced options" collapsible at bottom of Step 2</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-collapsed">
+        <div class="plan-card-head"><div class="plan-card-icon">▼</div><div class="plan-card-label">Collapsed by default</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Policy warnings and validation details → shown inline only for fields that fail validation, not pre-emptively</div></div>
+            <div class="item"><div class="item-dot"></div><div>Opportunity field details (all 5 snapshot columns) → collapsed; only Name + ARR shown in drawer header</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-hidden">
+        <div class="plan-card-head"><div class="plan-card-icon">✕</div><div class="plan-card-label">Role-hidden</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Override routing / bypass approver — hidden for Rep; Admin-only</div></div>
+            <div class="item"><div class="item-dot"></div><div>Request on behalf of another rep — hidden for Rep; Manager/Admin only</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cta-row">
+      <div class="cta-block">
+        <div class="cta-block-label">Primary CTA (per step)</div>
+        <div class="cta-primary">Continue →</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Step 3: "Submit for Approval" (filled primary button). Not available until all required fields are valid.</div>
+      </div>
+      <div class="cta-block">
+        <div class="cta-block-label">Secondary actions</div>
+        <div class="cta-secondary">
+          <span class="cta-sec-item">← Back</span>
+          <span class="cta-sec-item">Save draft</span>
+          <span class="cta-sec-item">Cancel</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════
+       05 APPROVER INBOX
+  ═══════════════════════════════════════════════ -->
+  <section class="screen-section" id="s05">
+    <div class="screen-header">
+      <div class="screen-num">05</div>
+      <div>
+        <div class="screen-name">Approver Inbox</div>
+        <div class="screen-job">Primary job: let the approver see what needs a decision and act on it immediately.</div>
+      </div>
+      <div class="role-tags"><span class="role-tag approver">Approver</span></div>
+    </div>
+    <div class="screen-body">
+      <div class="plan-card card-visible">
+        <div class="plan-card-head"><div class="plan-card-icon">●</div><div class="plan-card-label">Visible by default</div></div>
+        <div class="plan-card-body">
+          <div class="current-state"><strong>Current problem:</strong> 5 KPI metrics + 6 saved view tabs + 7-column filter row + table + 400px right panel — all visible on load. The approver's actual job (decide on a request) is buried under analytics.</div>
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div><strong>2 metrics only:</strong> Pending (with overdue count highlighted) and Decided Today — shown as a compact 2-cell strip, not a 5-KPI dashboard</div></div>
+            <div class="item"><div class="item-dot"></div><div>Queue tabs: Pending · Overdue · Decided (today) — 3 tabs, not 6 saved views</div></div>
+            <div class="item"><div class="item-dot"></div><div>Filters: Search + Request Type + Submitted Date — 3 controls. "More filters" popover for the rest.</div></div>
+            <div class="item"><div class="item-dot"></div><div>Table columns: Request name, Requester, Type, Amount, SLA countdown, Status — 6 columns max</div></div>
+            <div class="item"><div class="item-dot"></div><div>Clicking a row opens Approval Decision Detail (screen 06) inline as a right drawer — not a navigation away from the inbox</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-drawer">
+        <div class="plan-card-head"><div class="plan-card-icon">▶</div><div class="plan-card-label">Move to drawer / modal</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Advanced filters (region, product line, owner, date range) → "More filters" popover</div></div>
+            <div class="item"><div class="item-dot"></div><div>Bulk decide (approve / reject multiple) → bulk action toolbar appears when rows are selected</div></div>
+            <div class="item"><div class="item-dot"></div><div>Inbox settings (notification prefs, delegate) → gear icon → right drawer</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-collapsed">
+        <div class="plan-card-head"><div class="plan-card-icon">▼</div><div class="plan-card-label">Collapsed by default</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Locked / delegated items — visible only in a "Locked" filter tab, not in default Pending view</div></div>
+            <div class="item"><div class="item-dot"></div><div>Historical decisions (older than today) → "All decided" tab with date grouping</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-hidden">
+        <div class="plan-card-head"><div class="plan-card-icon">✕</div><div class="plan-card-label">Role-hidden</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Requests assigned to other approvers — not shown unless the user is also a manager with delegation access</div></div>
+            <div class="item"><div class="item-dot"></div><div>Win rate / pipeline analytics metrics — not an approver concern; move to Manager / Exec dashboards</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cta-row">
+      <div class="cta-block">
+        <div class="cta-block-label">Primary CTA</div>
+        <div class="cta-primary">Open &amp; Decide</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Opens drawer with Approval Decision Detail inline — approver never leaves the inbox</div>
+      </div>
+      <div class="cta-block">
+        <div class="cta-block-label">Secondary actions</div>
+        <div class="cta-secondary">
+          <span class="cta-sec-item">Delegate selected</span>
+          <span class="cta-sec-item">Export decisions</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════
+       06 APPROVAL DECISION DETAIL
+  ═══════════════════════════════════════════════ -->
+  <section class="screen-section" id="s06">
+    <div class="screen-header">
+      <div class="screen-num">06</div>
+      <div>
+        <div class="screen-name">Approval Decision Detail</div>
+        <div class="screen-job">Primary job: show the approver exactly what they need to make a decision — and nothing more.</div>
+      </div>
+      <div class="role-tags"><span class="role-tag approver">Approver</span></div>
+    </div>
+    <div class="screen-body">
+      <div class="plan-card card-visible half">
+        <div class="plan-card-head"><div class="plan-card-icon">●</div><div class="plan-card-label">Visible by default</div></div>
+        <div class="plan-card-body">
+          <div class="current-state"><strong>Current problem:</strong> The screen is built as a full page with its own navigation, header strip, accbox, and multiple stacked panels. Opening it breaks the approver's inbox context entirely.</div>
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div><strong>Redesign as a right drawer (720px)</strong> that opens from the Approver Inbox without page navigation</div></div>
+            <div class="item"><div class="item-dot"></div><div>Drawer header: Request ID, type tag, requester name, submitted date, SLA countdown pill</div></div>
+            <div class="item"><div class="item-dot"></div><div>Request summary: Type, Amount, Justification text, linked Opportunity name (clickable)</div></div>
+            <div class="item"><div class="item-dot"></div><div>Approval chain: compact visual showing completed steps (✓) and current step (→). Only current approver's position highlighted.</div></div>
+            <div class="item"><div class="item-dot"></div><div>Decision area: Approve / Reject / Send Back — always visible at the bottom of the drawer, sticky</div></div>
+            <div class="item"><div class="item-dot"></div><div>Comment field: shown inline above decision buttons, required on Reject and Send Back</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-drawer">
+        <div class="plan-card-head"><div class="plan-card-icon">▶</div><div class="plan-card-label">Move to drawer / modal</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Full opportunity detail → "View opportunity →" link navigates to screen 03 (opens in new tab or full nav)</div></div>
+            <div class="item"><div class="item-dot"></div><div>Full audit trail of this request → "Request history" expandable section at bottom of drawer</div></div>
+            <div class="item"><div class="item-dot"></div><div>Supporting documents → "Attachments" section, collapsed by default</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-collapsed">
+        <div class="plan-card-head"><div class="plan-card-icon">▼</div><div class="plan-card-label">Collapsed by default</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Previous approver comments — collapsed under "Approval chain" section; expand to read</div></div>
+            <div class="item"><div class="item-dot"></div><div>Policy details and rule explanations — collapsed; "Why does this require approval?" expandable</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-hidden">
+        <div class="plan-card-head"><div class="plan-card-icon">✕</div><div class="plan-card-label">Role-hidden</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Routing rule config / override — hidden; Admin-only</div></div>
+            <div class="item"><div class="item-dot"></div><div>Reassign to another approver — hidden for standard approver; Manager/Admin only</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cta-row">
+      <div class="cta-block">
+        <div class="cta-block-label">Primary CTA</div>
+        <div class="cta-primary">Approve</div>
+      </div>
+      <div class="cta-block">
+        <div class="cta-block-label">Secondary actions</div>
+        <div class="cta-secondary">
+          <span class="cta-sec-item">Reject</span>
+          <span class="cta-sec-item">Send Back</span>
+          <span class="cta-sec-item">Delegate</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════
+       07 ACCOUNT DETAIL
+  ═══════════════════════════════════════════════ -->
+  <section class="screen-section" id="s07">
+    <div class="screen-header">
+      <div class="screen-num">07</div>
+      <div>
+        <div class="screen-name">Account Detail</div>
+        <div class="screen-job">Primary job: give the rep a clear picture of one account and what opportunities are active.</div>
+      </div>
+      <div class="role-tags"><span class="role-tag rep">Rep</span><span class="role-tag manager">Manager</span></div>
+    </div>
+    <div class="screen-body">
+      <div class="plan-card card-visible">
+        <div class="plan-card-head"><div class="plan-card-icon">●</div><div class="plan-card-label">Visible by default</div></div>
+        <div class="plan-card-body">
+          <div class="current-state"><strong>Current problem:</strong> Duplicate warning banner + full account header + 1fr+336px grid + multiple stacked panels with all opportunities, contacts, and history simultaneously visible.</div>
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Account header: Name, logo mark, Industry tag, HQ location, ARR total, Account owner</div></div>
+            <div class="item"><div class="item-dot"></div><div>Duplicate warning — keep as inline banner only when duplicates exist; non-dismissable until resolved</div></div>
+            <div class="item"><div class="item-dot"></div><div>Tab bar: Opportunities · Contacts · Documents · Activity</div></div>
+            <div class="item"><div class="item-dot"></div><div>Opportunities tab (default): table with Name, Stage, Value, Status — 4 columns, with "+ New" inline</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-drawer">
+        <div class="plan-card-head"><div class="plan-card-icon">▶</div><div class="plan-card-label">Move to drawer / modal</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Edit account fields → right drawer (do not inline edit on the detail page)</div></div>
+            <div class="item"><div class="item-dot"></div><div>Merge duplicate accounts → modal (currently a full separate page — see screen 11)</div></div>
+            <div class="item"><div class="item-dot"></div><div>Add contact / document → drawer triggered from respective tab</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-collapsed">
+        <div class="plan-card-head"><div class="plan-card-icon">▼</div><div class="plan-card-label">Collapsed by default</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Activity log → Activity tab, collapsed accordion within</div></div>
+            <div class="item"><div class="item-dot"></div><div>System fields (CRM ID, source, created date) → collapsed "System info" at page bottom</div></div>
+            <div class="item"><div class="item-dot"></div><div>Additional custom attributes → collapsed "More account details" accordion</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-hidden">
+        <div class="plan-card-head"><div class="plan-card-icon">✕</div><div class="plan-card-label">Role-hidden</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Delete account — Admin only</div></div>
+            <div class="item"><div class="item-dot"></div><div>Reassign account owner — Manager/Admin only; hidden for Rep</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cta-row">
+      <div class="cta-block">
+        <div class="cta-block-label">Primary CTA</div>
+        <div class="cta-primary">+ New Opportunity</div>
+      </div>
+      <div class="cta-block">
+        <div class="cta-block-label">Secondary actions</div>
+        <div class="cta-secondary">
+          <span class="cta-sec-item">Edit account</span>
+          <span class="cta-sec-item">Resolve duplicates</span>
+          <span class="cta-sec-item">⋯ More</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════
+       08 MANAGER PIPELINE
+  ═══════════════════════════════════════════════ -->
+  <section class="screen-section" id="s08">
+    <div class="screen-header">
+      <div class="screen-num">08</div>
+      <div>
+        <div class="screen-name">Manager Pipeline</div>
+        <div class="screen-job">Primary job: let the manager scan their team's pipeline, identify risk, and act on individual deals.</div>
+      </div>
+      <div class="role-tags"><span class="role-tag manager">Manager</span></div>
+    </div>
+    <div class="screen-body">
+      <div class="plan-card card-visible">
+        <div class="plan-card-head"><div class="plan-card-icon">●</div><div class="plan-card-label">Visible by default</div></div>
+        <div class="plan-card-body">
+          <div class="current-state"><strong>Current problem:</strong> React-based, 356px side panel visible immediately on load. Filter bar has too many dropdowns. Table footer shows totals but those numbers aren't explained.</div>
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div><strong>3 KPIs:</strong> Total Pipeline, At Risk (overdue SLA or stalled stage), Closing This Quarter</div></div>
+            <div class="item"><div class="item-dot"></div><div>View toggle: Table (default) · Board (kanban by stage)</div></div>
+            <div class="item"><div class="item-dot"></div><div>Filters: Owner (rep selector) + Stage + Close quarter — 3 controls; "More" popover for the rest</div></div>
+            <div class="item"><div class="item-dot"></div><div>Table: Rep name, Opportunity, Account, Stage pip, Value, SLA status, Days in stage — 7 columns max (stage pip counts as 1)</div></div>
+            <div class="item"><div class="item-dot"></div><div>Side panel: hidden by default; slides in from right when a row is clicked (360px preview)</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-drawer">
+        <div class="plan-card-head"><div class="plan-card-icon">▶</div><div class="plan-card-label">Move to drawer / modal</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Opportunity detail → right drawer (manager read + comment; not a full page nav from pipeline view)</div></div>
+            <div class="item"><div class="item-dot"></div><div>Reassign rep → modal from overflow menu on table row</div></div>
+            <div class="item"><div class="item-dot"></div><div>Export pipeline → modal with format + date range options</div></div>
+            <div class="item"><div class="item-dot"></div><div>Forecast editor → right drawer from "Edit forecast" button (not inline table cells)</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-collapsed">
+        <div class="plan-card-head"><div class="plan-card-icon">▼</div><div class="plan-card-label">Collapsed by default</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Closed / Won deals — separate "Closed" view tab</div></div>
+            <div class="item"><div class="item-dot"></div><div>Individual rep totals in table footer — shown only when "Group by rep" view is active</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-hidden">
+        <div class="plan-card-head"><div class="plan-card-icon">✕</div><div class="plan-card-label">Role-hidden</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Cross-team / org-wide pipeline — hidden; Manager sees own team only; VP+ sees org-wide in Exec Dashboard</div></div>
+            <div class="item"><div class="item-dot"></div><div>Admin metadata columns — hidden</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cta-row">
+      <div class="cta-block">
+        <div class="cta-block-label">Primary CTA</div>
+        <div class="cta-primary">Review At-Risk Deals</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Filters table to at-risk items on click; removes itself when no at-risk items exist</div>
+      </div>
+      <div class="cta-block">
+        <div class="cta-block-label">Secondary actions</div>
+        <div class="cta-secondary">
+          <span class="cta-sec-item">Edit forecast</span>
+          <span class="cta-sec-item">Export</span>
+          <span class="cta-sec-item">View: Table / Board</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════
+       09 METADATA ADMIN
+  ═══════════════════════════════════════════════ -->
+  <section class="screen-section" id="s09">
+    <div class="screen-header">
+      <div class="screen-num">09</div>
+      <div>
+        <div class="screen-name">Metadata Admin</div>
+        <div class="screen-job">Primary job: let the admin view, create, and edit field definitions and lookup values.</div>
+      </div>
+      <div class="role-tags"><span class="role-tag admin">Admin</span></div>
+    </div>
+    <div class="screen-body">
+      <div class="plan-card card-visible">
+        <div class="plan-card-head"><div class="plan-card-icon">●</div><div class="plan-card-label">Visible by default</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Object selector tabs: Opportunities · Accounts · Contacts · Requests — flat tab strip</div></div>
+            <div class="item"><div class="item-dot"></div><div>Field table: Field name, Label, Type, Required, Active — 5 columns. Search above table.</div></div>
+            <div class="item"><div class="item-dot"></div><div>Row click opens field detail in a right drawer (not inline expansion)</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-drawer">
+        <div class="plan-card-head"><div class="plan-card-icon">▶</div><div class="plan-card-label">Move to drawer / modal</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Create / edit field → right drawer with full field config form</div></div>
+            <div class="item"><div class="item-dot"></div><div>Edit lookup values (picklist options) → drawer within drawer (nested drawer, max depth 2)</div></div>
+            <div class="item"><div class="item-dot"></div><div>Field usage report (which records use this field) → modal</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-collapsed">
+        <div class="plan-card-head"><div class="plan-card-icon">▼</div><div class="plan-card-label">Collapsed by default</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Inactive / archived fields — shown only when "Show inactive" toggle is on</div></div>
+            <div class="item"><div class="item-dot"></div><div>System-managed fields (read-only) — separate section, collapsed by default</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-hidden">
+        <div class="plan-card-head"><div class="plan-card-icon">✕</div><div class="plan-card-label">Role-hidden</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Entire screen — hidden from all non-Admin roles</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cta-row">
+      <div class="cta-block">
+        <div class="cta-block-label">Primary CTA</div>
+        <div class="cta-primary">+ New Field</div>
+      </div>
+      <div class="cta-block">
+        <div class="cta-block-label">Secondary actions</div>
+        <div class="cta-secondary">
+          <span class="cta-sec-item">Import field schema</span>
+          <span class="cta-sec-item">Export schema</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════
+       10 IMPORT / EXPORT OPERATIONS
+  ═══════════════════════════════════════════════ -->
+  <section class="screen-section" id="s10">
+    <div class="screen-header">
+      <div class="screen-num">10</div>
+      <div>
+        <div class="screen-name">Import / Export Operations</div>
+        <div class="screen-job">Primary job: let the admin run and monitor data import and export jobs.</div>
+      </div>
+      <div class="role-tags"><span class="role-tag admin">Admin</span></div>
+    </div>
+    <div class="screen-body">
+      <div class="plan-card card-visible">
+        <div class="plan-card-head"><div class="plan-card-icon">●</div><div class="plan-card-label">Visible by default</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Two tabs: Import · Export — default to Import</div></div>
+            <div class="item"><div class="item-dot"></div><div>Jobs table: Job name, Object type, Status, Record count, Started, Duration — 6 columns</div></div>
+            <div class="item"><div class="item-dot"></div><div>Status filter: All · Running · Completed · Failed</div></div>
+            <div class="item"><div class="item-dot"></div><div>Active/running jobs shown at top with live progress indicator</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-drawer">
+        <div class="plan-card-head"><div class="plan-card-icon">▶</div><div class="plan-card-label">Move to drawer / modal</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>New import wizard (upload file → map columns → preview → run) → right drawer, 3-step wizard</div></div>
+            <div class="item"><div class="item-dot"></div><div>Job detail + error log → right drawer (row click)</div></div>
+            <div class="item"><div class="item-dot"></div><div>New export (select object, filters, format) → modal</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-collapsed">
+        <div class="plan-card-head"><div class="plan-card-icon">▼</div><div class="plan-card-label">Collapsed by default</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Jobs older than 30 days — collapsed under "Older jobs" section with date grouping</div></div>
+            <div class="item"><div class="item-dot"></div><div>Full error details — collapsed inside job detail drawer; "Show errors (N)" expandable</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-hidden">
+        <div class="plan-card-head"><div class="plan-card-icon">✕</div><div class="plan-card-label">Role-hidden</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Entire screen — hidden from all non-Admin roles</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cta-row">
+      <div class="cta-block">
+        <div class="cta-block-label">Primary CTA</div>
+        <div class="cta-primary">+ New Import</div>
+      </div>
+      <div class="cta-block">
+        <div class="cta-block-label">Secondary actions</div>
+        <div class="cta-secondary">
+          <span class="cta-sec-item">New Export</span>
+          <span class="cta-sec-item">Refresh</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════
+       11 DUPLICATE REVIEW / MERGE
+  ═══════════════════════════════════════════════ -->
+  <section class="screen-section" id="s11">
+    <div class="screen-header">
+      <div class="screen-num">11</div>
+      <div>
+        <div class="screen-name">Duplicate Review / Merge</div>
+        <div class="screen-job">Primary job: let the admin identify and resolve duplicate records efficiently.</div>
+      </div>
+      <div class="role-tags"><span class="role-tag admin">Admin</span></div>
+    </div>
+    <div class="screen-body">
+      <div class="plan-card card-visible">
+        <div class="plan-card-head"><div class="plan-card-icon">●</div><div class="plan-card-label">Visible by default</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Duplicate groups list: each row = one group of N duplicate records with a confidence score and record count</div></div>
+            <div class="item"><div class="item-dot"></div><div>Object filter: Accounts · Contacts — defaults to Accounts</div></div>
+            <div class="item"><div class="item-dot"></div><div>3 metrics: Total duplicate groups, Records affected, Auto-resolvable</div></div>
+            <div class="item"><div class="item-dot"></div><div>Group confidence score shown as a simple HIGH / MED / LOW tag — not a raw decimal number</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-drawer">
+        <div class="plan-card-head"><div class="plan-card-icon">▶</div><div class="plan-card-label">Move to drawer / modal</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Merge decision UI (field-by-field winner selection) → right drawer (this is the primary interaction; do not show inline in list)</div></div>
+            <div class="item"><div class="item-dot"></div><div>Bulk auto-resolve → confirmation modal before executing</div></div>
+            <div class="item"><div class="item-dot"></div><div>Dismiss / mark as not duplicate → confirm modal</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-collapsed">
+        <div class="plan-card-head"><div class="plan-card-icon">▼</div><div class="plan-card-label">Collapsed by default</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Resolved / dismissed groups — separate "Resolved" tab, not visible by default</div></div>
+            <div class="item"><div class="item-dot"></div><div>Match rule details (which fields triggered the match) → collapsed inside merge drawer</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-hidden">
+        <div class="plan-card-head"><div class="plan-card-icon">✕</div><div class="plan-card-label">Role-hidden</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Entire screen — hidden from all non-Admin roles (account detail shows a warning banner + link to this screen)</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cta-row">
+      <div class="cta-block">
+        <div class="cta-block-label">Primary CTA</div>
+        <div class="cta-primary">Review &amp; Merge</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Opens merge drawer for selected group</div>
+      </div>
+      <div class="cta-block">
+        <div class="cta-block-label">Secondary actions</div>
+        <div class="cta-secondary">
+          <span class="cta-sec-item">Auto-resolve all HIGH</span>
+          <span class="cta-sec-item">Dismiss selected</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════
+       12 EXECUTIVE DASHBOARD
+  ═══════════════════════════════════════════════ -->
+  <section class="screen-section" id="s12">
+    <div class="screen-header">
+      <div class="screen-num">12</div>
+      <div>
+        <div class="screen-name">Executive Dashboard</div>
+        <div class="screen-job">Primary job: give the exec a read-only health check of pipeline, approvals, and team performance at a glance.</div>
+      </div>
+      <div class="role-tags"><span class="role-tag exec">Exec</span><span class="role-tag manager">Manager</span></div>
+    </div>
+    <div class="screen-body">
+      <div class="plan-card card-visible half">
+        <div class="plan-card-head"><div class="plan-card-icon">●</div><div class="plan-card-label">Visible by default</div></div>
+        <div class="plan-card-body">
+          <div class="current-state"><strong>Current problem:</strong> 4 KPIs + multiple chart panels + a 300px side panel + drill-down table — all visible on load. The dashboard tries to be both a summary and an operations tool simultaneously.</div>
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div><strong>4 KPIs (keep, these work):</strong> Total Pipeline, Approval Cycle Time avg, Win Rate, Deals Closing This Quarter</div></div>
+            <div class="item"><div class="item-dot"></div><div><strong>2 charts only:</strong> Pipeline by Stage (funnel) · Approval Cycle Time trend (sparkline) — placed side by side</div></div>
+            <div class="item"><div class="item-dot"></div><div><strong>One focused table:</strong> Top 10 deals by value — Name, Rep, Stage, Value, Close Date. No other tables on first load.</div></div>
+            <div class="item"><div class="item-dot"></div><div>Time period filter at top right: This Quarter / Last Quarter / This Year — single selector</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-drawer">
+        <div class="plan-card-head"><div class="plan-card-icon">▶</div><div class="plan-card-label">Move to drawer / modal</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>KPI drilldown (clicking a KPI tile) → right drawer with expanded chart + supporting table</div></div>
+            <div class="item"><div class="item-dot"></div><div>Deal row click → read-only opportunity detail drawer (exec cannot edit)</div></div>
+            <div class="item"><div class="item-dot"></div><div>Export dashboard as PDF / data export → modal</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-collapsed">
+        <div class="plan-card-head"><div class="plan-card-icon">▼</div><div class="plan-card-label">Collapsed by default</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Rep performance breakdown — collapsed "By rep" section below main table</div></div>
+            <div class="item"><div class="item-dot"></div><div>Approval bottleneck analysis — collapsed "Approval health" section</div></div>
+            <div class="item"><div class="item-dot"></div><div>Historical comparisons (QoQ, YoY) — collapsed inside KPI drilldown drawer</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="plan-card card-hidden">
+        <div class="plan-card-head"><div class="plan-card-icon">✕</div><div class="plan-card-label">Role-hidden</div></div>
+        <div class="plan-card-body">
+          <div class="item-list">
+            <div class="item"><div class="item-dot"></div><div>Any edit / submit / approve action — exec dashboard is entirely read-only</div></div>
+            <div class="item"><div class="item-dot"></div><div>Admin metadata columns, system IDs — never shown on exec screen</div></div>
+            <div class="item"><div class="item-dot"></div><div>Manager-level detail (individual rep quotas, day-by-day activity) — hidden; accessible from Manager Pipeline</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cta-row">
+      <div class="cta-block">
+        <div class="cta-block-label">Primary CTA</div>
+        <div style="font-size:12.5px;color:var(--muted);padding-top:4px;font-style:italic;">None — dashboard is read-only. No primary action button.</div>
+      </div>
+      <div class="cta-block">
+        <div class="cta-block-label">Secondary actions</div>
+        <div class="cta-secondary">
+          <span class="cta-sec-item">Export PDF</span>
+          <span class="cta-sec-item">Refresh</span>
+          <span class="cta-sec-item">Time period selector</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Footer ─── -->
+  <div style="padding:32px;border-top:1px solid var(--hairline);display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:11.5px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em;">
+    <span>Sales Ops CRM · UX Simplification Plan · LOCAL PILOT</span>
+    <span>12 screens · May 27 2026</span>
+  </div>
+
+</main>
+</div>
+
+<script>
+  // Active nav link on scroll
+  const sections = document.querySelectorAll('[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => observer.observe(s));
+
+  // Smooth scroll
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+</body>
+</html>
