@@ -1,0 +1,884 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sales Ops CRM — Executive Dashboard — Phase 2.10</title>
+<meta name="viewport" content="width=1440" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ── Design tokens ── */
+:root {
+  --paper:#F4F1EB; --paper-2:#EEEAE0; --paper-3:#E6E1D4;
+  --ink:#17150F; --ink-2:#3A372E;
+  --muted:#6E6A5C; --muted-2:#8C8779;
+  --line:#D6D0BF; --line-2:#C4BDA8; --hairline:#E4DFD0;
+  --accent:#B57321; --accent-2:#8A5616; --accent-soft:#F2E3C8;
+  --pos:#3F6B3A; --pos-soft:#E2EAD6;
+  --neg:#9A3A2F; --neg-soft:#F0DAD3;
+  --warn:#A36A11; --warn-soft:#F4E3C1;
+  --info:#2D5B6B; --info-soft:#D6E1E4;
+  --white:#FBFAF6; --select:#FBF1DC;
+  font-family:"Geist","Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-feature-settings:"ss01","cv11","tnum";
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--paper);color:var(--ink)}
+body{font-size:13px;line-height:1.4;-webkit-font-smoothing:antialiased}
+.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-feature-settings:"tnum","ss02"}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+a{color:inherit;text-decoration:none}
+input{font:inherit;color:inherit}
+::selection{background:var(--accent-soft);color:var(--ink)}
+
+/* ── App shell ── */
+.app{display:grid;grid-template-columns:244px 1fr;min-height:100vh}
+.sidebar{background:var(--paper-2);border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.main{display:flex;flex-direction:column;min-width:0}
+
+/* ── Sidebar ── */
+.brand{padding:18px 18px 14px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px}
+.brand-mark{width:22px;height:22px;flex:0 0 22px;position:relative}
+.brand-mark::before,.brand-mark::after{content:"";position:absolute;inset:0;border:1.5px solid var(--ink)}
+.brand-mark::after{inset:5px;background:var(--accent);border-color:var(--accent-2)}
+.brand-name{font-weight:600;letter-spacing:.02em;font-size:14px}
+.brand-name span{color:var(--muted);font-weight:400;margin-left:6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.tenant{padding:12px 18px;border-bottom:1px solid var(--hairline);display:flex;flex-direction:column;gap:4px}
+.tenant-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.tenant-row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.tenant-name{font-weight:600;font-size:13.5px}
+.tenant-env{font-family:"JetBrains Mono",monospace;font-size:10px;padding:2px 6px;border:1px solid var(--line-2);border-radius:2px;color:var(--muted);background:var(--paper);letter-spacing:.04em}
+.tenant-meta{display:flex;gap:8px;font-size:11px;color:var(--muted)}
+.tenant-meta .dot{color:var(--line-2)}
+.nav{flex:1;overflow:auto;padding:10px 0 12px}
+.nav-section{margin-top:14px}
+.nav-section:first-child{margin-top:8px}
+.nav-title{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-2);padding:6px 18px 4px;display:flex;justify-content:space-between;align-items:center}
+.nav-title em{font-style:normal;font-family:"JetBrains Mono",monospace;color:var(--line-2);letter-spacing:.05em}
+.nav-item{display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:10px;padding:7px 18px 7px 14px;border-left:2px solid transparent;color:var(--ink-2);font-size:13px;cursor:pointer}
+.nav-item:hover{background:var(--paper-3);color:var(--ink)}
+.nav-item.active{background:var(--paper-3);border-left-color:var(--accent);color:var(--ink);font-weight:500}
+.nav-mark{width:22px;height:22px;display:grid;place-items:center;border:1px solid var(--line-2);background:var(--white);font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:600;letter-spacing:.04em;color:var(--ink-2)}
+.nav-item.active .nav-mark{border-color:var(--accent);color:var(--accent-2);background:var(--accent-soft)}
+.nav-count{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);min-width:18px;text-align:right}
+.user-block{border-top:1px solid var(--line);padding:12px 14px;display:flex;align-items:center;gap:10px}
+.avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--paper);font-size:11px;font-weight:600;letter-spacing:.04em;flex:0 0 30px;border:1px solid var(--ink)}
+.avatar.bg-f{background:#5D562A;border-color:#5D562A}
+.user-meta{display:flex;flex-direction:column;min-width:0;flex:1}
+.user-name{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.role-badge{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.06em;padding:2px 6px;border-radius:2px;border:1px solid var(--line-2);color:var(--muted);background:var(--paper);text-transform:uppercase}
+.role-badge.r-fin{color:#3F6B3A;border-color:#B2C8A8;background:var(--pos-soft)}
+.role-badge.r-leg{color:#6B2E2E;border-color:#D6B0A8;background:var(--neg-soft)}
+.role-badge.r-mgr{color:#5C3A1E;border-color:#D9BFA0;background:#F0E2CE}
+.role-badge.r-exe{color:#17150F;border-color:#C4BDA8;background:var(--paper-3)}
+
+/* ── Topbar ── */
+.topbar{height:56px;border-bottom:1px solid var(--line);background:var(--paper);display:grid;grid-template-columns:1fr minmax(280px,440px) auto;align-items:center;gap:20px;padding:0 22px;position:sticky;top:0;z-index:10}
+.crumb{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px}
+.crumb strong{color:var(--ink);font-weight:600;font-size:13.5px}
+.crumb .sep{color:var(--line-2)}
+.crumb .pulse{display:inline-flex;align-items:center;gap:6px;font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--muted);padding:3px 7px;border:1px solid var(--line-2);border-radius:2px;background:var(--paper-2);letter-spacing:.04em}
+.pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--pos);box-shadow:0 0 0 2px var(--pos-soft)}
+.search{display:flex;align-items:center;gap:8px;background:var(--paper-2);border:1px solid var(--line);border-radius:3px;padding:7px 10px;font-size:12.5px;color:var(--muted)}
+.search:focus-within{border-color:var(--ink);background:var(--white)}
+.search svg{flex:0 0 14px}
+.search input{border:0;background:transparent;outline:none;flex:1;font:inherit;color:var(--ink)}
+.search kbd{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted);border:1px solid var(--line-2);border-radius:2px;padding:1px 5px;background:var(--paper)}
+.top-actions{display:flex;align-items:center;gap:10px}
+.icon-btn{width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line);border-radius:3px;background:var(--paper);color:var(--ink-2);position:relative}
+.icon-btn:hover{border-color:var(--ink)}
+.icon-btn .dot-badge{position:absolute;top:-3px;right:-3px;min-width:14px;height:14px;padding:0 3px;background:var(--accent);color:var(--white);font-family:"JetBrains Mono",monospace;font-size:9px;font-weight:600;border-radius:7px;display:grid;place-items:center;border:1.5px solid var(--paper)}
+.role-pill{display:flex;align-items:center;gap:10px;padding:4px 10px 4px 4px;border:1px solid var(--line);border-radius:18px;background:var(--paper)}
+.role-pill .avatar{width:26px;height:26px;flex:0 0 26px;font-size:10px}
+.role-pill .who{display:flex;flex-direction:column;line-height:1.15}
+.role-pill .who b{font-size:12px;font-weight:600}
+.role-pill .who span{font-size:10.5px;color:var(--muted)}
+.role-pill .chev{color:var(--muted);margin-left:2px}
+
+/* ── Shared button / panel / table / pill ── */
+.rep-btn{border:1px solid var(--line-2);background:var(--paper);padding:7px 12px;font-size:12px;color:var(--ink);border-radius:3px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;cursor:pointer}
+.rep-btn:hover{border-color:var(--ink)}
+.rep-btn-ghost{border-color:transparent;background:transparent;color:var(--muted)}
+.rep-btn-ghost:hover{border-color:var(--line-2);background:var(--paper-2);color:var(--ink)}
+.rep-panel{background:var(--white);border:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.rep-panel-head{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--hairline);gap:10px;flex-wrap:wrap}
+.rep-panel-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.rep-panel-title em{font-style:normal;font-family:"JetBrains Mono",monospace;color:var(--muted);font-weight:400;font-size:11px;letter-spacing:.02em;text-transform:none}
+.rep-panel-actions{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:11.5px;flex-wrap:wrap}
+.rep-pill{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-family:"JetBrains Mono",monospace;letter-spacing:.04em;padding:2px 7px;border-radius:2px;border:1px solid var(--line-2);background:var(--paper);text-transform:uppercase;white-space:nowrap}
+.rep-pill .dot{width:5px;height:5px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.rep-pill.p-pending{color:var(--warn);border-color:#E2C887;background:var(--warn-soft)}
+.rep-pill.p-pending .dot{background:var(--warn)}
+.rep-pill.p-approved{color:var(--pos);border-color:#B2C8A8;background:var(--pos-soft)}
+.rep-pill.p-approved .dot{background:var(--pos)}
+.rep-pill.p-rejected{color:var(--neg);border-color:#D6B0A8;background:var(--neg-soft)}
+.rep-pill.p-rejected .dot{background:var(--neg)}
+.rep-pill.p-sent_back{color:var(--info);border-color:#A4C0C8;background:var(--info-soft)}
+.rep-pill.p-sent_back .dot{background:var(--info)}
+.rep-table-scroll{overflow-x:auto}
+.rep-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.rep-table th,.rep-table td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--hairline);font-size:12.5px;vertical-align:middle}
+.rep-table th{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:500;background:var(--paper-2);border-bottom:1px solid var(--line);padding:6px 12px}
+.rep-table .num{font-family:"JetBrains Mono",monospace;text-align:right;font-variant-numeric:tabular-nums}
+.rep-table th.num{text-align:right}
+.rep-table tr{cursor:default}
+.rep-table tr:hover td{background:#FBF7EB}
+.rep-table tr.selected td{background:var(--select);border-bottom-color:#E0CC9C}
+.rep-table tr.selected td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+.rep-table .rep-cell-truncate{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rep-table td .rep-cell-sub{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.rep-foot-ruler{margin-top:24px;border-top:1px solid var(--hairline);padding:10px 18px;display:flex;justify-content:space-between;color:var(--muted);font-size:11px;font-family:"JetBrains Mono",monospace;letter-spacing:.04em;flex-wrap:wrap;gap:8px}
+
+/* ═══════════════════════════════════════════════
+   PHASE 2.10 — ExecutiveDashboard CSS
+   (Inline version of styles.phase2-10.css)
+   ═══════════════════════════════════════════════ */
+
+.rep-workspace{display:flex;flex-direction:column;min-height:100vh;padding-bottom:60px;background:var(--paper)}
+
+.exe-page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;padding:14px 18px 12px;border-bottom:1px solid var(--line);background:var(--white);flex-shrink:0;flex-wrap:wrap}
+.exe-page-head-left{display:flex;flex-direction:column;gap:5px;min-width:0}
+.exe-page-head-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.exe-crumb{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.exe-crumb strong{font-size:15px;font-weight:600;color:var(--ink);letter-spacing:-.01em}
+.exe-crumb .sep{color:var(--line-2)}
+.exe-page-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.exe-page-meta .sep{color:var(--line-2)}
+.exe-env-tag{font-size:10px;letter-spacing:.06em;color:var(--muted-2)}
+.exe-btn-busy{opacity:.7;cursor:not-allowed}
+.exe-btn-busy:hover{border-color:var(--line-2)!important}
+.exe-btn-error{border-color:#D6B0A8;background:var(--neg-soft);color:var(--neg)}
+.exe-btn-error:hover{border-color:var(--neg);background:var(--neg-soft);color:var(--neg)}
+.exe-context-label{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.04em;color:var(--muted-2);background:var(--paper-2);border:1px solid var(--hairline);padding:2px 7px;border-radius:2px;user-select:none;cursor:default}
+.exe-panel-link-label{font-size:11.5px;color:var(--muted-2);cursor:default;user-select:none}
+@keyframes exe-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.exe-spin{display:inline-block;animation:exe-spin .9s linear infinite}
+.exe-link-btn{font-size:11.5px;padding:2px 0;border-color:transparent;background:transparent;color:var(--muted);border-bottom:1px dotted var(--line-2);border-radius:0}
+.exe-link-btn:hover{border-bottom-color:var(--ink);border-color:transparent;color:var(--ink);background:transparent}
+
+.exe-kpi-band{display:grid;grid-template-columns:repeat(4,1fr);background:var(--white);border-bottom:1px solid var(--line);flex-shrink:0}
+.exe-kpi-item{padding:14px 18px;border-right:1px solid var(--hairline);position:relative;transition:background .12s}
+.exe-kpi-item:last-child{border-right:0}
+.exe-kpi-btn{cursor:pointer}
+.exe-kpi-btn:hover:not(.exe-kpi-active){background:var(--paper-2)}
+.exe-kpi-active{background:var(--accent-soft);box-shadow:inset 0 2px 0 var(--accent)}
+.exe-kpi-l{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.exe-kpi-delta{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:0;text-transform:none}
+.exe-kpi-delta.up{color:var(--pos)}
+.exe-kpi-delta.dn{color:var(--neg)}
+.exe-kpi-v{font-size:26px;font-weight:500;letter-spacing:-.02em;margin-top:6px;line-height:1.1}
+.exe-kpi-v small{font-size:13px;color:var(--muted);margin-left:3px;letter-spacing:0}
+.exe-kpi-foot{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.4}
+
+.exe-main-grid{display:grid;grid-template-columns:2fr 1fr;gap:14px;padding:14px;align-items:flex-start;flex-shrink:0}
+
+/* Funnel */
+.exe-funnel-col-hd{display:grid;grid-template-columns:132px 1fr 54px 88px 56px;gap:10px;padding:5px 14px 7px;border-bottom:1px solid var(--line)}
+.exe-fhd{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.exe-fhd--num{text-align:right}
+.exe-funnel-row{display:grid;grid-template-columns:132px 1fr 54px 88px 56px;gap:10px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--hairline);cursor:pointer;transition:background .1s}
+.exe-funnel-row:hover:not(.exe-funnel-row--active){background:#FBF7EB}
+.exe-funnel-row--active{background:var(--accent-soft)}
+.exe-funnel-row--won{border-top:1px solid var(--line);border-bottom:none}
+.exe-funnel-stage{display:flex;align-items:center;gap:8px;font-size:12.5px;min-width:0}
+.exe-funnel-code{width:16px;flex-shrink:0;font-size:10.5px;color:var(--muted)}
+.exe-funnel-row--active .exe-funnel-code{color:var(--accent-2)}
+.exe-bar-track{height:12px;background:var(--paper-2);border:1px solid var(--hairline);position:relative;overflow:hidden}
+.exe-bar-fill{position:absolute;left:0;top:0;bottom:0;transition:width .25s ease}
+.exe-funnel-num{font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.exe-funnel-foot{display:flex;gap:20px;flex-wrap:wrap;padding:9px 14px;border-top:1px solid var(--hairline);font-size:11.5px;color:var(--muted)}
+.exe-funnel-foot strong{font-weight:600;color:var(--ink)}
+.exe-filter-chip{display:inline-flex;align-items:center;font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.04em;border:1px solid var(--line-2);padding:2px 7px;border-radius:2px;color:var(--ink-2);background:var(--paper);cursor:pointer;transition:background .1s}
+.exe-filter-chip:hover{background:var(--paper-2)}
+.exe-filter-chip--on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.exe-filter-chip--on:hover{background:var(--ink-2)}
+
+/* Approval panel */
+.exe-appr-row{display:grid;grid-template-columns:48px 1fr auto;gap:12px;align-items:center;padding:11px 14px;cursor:pointer;transition:background .1s}
+.exe-appr-row:hover:not(.exe-appr-row--active){background:#FBF7EB}
+.exe-appr-row--active{background:var(--accent-soft)}
+.exe-appr-row--bottleneck{background:#FBFAF0}
+.exe-appr-row--bottleneck.exe-appr-row--active{background:var(--accent-soft)}
+.exe-appr-meta{min-width:0;display:flex;flex-direction:column;gap:3px}
+.exe-appr-dept{font-size:12.5px;font-weight:400;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.exe-appr-row--bottleneck .exe-appr-dept{font-weight:600}
+.exe-appr-sla{font-size:11px;color:var(--muted)}
+.exe-bottleneck-badge{font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.06em;color:var(--accent-2);border:1px solid var(--accent);background:var(--accent-soft);padding:1px 5px;border-radius:2px;font-weight:600}
+.exe-appr-counts{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.exe-appr-pending{font-size:18px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1}
+.exe-overdue-badge{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.04em;color:var(--neg);background:var(--neg-soft);border:1px solid #D6B0A8;border-radius:2px;padding:1px 5px;font-weight:600;white-space:nowrap}
+.exe-ontime-badge{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.04em;color:var(--pos);background:var(--pos-soft);border:1px solid #B2C8A8;border-radius:2px;padding:1px 5px;white-space:nowrap}
+.exe-appr-foot{display:flex;gap:14px;flex-wrap:wrap;padding:8px 14px;border-top:1px solid var(--hairline);font-size:11.5px;color:var(--muted)}
+.exe-appr-foot strong{font-weight:600;color:var(--ink)}
+
+/* Accordion */
+.exe-accordion-hd{width:100%;display:flex;align-items:center;gap:8px;padding:9px 14px;font:inherit;font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);background:transparent;border:0;cursor:pointer;text-align:left}
+.exe-accordion-hd:hover{background:var(--paper-2)}
+.exe-accordion-label{flex:1;font-size:10.5px}
+.exe-accordion-count{font-size:10.5px;font-style:normal;color:var(--muted-2);font-weight:400;text-transform:none;letter-spacing:.02em;background:var(--paper-2);border:1px solid var(--line);padding:0 5px;border-radius:2px}
+.exe-accordion-chev{font-size:9px;color:var(--muted);flex-shrink:0}
+.exe-accordion-body{border-top:1px solid var(--hairline)}
+.exe-except-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:9px 14px}
+.exe-except-copy{min-width:0}
+.exe-except-type{font-size:12.5px;color:var(--ink)}
+.exe-except-detail{font-size:11px;color:var(--muted);margin-top:2px}
+.exe-except-n{font-size:16px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;flex-shrink:0}
+
+/* Projection accordion */
+.exe-below-grid{padding:0 14px;flex-shrink:0}
+.exe-proj-hd{flex-wrap:wrap;gap:4px 12px}
+.exe-proj-meta{font-size:11px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;margin-right:auto}
+.exe-proj-warn-flag{color:var(--accent-2);font-weight:600}
+.exe-proj-row{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding:7px 14px}
+.exe-proj-lbl{font-size:11.5px;color:var(--muted)}
+.exe-proj-val{font-size:11.5px;color:var(--ink);text-align:right}
+
+/* Access strip */
+.exe-access-strip{display:flex;align-items:flex-start;gap:8px;padding:8px 18px;font-size:11.5px;color:var(--muted-2);line-height:1.55;border-top:1px solid var(--hairline);flex-shrink:0}
+.exe-access-strip strong{color:var(--ink-2)}
+.exe-access-icon{flex-shrink:0;margin-top:1px;color:var(--info);font-size:13px}
+
+/* Drill section */
+.exe-drill-section{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:flex-start;padding:4px 14px 0}
+.exe-preview-col{position:sticky;top:72px;max-height:calc(100vh - 90px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line-2) transparent}
+.exe-preview-col::-webkit-scrollbar{width:4px}
+.exe-preview-col::-webkit-scrollbar-thumb{background:var(--line-2)}
+.exe-drill-table{min-width:820px}
+
+/* Stage pip */
+.exe-stage-pip{display:inline-flex;gap:3px;align-items:center;vertical-align:middle}
+.exe-stage-pip i{display:block;width:5px;height:10px;background:var(--line)}
+.exe-stage-pip i.on{background:var(--ink)}
+.exe-stage-pip i.cur{background:var(--accent)}
+
+/* Risk / pill util */
+.exe-risk-label{font-size:11px;line-height:1.4}
+.exe-pill-none{color:var(--muted);font-size:12px}
+
+/* Empty state */
+.exe-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:52px 24px;text-align:center}
+.exe-empty-icon{font-size:28px;color:var(--line);margin-bottom:14px}
+.exe-empty-title{font-size:13px;font-weight:500;color:var(--ink-2);margin-bottom:6px}
+.exe-empty-sub{font-size:12px;color:var(--muted);max-width:320px;line-height:1.6}
+
+/* Preview panel */
+.exe-preview-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:44px 20px;min-height:200px;text-align:center}
+.exe-preview-empty-icon{font-size:26px;color:var(--line);margin-bottom:12px}
+.exe-preview-empty-title{font-size:12.5px;font-weight:500;color:var(--ink-2);margin-bottom:6px}
+.exe-preview-empty-sub{font-size:11.5px;color:var(--muted);line-height:1.6}
+.exe-pv-head{padding:11px 14px;border-bottom:1px solid var(--hairline)}
+.exe-pv-title{font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.35}
+.exe-pv-id{font-size:10.5px;color:var(--muted);margin-top:3px;display:block}
+.exe-pv-stage-row{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--hairline)}
+.exe-pv-stage-label{font-size:12px;color:var(--muted)}
+.exe-pv-field{display:grid;grid-template-columns:64px 1fr;gap:10px;padding:7px 14px;border-bottom:1px solid var(--hairline);align-items:start}
+.exe-pv-fl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-top:2px}
+.exe-pv-fv{font-size:12px;color:var(--ink);word-break:break-word}
+.exe-pv-notes{padding:10px 14px;border-bottom:1px solid var(--hairline)}
+.exe-pv-notes-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.exe-pv-notes-body{font-size:12px;color:var(--ink-2);line-height:1.6}
+.exe-pv-action{padding:8px 14px;border-bottom:1px solid var(--hairline)}
+.exe-pv-open-btn{width:100%;justify-content:center}
+.exe-pv-caveat{padding:8px 14px;background:var(--paper-2);font-size:11px;color:var(--muted-2);line-height:1.5}
+
+@media(max-width:1380px){.exe-main-grid{grid-template-columns:3fr 2fr}}
+@media(max-width:1200px){
+  .exe-main-grid{grid-template-columns:1fr}
+  .exe-drill-section{grid-template-columns:1fr}
+  .exe-preview-col{position:relative;top:auto;max-height:none;overflow-y:visible}
+  .exe-kpi-band{grid-template-columns:repeat(2,1fr)}
+  .exe-kpi-item:nth-child(2){border-right:0}
+  .exe-kpi-item:nth-child(1),.exe-kpi-item:nth-child(2){border-bottom:1px solid var(--hairline)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-name">Sales Ops CRM<span>v2.10</span></div>
+    </div>
+    <div class="tenant">
+      <div class="tenant-label">Tenant</div>
+      <div class="tenant-row">
+        <div class="tenant-name">Orion Industrial</div>
+        <div class="tenant-env mono">LOCAL PILOT</div>
+      </div>
+      <div class="tenant-meta">
+        <span class="mono">EU-CENTRAL-1</span>
+        <span class="dot">·</span>
+        <span>184 seats</span>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">
+        <div class="nav-title">Workspace<em>01</em></div>
+        <div class="nav-item active">
+          <span class="nav-mark mono">DA</span>
+          <span>Dashboard</span>
+          <span class="nav-count"></span>
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-title">Pipeline<em>03</em></div>
+        <div class="nav-item">
+          <span class="nav-mark mono">OP</span>
+          <span>Opportunities</span>
+          <span class="nav-count">128</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-mark mono">AC</span>
+          <span>Accounts</span>
+          <span class="nav-count"></span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-mark mono">AP</span>
+          <span>Approvals</span>
+          <span class="nav-count">19</span>
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-title">Insights<em>02</em></div>
+        <div class="nav-item">
+          <span class="nav-mark mono">RE</span>
+          <span>Reports</span>
+          <span class="nav-count"></span>
+        </div>
+      </div>
+    </nav>
+    <div class="user-block">
+      <div class="avatar bg-f">EM</div>
+      <div class="user-meta">
+        <div class="user-name">Elena Morozova</div>
+        <div class="user-role">Executive</div>
+      </div>
+      <span class="role-badge r-exe">EXE</span>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="crumb">
+        <span class="pulse"><span class="pulse-dot"></span>LOCAL PILOT</span>
+        <span>Orion Industrial</span>
+        <span class="sep">/</span>
+        <strong>Executive Dashboard</strong>
+      </div>
+      <label class="search">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5"/></svg>
+        <input placeholder="Search opportunities, accounts, approval requests…" />
+        <kbd>⌘K</kbd>
+      </label>
+      <div class="top-actions">
+        <button class="icon-btn" title="Notifications">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3.5 12h9l-1-1.5V7a3.5 3.5 0 0 0-7 0v3.5L3.5 12Z"/><path d="M6.5 13.5a1.5 1.5 0 0 0 3 0"/></svg>
+          <span class="dot-badge mono">3</span>
+        </button>
+        <div class="role-pill">
+          <span class="avatar bg-f">EM</span>
+          <span class="who"><b>Elena M.</b><span>Executive</span></span>
+          <span class="chev">▾</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard content (React) -->
+    <div id="root"></div>
+  </main>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useMemo } = React;
+
+/* ── Static prototype data (mirrors 12_executive_dashboard.jsx) ── */
+
+const PIPELINE_STAGES = [
+  { stage:"Qualification", code:"Q", count:42, value:2800000, pct:100, stuck:1 },
+  { stage:"Discovery",     code:"D", count:35, value:2200000, pct:79,  stuck:2 },
+  { stage:"Proposal",      code:"P", count:28, value:2100000, pct:75,  stuck:4, warn:true },
+  { stage:"Negotiation",   code:"N", count:23, value:1620000, pct:58,  stuck:2 },
+];
+const CLOSED_QTD = { count:11, value:1040000, pctOfMax:37 };
+
+const APPROVAL_QUEUES = [
+  { dept:"Finance", abbr:"FIN", badgeCls:"r-fin", pending:8,  overdue:1, avgH:"24h", sla:"48h" },
+  { dept:"Legal",   abbr:"LEG", badgeCls:"r-leg", pending:9,  overdue:3, avgH:"54h", sla:"72h", bottleneck:true },
+  { dept:"Manager", abbr:"MGR", badgeCls:"r-mgr", pending:2,  overdue:0, avgH:"8h",  sla:"24h" },
+];
+
+const EXCEPTION_TYPES = [
+  { type:"Discount exception", count:8, value:2140000, detail:"avg 11.4% off list" },
+  { type:"Payment terms",      count:4, value:1620000, detail:"NET-60 most common" },
+  { type:"Legal / indemnity",  count:7, value:2960000, detail:"3 overdue in Legal queue" },
+];
+
+const PROJ_HEALTH = {
+  lastRefresh:"2026-05-17 08:40",
+  refreshDuration:"12s",
+  sourceEvents:"1,284",
+  pendingImports:2,
+  pendingMerges:5,
+};
+
+const ALL_OPPS = [
+  { id:"OPP-2418", title:"Q3 Equipment Renewal",        account:"Acme Manufacturing",   owner:"A. Petrova", team:"DACH-North", stageCode:"P", stageIdx:2, amount:145000, close:"2026-06-12", approvalStatus:"pending",  approvalLabel:"Finance",       riskLabel:"SLA at risk · 23h left",         riskSev:"warn", notes:"Strategic renewal. Competitor offered 9% rebate. Finance discount exception SLA expires tomorrow. Needs fast decision to protect close date." },
+  { id:"OPP-2502", title:"Sigma Castings Capital Order", account:"Sigma Castings GmbH",  owner:"J. Berg",    team:"DACH-North", stageCode:"P", stageIdx:2, amount:580000, close:"2026-05-29", approvalStatus:"overdue",  approvalLabel:"Finance OD",    riskLabel:"Approval overdue · 5h past SLA", riskSev:"neg",  notes:"Largest Q3 deal. Finance SLA breached 5h ago. Customer has given an EOD deadline today. Escalation required immediately." },
+  { id:"OPP-2385", title:"Carpathia Steel NET-90 Terms", account:"Carpathia Steel S.A.", owner:"A. Petrova", team:"DACH-North", stageCode:"N", stageIdx:3, amount:264000, close:"2026-05-22", approvalStatus:"sentback", approvalLabel:"Sent Back",     riskLabel:"Send-back 22d · no resubmit",    riskSev:"neg",  notes:"Finance sent back — justification insufficient. Needs payment record + NDA. Owner has not resubmitted. Close date slipped 8 days." },
+  { id:"OPP-2410", title:"Nordwerk Plant Retooling",     account:"Nordwerk Tooling AG",  owner:"A. Petrova", team:"DACH-North", stageCode:"N", stageIdx:3, amount:412500, close:"2026-05-30", approvalStatus:"pending",  approvalLabel:"Finance",       riskLabel:"Closing 13d · approval pending",  riskSev:"warn", notes:"Customer treasury requires NET-60 terms. Terms exception in Finance queue. Close date is firm — fast decision needed." },
+  { id:"OPP-2360", title:"Vetra Logistics Pricing Model",account:"Vetra Logistics OÜ",  owner:"E. Vogel",   team:"DACH-North", stageCode:"P", stageIdx:2, amount:192000, close:"2026-06-28", approvalStatus:"legal",    approvalLabel:"Legal Review",  riskLabel:"—",                              riskSev:"none", notes:"Indemnity carve-out under legal review by O. Markov. Expected to clear this week. Eva monitoring closely." },
+  { id:"OPP-2170", title:"Schwarz Maschinenbau Renewal", account:"Schwarz Maschinenbau", owner:"M. Weber",   team:"DACH-South", stageCode:"N", stageIdx:3, amount:204000, close:"2026-05-20", approvalStatus:"approved", approvalLabel:"Approved",      riskLabel:"—",                              riskSev:"none", notes:"Finance approved 9% discount. Standard terms. Contract prepared. On track to close 2026-05-20." },
+  { id:"OPP-2298", title:"Renvik Industri Pilot to Prod.",account:"Renvik Industri AB",  owner:"E. Vogel",   team:"DACH-North", stageCode:"D", stageIdx:1, amount:118000, close:"2026-08-20", approvalStatus:"none",     approvalLabel:"—",             riskLabel:"No next step · 18d idle",        riskSev:"warn", notes:"Promising discovery — pilot went well. No follow-up activity logged in 18 days. Owner must schedule next step or qualify out." },
+];
+
+/* ── Drill presets — rev 1: all 14 are honest and distinct ── */
+const DRILL_PRESETS = {
+  all:       { label:"All opportunities",            f:()=>true },
+  pipeline:  { label:"Open pipeline · all stages",  f:()=>true },
+  // DISTINCT: pending + overdue only — immediate action required
+  approvals: { label:"Approval action required",     f:o=>["pending","overdue"].includes(o.approvalStatus) },
+  // DISTINCT: overdue + sentback — the states that directly inflate avg turnaround.
+  // sentback restarts the approval clock; these do NOT appear in approvals preset.
+  turnover:  { label:"Turnaround risk \u00b7 overdue & sent back", f:o=>["overdue","sentback"].includes(o.approvalStatus),
+    emptyNote:"No overdue or sent-back approval requests are currently active. These are the primary contributors to elevated avg turnaround time." },
+  closingQ2: { label:"Closing Q2 2026",              f:o=>o.close<"2026-07-01" },
+  stageQ:    { label:"Stage: Qualification",         f:o=>o.stageCode==="Q" },
+  stageD:    { label:"Stage: Discovery",             f:o=>o.stageCode==="D" },
+  stageP:    { label:"Stage: Proposal",              f:o=>o.stageCode==="P" },
+  stageN:    { label:"Stage: Negotiation",           f:o=>o.stageCode==="N" },
+  // Real filter; empty because exec drill-down covers open opps only
+  stageW:    { label:"Stage: Closed Won",            f:o=>o.stageCode==="W",
+    emptyNote:"Closed Won opportunities are tracked in the Closed pipeline view. This executive drill-down covers open and recently approved opportunities only." },
+  apprFin:   { label:"Finance approval queue",       f:o=>o.approvalLabel.startsWith("Finance") },
+  apprLeg:   { label:"Legal Review queue",           f:o=>o.approvalLabel.includes("Legal") },
+  // Real filter; empty when no manager-level requests are active
+  apprMgr:   { label:"Manager approval queue",       f:o=>o.approvalLabel.toLowerCase().includes("manager"),
+    emptyNote:"No manager-level approval requests are currently active. Manager approvals will appear here when submitted." },
+  risk:      { label:"Deals with risk signals",      f:o=>o.riskSev!=="none" },
+};
+const QUEUE_DRILL = { Finance:"apprFin", Legal:"apprLeg", Manager:"apprMgr" };
+
+/* ── Helpers ── */
+function fmtM(n){ if(n>=1e6) return `$${(n/1e6).toFixed(2)}M`; if(n>=1e3) return `$${(n/1e3).toFixed(0)}K`; return `$${n}`; }
+function nextSched(last){ const[d,t]=last.split(" "); const[h,m]=t.split(":").map(Number); return `${d} ${String((h+1)%24).padStart(2,"0")}:${String(m).padStart(2,"0")}`; }
+function pillState(s){ if(s==="approved") return "approved"; if(s==="pending") return "pending"; if(s==="overdue") return "rejected"; if(s==="sentback"||s==="legal") return "sent_back"; return "none"; }
+function riskClr(sev){ return sev==="neg"?"var(--neg)":sev==="warn"?"var(--warn)":"var(--muted-2)"; }
+const STAGE_LABELS=["Qualification","Discovery","Proposal","Negotiation","Closed Won"];
+
+/* ── StagePip ── */
+function StagePip({idx,total=5}){
+  return <span className="exe-stage-pip" aria-hidden="true">{Array.from({length:total},(_,i)=><i key={i} className={i<idx?"on":i===idx?"cur":""} />)}</span>;
+}
+
+/* ── ApprPill ── */
+function ApprPill({status,label}){
+  if(!status||status==="none") return <span className="exe-pill-none">—</span>;
+  return <span className={`rep-pill p-${pillState(status)}`}><span className="dot"/>{label}</span>;
+}
+
+/* ── KpiTile ── */
+function KpiTile({label,value,unit,delta,foot,alert,active,onClick}){
+  return (
+    <div className={`exe-kpi-item${onClick?" exe-kpi-btn":""}${active?" exe-kpi-active":""}`} onClick={onClick} role={onClick?"button":undefined} title={onClick?"Click to filter drill-down":undefined}>
+      <div className="exe-kpi-l">
+        <span>{label}</span>
+        {delta&&<span className={`exe-kpi-delta ${delta.dir}`}>{delta.dir==="up"?"▲":"▼"} {delta.v}</span>}
+      </div>
+      <div className="exe-kpi-v mono" style={alert?{color:"var(--neg)"}:{}}>
+        {value}{unit&&<small>{unit}</small>}
+      </div>
+      <div className="exe-kpi-foot">{foot}</div>
+    </div>
+  );
+}
+
+/* ── PipelineFunnel ── */
+function PipelineFunnel({stages,closedQtd,drillKey,onDrill}){
+  const openTotal=stages.reduce((s,st)=>s+st.value,0);
+  const stuckTotal=stages.reduce((s,st)=>s+st.stuck,0);
+  const weighted=openTotal*0.365;
+  const openCount=stages.reduce((s,st)=>s+st.count,0);
+  return (
+    <div className="rep-panel">
+      <div className="rep-panel-head">
+        <div className="rep-panel-title">Pipeline by stage<em>{openCount} open</em></div>
+        <div className="rep-panel-actions">
+          {/* Non-interactive context labels — no real backend filter */}
+          <span className="exe-context-label">ALL TEAMS</span>
+          <span className="exe-context-label">Q2 2026</span>
+          <button className="rep-btn rep-btn-ghost exe-link-btn" type="button" onClick={()=>onDrill("pipeline")}>All opportunities ›</button>
+        </div>
+      </div>
+      <div>
+        <div className="exe-funnel-col-hd">
+          <div className="exe-fhd">Stage</div>
+          <div className="exe-fhd">Distribution</div>
+          <div className="exe-fhd exe-fhd--num">Deals</div>
+          <div className="exe-fhd exe-fhd--num">Value</div>
+          <div className="exe-fhd exe-fhd--num">Stuck</div>
+        </div>
+        {stages.map(s=>{
+          const key=`stage${s.code}`;const active=drillKey===key;
+          return (
+            <div key={s.code} className={`exe-funnel-row${active?" exe-funnel-row--active":""}`} onClick={()=>onDrill(key)} role="button" tabIndex={0}>
+              <div className="exe-funnel-stage"><span className="exe-funnel-code mono">{s.code}</span><span>{s.stage}</span></div>
+              <div className="exe-bar-track"><div className="exe-bar-fill" style={{width:`${s.pct}%`,background:s.warn?"var(--warn)":"var(--ink)"}}/></div>
+              <div className="exe-funnel-num mono">{s.count}</div>
+              <div className="exe-funnel-num mono">{fmtM(s.value)}</div>
+              <div className="exe-funnel-num mono" style={{color:s.stuck>3?"var(--neg)":s.stuck>1?"var(--warn)":"var(--muted)"}}>{s.stuck>0?s.stuck:"—"}</div>
+            </div>
+          );
+        })}
+        <div className={`exe-funnel-row exe-funnel-row--won${drillKey==="stageW"?" exe-funnel-row--active":""}`} onClick={()=>onDrill("stageW")} role="button" tabIndex={0}>
+          <div className="exe-funnel-stage" style={{color:"var(--pos)"}}><span className="exe-funnel-code mono">W</span><span>Closed Won QTD</span></div>
+          <div className="exe-bar-track"><div className="exe-bar-fill" style={{width:`${closedQtd.pctOfMax}%`,background:"var(--pos)"}}/></div>
+          <div className="exe-funnel-num mono" style={{color:"var(--pos)"}}>{closedQtd.count}</div>
+          <div className="exe-funnel-num mono" style={{color:"var(--pos)"}}>{fmtM(closedQtd.value)}</div>
+          <div className="exe-funnel-num mono" style={{color:"var(--muted)"}}>—</div>
+        </div>
+      </div>
+      <div className="exe-funnel-foot">
+        <span>Open: <strong className="mono">{fmtM(openTotal)}</strong></span>
+        <span>Weighted: <strong className="mono" style={{color:"var(--accent-2)"}}>{fmtM(weighted)}</strong></span>
+        <span>Stuck: <strong className="mono" style={{color:stuckTotal>0?"var(--neg)":"inherit"}}>{stuckTotal}</strong></span>
+      </div>
+    </div>
+  );
+}
+
+/* ── ApprovalPanel ── */
+function ApprovalPanel({queues,exceptionTypes,drillKey,onDrill,onOpenApprovals}){
+  const [exceptOpen,setExceptOpen]=useState(false);
+  const totalPending=queues.reduce((s,q)=>s+q.pending,0);
+  const totalOverdue=queues.reduce((s,q)=>s+q.overdue,0);
+  const exceptTotal=exceptionTypes.reduce((s,t)=>s+t.count,0);
+  return (
+    <div className="rep-panel">
+      <div className="rep-panel-head">
+        <div className="rep-panel-title">Approval queues<em>{totalPending} pending</em></div>
+        <div className="rep-panel-actions">
+          {/* Render as button only when handler is provided */}
+          {onOpenApprovals
+            ? <button className="rep-btn rep-btn-ghost exe-link-btn" type="button" onClick={onOpenApprovals}>Approvals ›</button>
+            : <span className="exe-panel-link-label">Approvals</span>}
+        </div>
+      </div>
+      {queues.map((q,i)=>{
+        const key=QUEUE_DRILL[q.dept]??"approvals";const active=drillKey===key;
+        return (
+          <div key={q.dept} className={`exe-appr-row${active?" exe-appr-row--active":""}${q.bottleneck?" exe-appr-row--bottleneck":""}`}
+            style={i<queues.length-1?{borderBottom:"1px solid var(--hairline)"}:{}}
+            onClick={()=>onDrill(key)} role="button" tabIndex={0}>
+            <span className={`role-badge ${q.badgeCls}`}>{q.abbr}</span>
+            <div className="exe-appr-meta">
+              <div className="exe-appr-dept">{q.dept}{q.bottleneck&&<span className="exe-bottleneck-badge">BOTTLENECK</span>}</div>
+              <div className="exe-appr-sla">SLA {q.sla} · avg {q.avgH}</div>
+            </div>
+            <div className="exe-appr-counts">
+              <span className="exe-appr-pending mono">{q.pending}</span>
+              {q.overdue>0?<span className="exe-overdue-badge">{q.overdue} OD</span>:<span className="exe-ontime-badge">ON TIME</span>}
+            </div>
+          </div>
+        );
+      })}
+      <div className="exe-appr-foot">
+        <span>Total: <strong className="mono">{totalPending}</strong></span>
+        <span style={{color:"var(--neg)",fontWeight:600}}>▲ {totalOverdue} past SLA</span>
+        <span>Avg: <strong className="mono">36.4h</strong></span>
+      </div>
+      <div style={{borderTop:"1px solid var(--hairline)"}}>
+        <button className="exe-accordion-hd" type="button" onClick={()=>setExceptOpen(o=>!o)} aria-expanded={exceptOpen}>
+          <span className="exe-accordion-label">Exception types</span>
+          <em className="exe-accordion-count mono">{exceptTotal}</em>
+          <span className="exe-accordion-chev">{exceptOpen?"▲":"▼"}</span>
+        </button>
+        {exceptOpen&&(
+          <div className="exe-accordion-body">
+            {exceptionTypes.map((t,i)=>(
+              <div key={t.type} className="exe-except-row" style={i<exceptionTypes.length-1?{borderBottom:"1px solid var(--hairline)"}:{}}>
+                <div className="exe-except-copy">
+                  <div className="exe-except-type">{t.type}</div>
+                  <div className="exe-except-detail">{t.count} req · {fmtM(t.value)} · {t.detail}</div>
+                </div>
+                <span className="exe-except-n mono">{t.count}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── ProjectionHealthAccordion ── */
+function ProjectionAccordion({health,lastRefresh}){
+  const [open,setOpen]=useState(false);
+  const hasPending=health.pendingImports>0||health.pendingMerges>0;
+  const rows=[
+    {label:"Last refresh",           value:lastRefresh,                   warn:false},
+    {label:"Refresh duration",       value:health.refreshDuration,        warn:false},
+    {label:"Source events included", value:health.sourceEvents,           warn:false},
+    {label:"Pending imports",        value:String(health.pendingImports), warn:health.pendingImports>0},
+    {label:"Pending merge refresh",  value:String(health.pendingMerges),  warn:health.pendingMerges>0},
+    {label:"Next scheduled",         value:nextSched(lastRefresh),        warn:false},
+  ];
+  return (
+    <div className="rep-panel">
+      <button className="exe-accordion-hd exe-proj-hd" type="button" onClick={()=>setOpen(o=>!o)} aria-expanded={open}>
+        <span className="exe-accordion-label">Data freshness</span>
+        <span className="exe-proj-meta mono">
+          Last: {lastRefresh}
+          {hasPending&&<span className="exe-proj-warn-flag"> · {health.pendingImports+health.pendingMerges} pending</span>}
+        </span>
+        <span className="exe-accordion-chev">{open?"▲":"▼"}</span>
+      </button>
+      {open&&(
+        <div className="exe-accordion-body">
+          {rows.map((r,i)=>(
+            <div key={r.label} className="exe-proj-row" style={i<rows.length-1?{borderBottom:"1px solid var(--hairline)"}:{}}>
+              <span className="exe-proj-lbl">{r.label}</span>
+              <span className="mono exe-proj-val" style={r.warn?{color:"var(--accent-2)",fontWeight:600}:{}}>{r.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── DrillTable ── */
+function DrillTable({rows,drillLabel,emptyNote,selectedId,onSelect}){
+  if(rows.length===0) return (
+    <div className="rep-panel">
+      <div className="rep-panel-head">
+        <div className="rep-panel-title">Drill-down <em>0 results</em></div>
+        <div className="rep-panel-actions"><span className="mono" style={{fontSize:11,color:"var(--muted)"}}>{drillLabel}</span></div>
+      </div>
+      <div className="exe-empty">
+        <div className="exe-empty-icon mono">∅</div>
+        <div className="exe-empty-title">No records match this filter</div>
+        <div className="exe-empty-sub">{emptyNote??"The selected view returned no permitted drill-down records. Try a different metric, stage, or queue."}</div>
+      </div>
+    </div>
+  );
+  return (
+    <div className="rep-panel">
+      <div className="rep-panel-head">
+        <div className="rep-panel-title">Drill-down <em>{rows.length} result{rows.length!==1?"s":""}</em></div>
+        <div className="rep-panel-actions"><span className="mono" style={{fontSize:11,color:"var(--muted)"}}>{drillLabel}</span></div>
+      </div>
+      <div className="rep-table-scroll">
+        <table className="rep-table exe-drill-table">
+          <colgroup>
+            <col style={{width:"17%"}}/><col style={{width:"13%"}}/><col style={{width:"8%"}}/><col style={{width:"9%"}}/>
+            <col style={{width:"5%"}}/><col style={{width:"7%"}}/><col style={{width:"8%"}}/><col style={{width:"11%"}}/><col/>
+          </colgroup>
+          <thead><tr>
+            <th>Opportunity</th><th>Account</th><th>Owner</th><th>Team</th>
+            <th>Stage</th><th className="num">Amount</th><th>Close</th><th>Approval</th><th>Risk Signal</th>
+          </tr></thead>
+          <tbody>
+            {rows.map(o=>(
+              <tr key={o.id} className={selectedId===o.id?"selected":""} style={{cursor:"pointer"}} onClick={()=>onSelect(o.id===selectedId?null:o.id)}>
+                <td><div className="rep-cell-truncate" style={{fontWeight:500}}>{o.title}</div><span className="rep-cell-sub mono">{o.id}</span></td>
+                <td className="rep-cell-truncate">{o.account}</td>
+                <td style={{fontSize:12}}>{o.owner}</td>
+                <td style={{fontSize:11.5,color:"var(--muted)"}}>{o.team}</td>
+                <td style={{textAlign:"center"}}><StagePip idx={o.stageIdx}/></td>
+                <td className="num"><span className="mono" style={{fontWeight:600,fontSize:12.5}}>{fmtM(o.amount)}</span></td>
+                <td><span className="mono" style={{fontSize:12}}>{o.close}</span></td>
+                <td><ApprPill status={o.approvalStatus} label={o.approvalLabel}/></td>
+                <td><span className="mono exe-risk-label" style={{color:riskClr(o.riskSev)}}>{o.riskLabel||"—"}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ── OppPreview ── */
+function OppPreview({opp}){
+  if(!opp) return (
+    <div className="rep-panel exe-preview-empty">
+      <div className="exe-preview-empty-icon">↗</div>
+      <div className="exe-preview-empty-title">Opportunity preview</div>
+      <div className="exe-preview-empty-sub">Select a row in the drill-down table to preview.</div>
+    </div>
+  );
+  const meta=[["Account",opp.account,false],["Owner",`${opp.owner} · ${opp.team}`,false],["Amount",fmtM(opp.amount),true],["Close",opp.close,true]];
+  return (
+    <div className="rep-panel">
+      <div className="exe-pv-head">
+        <div className="exe-pv-title">{opp.title}</div>
+        <div className="mono exe-pv-id">{opp.id}</div>
+      </div>
+      <div className="exe-pv-stage-row">
+        <StagePip idx={opp.stageIdx}/>
+        <span className="exe-pv-stage-label">{STAGE_LABELS[opp.stageIdx]}</span>
+      </div>
+      {meta.map(([l,v,isMono])=>(
+        <div key={l} className="exe-pv-field">
+          <span className="exe-pv-fl">{l}</span>
+          <span className={isMono?"mono exe-pv-fv":"exe-pv-fv"}>{v}</span>
+        </div>
+      ))}
+      <div className="exe-pv-field">
+        <span className="exe-pv-fl">Approval</span>
+        <ApprPill status={opp.approvalStatus} label={opp.approvalLabel}/>
+      </div>
+      {opp.riskSev!=="none"&&(
+        <div className="exe-pv-field">
+          <span className="exe-pv-fl">Risk</span>
+          <span className="mono exe-risk-label" style={{color:riskClr(opp.riskSev)}}>{opp.riskLabel}</span>
+        </div>
+      )}
+      <div className="exe-pv-notes">
+        <div className="exe-pv-notes-lbl">Context</div>
+        <div className="exe-pv-notes-body">{opp.notes}</div>
+      </div>
+      <div className="exe-pv-action">
+        <button className="rep-btn rep-btn-ghost exe-pv-open-btn" type="button">Open opportunity ›</button>
+      </div>
+      <div className="exe-pv-caveat">ⓘ Sensitive fields may be hidden per role access and field visibility policy.</div>
+    </div>
+  );
+}
+
+/* ── App ── */
+function App(){
+  const [drillKey,setDrillKey]=useState("all");
+  const [selectedId,setSelectedId]=useState(null);
+  const [refreshState,setRefreshState]=useState("idle");
+  const [lastRefresh,setLastRefresh]=useState(PROJ_HEALTH.lastRefresh);
+
+  const preset=DRILL_PRESETS[drillKey]??DRILL_PRESETS.all;
+  const drillRows=useMemo(()=>ALL_OPPS.filter(preset.f),[drillKey]);
+  const selectedOpp=selectedId?ALL_OPPS.find(o=>o.id===selectedId)??null:null;
+
+  const openCount=PIPELINE_STAGES.reduce((s,st)=>s+st.count,0);
+  const totalPipeline=PIPELINE_STAGES.reduce((s,st)=>s+st.value,0);
+  const totalPending=APPROVAL_QUEUES.reduce((s,q)=>s+q.pending,0);
+  const totalOverdue=APPROVAL_QUEUES.reduce((s,q)=>s+q.overdue,0);
+  const weighted=totalPipeline*0.365;
+  const bottleneck=APPROVAL_QUEUES.find(q=>q.bottleneck)??null;
+
+  function selectDrill(key){setDrillKey(key);setSelectedId(null);}
+
+  function handleRefresh(){
+    if(refreshState==="loading") return;
+    setRefreshState("loading");
+    // Prototype simulates a real async refresh; error path is reachable
+    // by rejecting the promise — same semantics as production onRefresh.
+    new Promise((resolve,reject)=>{
+      setTimeout(()=>{
+        // Simulate ~5% failure rate so the error path is visibly testable.
+        // In production this is replaced by a real API call.
+        Math.random()<0.95 ? resolve() : reject(new Error("Refresh failed"));
+      },1600);
+    }).then(()=>{
+      const[d,t]=lastRefresh.split(" ");const[h,m]=t.split(":").map(Number);
+      setLastRefresh(`${d} ${String((h+1)%24).padStart(2,"0")}:${String(m).padStart(2,"0")}`);
+      setRefreshState("success");
+      setTimeout(()=>setRefreshState("idle"),3500);
+    }).catch(()=>{
+      // Never show success on failure.
+      setRefreshState("error");
+      setTimeout(()=>setRefreshState("idle"),5000);
+    });
+  }
+
+  return (
+    <div className="rep-workspace">
+
+      {/* Page head */}
+      <div className="exe-page-head">
+        <div className="exe-page-head-left">
+          <div className="exe-crumb">
+            <span>Reporting</span>
+            <span className="sep">/</span>
+            <strong>Executive Dashboard</strong>
+          </div>
+          <div className="exe-page-meta">
+            <span className="mono">Q2 2026</span>
+            <span className="sep">·</span>
+            <span>All teams · Orion Industrial</span>
+            <span className="sep">·</span>
+            <span>Projection: <span className="mono">{lastRefresh}</span></span>
+            <span className="sep">·</span>
+            <span className="mono exe-env-tag">LOCAL PILOT</span>
+          </div>
+        </div>
+        <div className="exe-page-head-right">
+          <button
+            className={`rep-btn${refreshState==="loading"?" exe-btn-busy":refreshState==="error"?" exe-btn-error":""}`}
+            type="button" onClick={handleRefresh} disabled={refreshState==="loading"}>
+            {refreshState==="loading"?<><span className="exe-spin">↻</span> Refreshing…</>:
+             refreshState==="success"?<><span style={{color:"var(--pos)"}}>✓</span> Updated {lastRefresh}</>:
+             refreshState==="error"?<><span style={{color:"var(--neg)"}}>✕</span> Refresh failed — retry</>:
+             <><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 8A6 6 0 1 1 8 2"/><path d="M14 2v4h-4"/></svg> Refresh Projection</>}
+          </button>
+          {/* Export only rendered when a real handler is available.
+              In the prototype we pass a no-op to show the button state. */}
+          <button className="rep-btn" type="button" onClick={()=>alert("Export not implemented in prototype")}>Export Summary</button>
+        </div>
+      </div>
+
+      {/* KPI band */}
+      <div className="exe-kpi-band">
+        <KpiTile label="Open pipeline" value={`${(totalPipeline/1e6).toFixed(2)}`} unit="M" foot={`${openCount} open opportunities · weighted ${fmtM(weighted)}`} delta={{dir:"up",v:"+2.4%"}} active={drillKey==="pipeline"} onClick={()=>selectDrill("pipeline")}/>
+        <KpiTile label="Pending approvals" value={String(totalPending)} foot={bottleneck?`Bottleneck: ${bottleneck.dept} · ${totalOverdue} overdue`:`${totalOverdue} overdue`} delta={{dir:"up",v:`${totalOverdue} OD`}} alert active={drillKey==="approvals"} onClick={()=>selectDrill("approvals")}/>
+        <KpiTile label="Avg approval turnaround" value="36.4" unit="h" foot={bottleneck?`Target 48h SLA · ${bottleneck.dept} avg ${bottleneck.avgH}`:"Target 48h SLA"} active={drillKey==="turnover"} onClick={()=>selectDrill("turnover")}/>
+        <KpiTile label="Weighted forecast" value={`${(weighted/1e6).toFixed(2)}`} unit="M" foot={`Q2 2026 · projection ${lastRefresh}`} active={drillKey==="closingQ2"} onClick={()=>selectDrill("closingQ2")}/>
+      </div>
+
+      {/* Main grid */}
+      <div className="exe-main-grid">
+        <PipelineFunnel stages={PIPELINE_STAGES} closedQtd={CLOSED_QTD} drillKey={drillKey} onDrill={selectDrill}/>
+        <ApprovalPanel queues={APPROVAL_QUEUES} exceptionTypes={EXCEPTION_TYPES} drillKey={drillKey} onDrill={selectDrill} onOpenApprovals={null}/>
+      </div>
+
+      {/* Data freshness */}
+      <div className="exe-below-grid">
+        <ProjectionAccordion health={PROJ_HEALTH} lastRefresh={lastRefresh}/>
+      </div>
+
+      {/* Access strip */}
+      <div className="exe-access-strip">
+        <span className="exe-access-icon">ⓘ</span>
+        <span><strong>Executive access</strong> — aggregate metrics and permitted drill-down records only. Drill-down respects role access and field visibility rules. Sensitive fields may be hidden even when the aggregate includes them.</span>
+      </div>
+
+      {/* Drill section */}
+      <div className="exe-drill-section">
+        <DrillTable rows={drillRows} drillLabel={preset.label} emptyNote={preset.emptyNote} selectedId={selectedId} onSelect={setSelectedId}/>
+        <div className="exe-preview-col">
+          <OppPreview opp={selectedOpp}/>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="rep-foot-ruler">
+        <span>12 · Executive Dashboard</span>
+        <span>ORION INDUSTRIAL · LOCAL PILOT · EU-CENTRAL-1</span>
+        <span className="mono">Projection {lastRefresh} · access-controlled aggregate</span>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
