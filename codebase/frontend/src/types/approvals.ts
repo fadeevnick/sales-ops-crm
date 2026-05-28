@@ -33,6 +33,7 @@ export type ApprovalInboxItem = {
   status: string;
   activeStepId: string;
   activeStepStatus: string;
+  activeStepDueAt: string | null;
   approverRoleKey: string;
   submittedByName: string;
   submittedAt: string | null;

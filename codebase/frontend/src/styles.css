@@ -3465,6 +3465,25 @@ button.record-row {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+.opp-appr-summary {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 14px 0;
+}
+
+.opp-appr-summary > span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  color: var(--ink-2);
+  font-size: 0.72rem;
+  border-radius: 2px;
+}
+
 /* Process strip for the submit flow */
 .opp-process {
   display: grid;
@@ -4635,6 +4654,45 @@ button.record-row {
   font-size: 0.7rem;
   color: var(--muted-2);
   margin-top: 2px;
+}
+
+.appr-sla-pill {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  border: 1px solid var(--line-2);
+  background: var(--paper-2);
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.66rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.rep-cell-sub + .appr-sla-pill {
+  margin-left: 0;
+  margin-top: 4px;
+}
+
+.appr-sla-ok {
+  border-color: rgba(39, 126, 68, 0.26);
+  background: var(--pos-soft);
+  color: var(--pos);
+}
+
+.appr-sla-warn {
+  border-color: rgba(191, 127, 24, 0.35);
+  background: #fff4d8;
+  color: #8a5a10;
+}
+
+.appr-sla-overdue {
+  border-color: rgba(154, 52, 18, 0.35);
+  background: #fee7dd;
+  color: var(--neg);
 }
 
 .appr-chain-badge {

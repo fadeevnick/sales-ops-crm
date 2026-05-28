@@ -38,6 +38,7 @@ data class ApprovalInboxItem(
     val status: String,
     val activeStepId: String,
     val activeStepStatus: String,
+    val activeStepDueAt: Instant?,
     val approverRoleKey: String,
     val submittedByName: String,
     val submittedAt: Instant?,

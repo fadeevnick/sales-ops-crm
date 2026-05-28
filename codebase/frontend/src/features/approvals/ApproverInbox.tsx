@@ -164,6 +164,43 @@ function formatDate(value: string | null | undefined): string {
   return value.slice(0, 10);
 }
 
+type SlaState = {
+  label: string;
+  tone: "none" | "ok" | "warn" | "overdue";
+  title: string;
+};
+
+function describeSla(value: string | null | undefined, now = Date.now()): SlaState {
+  if (!value) {
+    return { label: "No SLA set", tone: "none", title: "No due date was returned for this approval step" };
+  }
+  const dueMs = Date.parse(value);
+  if (!Number.isFinite(dueMs)) {
+    return { label: "SLA invalid", tone: "warn", title: value };
+  }
+
+  const diffMs = dueMs - now;
+  const absHours = Math.max(1, Math.round(Math.abs(diffMs) / 3_600_000));
+  const dueLabel = formatDateTime(value);
+  if (diffMs < 0) {
+    return { label: `Overdue by ${absHours}h`, tone: "overdue", title: `Due ${dueLabel}` };
+  }
+  if (diffMs <= 24 * 3_600_000) {
+    return { label: `Due in ${absHours}h`, tone: "warn", title: `Due ${dueLabel}` };
+  }
+  const days = Math.max(1, Math.round(diffMs / 86_400_000));
+  return { label: `Due in ${days}d`, tone: "ok", title: `Due ${dueLabel}` };
+}
+
+function SlaPill({ dueAt }: { dueAt: string | null | undefined }) {
+  const sla = describeSla(dueAt);
+  return (
+    <span className={`appr-sla-pill appr-sla-${sla.tone}`} title={sla.title}>
+      {sla.label}
+    </span>
+  );
+}
+
 function formatCurrency(value: number | undefined): string {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—";
   return value.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -604,6 +641,7 @@ export function ApproverInbox({ currentUser }: ApproverInboxProps) {
                       <td>
                         <div className="rep-cell-truncate">{item.approverRoleKey}</div>
                         <span className="rep-cell-sub">{humaniseStatus(item.activeStepStatus)}</span>
+                        <SlaPill dueAt={item.activeStepDueAt} />
                       </td>
                       <td>
                         <span className={`rep-pill p-${pillKindForStatus(item.status)}`}>
@@ -761,7 +799,9 @@ function DetailPreview({
     if (detail.status === "sent_back")
       return "Awaiting submitter to revise the underlying record and resubmit.";
     if (activeStep)
-      return `Active step ${String(activeStep.stepOrder).padStart(2, "0")} · ${activeStep.approverRoleKey}`;
+      return `Active step ${String(activeStep.stepOrder).padStart(2, "0")} · ${activeStep.approverRoleKey} · ${
+        describeSla(activeStep.dueAt).label
+      }`;
     return "—";
   })();
 
@@ -844,6 +884,17 @@ function DetailPreview({
             {detail.resolvedAt ? formatDateTime(detail.resolvedAt) : "—"}
           </div>
         </div>
+        <div className="rep-pf">
+          <div className="rep-pf-l">SLA deadline</div>
+          <div className="rep-pf-v">
+            <SlaPill dueAt={activeStep?.dueAt} />
+            {activeStep?.dueAt ? (
+              <span className="mono" style={{ color: "var(--muted)", fontFamily: "ui-monospace, monospace" }}>
+                {formatDateTime(activeStep.dueAt)}
+              </span>
+            ) : null}
+          </div>
+        </div>
       </div>
 
       <SnapshotBlock snapshot={snapshot} opportunityId={detail.opportunityId} />
@@ -909,6 +960,7 @@ function DetailPreview({
                   </div>
                   <div className="sla">
                     {step.isRequired ? "required" : "optional"} · status {humaniseStatus(step.status)}
+                    <SlaPill dueAt={step.dueAt} />
                   </div>
                 </div>
                 <span className={`appr-chain-badge appr-chain-badge-${pillKindForStatus(step.status)}`}>

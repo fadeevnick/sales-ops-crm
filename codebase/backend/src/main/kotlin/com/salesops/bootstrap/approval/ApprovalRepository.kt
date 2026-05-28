@@ -188,6 +188,7 @@ class ApprovalRepository(
             SET status = :status,
                 activated_at = COALESCE(:activatedAt, activated_at),
                 decided_at = COALESCE(:decidedAt, decided_at),
+                due_at = COALESCE(:dueAt, due_at),
                 updated_at = NOW()
             WHERE id = :approvalStepId
               AND tenant_id = :tenantId
@@ -197,6 +198,7 @@ class ApprovalRepository(
             .param("status", command.status)
             .param("activatedAt", command.activatedAt.toDbTimestamp())
             .param("decidedAt", command.decidedAt.toDbTimestamp())
+            .param("dueAt", command.dueAt.toDbTimestamp())
             .param("approvalStepId", command.approvalStepId)
             .param("tenantId", command.tenantId)
             .param("approvalRequestId", command.approvalRequestId)
@@ -314,6 +316,7 @@ class ApprovalRepository(
                 ar.status AS request_status,
                 s.id AS active_step_id,
                 s.status AS active_step_status,
+                s.due_at AS active_step_due_at,
                 s.approver_role_key,
                 ar.submitted_by_user_id,
                 submitter.display_name AS submitted_by_name,
@@ -348,6 +351,39 @@ class ApprovalRepository(
 
         return statement.query { rs, _ -> rs.toApprovalInboxRecord() }.list()
     }
+
+    fun findActiveSummaryByOpportunityId(
+        tenantId: String,
+        opportunityId: String,
+    ): OpportunityActiveApprovalRecord? =
+        jdbcClient.sql(
+            """
+            SELECT
+                ar.id AS approval_request_id,
+                ar.status AS request_status,
+                ar.policy_key,
+                s.id AS active_step_id,
+                s.status AS active_step_status,
+                s.due_at AS active_step_due_at,
+                s.approver_role_key,
+                ar.submitted_at
+            FROM approval_requests ar
+            JOIN approval_steps s
+                ON s.approval_request_id = ar.id
+               AND s.tenant_id = ar.tenant_id
+            WHERE ar.tenant_id = :tenantId
+              AND ar.opportunity_id = :opportunityId
+              AND ar.status = 'pending_step'
+              AND s.status = 'active'
+            ORDER BY ar.submitted_at DESC NULLS LAST, ar.created_at DESC, ar.id DESC
+            LIMIT 1
+            """.trimIndent(),
+        )
+            .param("tenantId", tenantId)
+            .param("opportunityId", opportunityId)
+            .query { rs, _ -> rs.toOpportunityActiveApprovalRecord() }
+            .optional()
+            .orElse(null)
 }
 
 data class CreateApprovalRequestCommand(
@@ -409,6 +445,7 @@ data class UpdateApprovalStepStatusCommand(
     val status: String,
     val activatedAt: Instant?,
     val decidedAt: Instant?,
+    val dueAt: Instant?,
 )
 
 data class ApprovalInboxFilter(
@@ -472,9 +509,21 @@ data class ApprovalInboxRecord(
     val requestStatus: String,
     val activeStepId: String,
     val activeStepStatus: String,
+    val activeStepDueAt: Instant?,
     val approverRoleKey: String,
     val submittedByUserId: String,
     val submittedByName: String,
+    val submittedAt: Instant?,
+)
+
+data class OpportunityActiveApprovalRecord(
+    val approvalRequestId: String,
+    val requestStatus: String,
+    val policyKey: String,
+    val activeStepId: String,
+    val activeStepStatus: String,
+    val activeStepDueAt: Instant?,
+    val approverRoleKey: String,
     val submittedAt: Instant?,
 )
 
@@ -536,9 +585,22 @@ private fun ResultSet.toApprovalInboxRecord(): ApprovalInboxRecord =
         requestStatus = getString("request_status"),
         activeStepId = getString("active_step_id"),
         activeStepStatus = getString("active_step_status"),
+        activeStepDueAt = getInstant("active_step_due_at"),
         approverRoleKey = getString("approver_role_key"),
         submittedByUserId = getString("submitted_by_user_id"),
         submittedByName = getString("submitted_by_name"),
+        submittedAt = getInstant("submitted_at"),
+    )
+
+private fun ResultSet.toOpportunityActiveApprovalRecord(): OpportunityActiveApprovalRecord =
+    OpportunityActiveApprovalRecord(
+        approvalRequestId = getString("approval_request_id"),
+        requestStatus = getString("request_status"),
+        policyKey = getString("policy_key"),
+        activeStepId = getString("active_step_id"),
+        activeStepStatus = getString("active_step_status"),
+        activeStepDueAt = getInstant("active_step_due_at"),
+        approverRoleKey = getString("approver_role_key"),
         submittedAt = getInstant("submitted_at"),
     )
 

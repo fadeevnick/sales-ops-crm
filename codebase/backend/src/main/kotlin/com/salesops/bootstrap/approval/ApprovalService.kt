@@ -8,6 +8,7 @@ import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 @Service
@@ -69,7 +70,7 @@ class ApprovalService(
                 isRequired = policyStep.isRequired,
                 activatedAt = if (policyStep.stepOrder == 1) now else null,
                 decidedAt = null,
-                dueAt = null,
+                dueAt = if (policyStep.stepOrder == 1) dueAtFor(policyStep.approverRoleKey, now) else null,
             )
         }
 
@@ -167,6 +168,7 @@ class ApprovalService(
                     status = record.requestStatus,
                     activeStepId = record.activeStepId,
                     activeStepStatus = record.activeStepStatus,
+                    activeStepDueAt = record.activeStepDueAt,
                     approverRoleKey = record.approverRoleKey,
                     submittedByName = record.submittedByName,
                     submittedAt = record.submittedAt,
@@ -209,6 +211,7 @@ class ApprovalService(
                 status = "approved",
                 activatedAt = null,
                 decidedAt = Instant.now(),
+                dueAt = null,
             ),
         )
         appendDecisionHistory(
@@ -226,6 +229,7 @@ class ApprovalService(
             .minByOrNull { it.stepOrder }
 
         if (nextStep != null) {
+            val activatedAt = Instant.now()
             approvalStatePolicy.validateStepTransition(nextStep.status, "active")
             approvalRepository.updateStepStatus(
                 UpdateApprovalStepStatusCommand(
@@ -233,8 +237,9 @@ class ApprovalService(
                     approvalRequestId = detail.request.id,
                     approvalStepId = nextStep.id,
                     status = "active",
-                    activatedAt = Instant.now(),
+                    activatedAt = activatedAt,
                     decidedAt = null,
+                    dueAt = dueAtFor(nextStep.approverRoleKey, activatedAt),
                 ),
             )
             appendDecisionHistory(
@@ -356,6 +361,7 @@ class ApprovalService(
                 status = targetStepStatus,
                 activatedAt = null,
                 decidedAt = Instant.now(),
+                dueAt = null,
             ),
         )
         approvalRepository.updateRequestStatus(
@@ -498,8 +504,16 @@ class ApprovalService(
     private fun newId(prefix: String): String =
         "${prefix}_${UUID.randomUUID().toString().replace("-", "").take(12)}"
 
+    private fun dueAtFor(approverRoleKey: String, activatedAt: Instant): Instant =
+        activatedAt.plus(SLA_HOURS_BY_ROLE[approverRoleKey] ?: DEFAULT_SLA_HOURS, ChronoUnit.HOURS)
+
     private companion object {
         const val TARGET_STAGE_KEY = "pending_approval"
+        const val DEFAULT_SLA_HOURS = 72L
+        val SLA_HOURS_BY_ROLE = mapOf(
+            "finance_approver" to 24L,
+            "legal_approver" to 48L,
+        )
         val terminalOpportunityStatuses = setOf("closed_won", "closed_lost")
     }
 }

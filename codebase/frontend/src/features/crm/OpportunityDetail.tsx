@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   ActivityListItem,
   CustomFieldValue,
@@ -87,6 +87,8 @@ export function OpportunityDetail({
   onSubmitApproval,
   onUpdateOpportunity,
 }: OpportunityDetailProps) {
+  const approvalPanelRef = useRef<HTMLDivElement | null>(null);
+
   // ── Edit-fields state ──────────────────────────────────────────────────
   const [editMode, setEditMode] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
@@ -182,8 +184,8 @@ export function OpportunityDetail({
 
   // ── Derived values ──────────────────────────────────────────────────────
   const approvalKey = normalizeApprovalState(opportunity.approvalState);
-  const hasActiveApproval = approvalKey === "pending" || approvalKey === "sent_back";
-  const eligibleToSubmit = approvalKey === "none";
+  const hasActiveApproval = approvalKey === "pending" || opportunity.activeApproval !== null;
+  const eligibleToSubmit = approvalKey === "none" && opportunity.activeApproval === null;
   const stageLabel =
     stages.find((stage) => stage.stageKey === opportunity.stageKey)?.displayName ?? opportunity.stageKey;
   const standardFieldCount = 6; // Title, amount, close, stage, owner, primary contact
@@ -321,6 +323,16 @@ export function OpportunityDetail({
     setSubmitPhase("submitted");
   };
 
+  const openSubmitFlow = () => {
+    setSubmitFlowOpen(true);
+    setSubmitPhase("draft");
+    setValidated(null);
+    setValidationErrors({});
+    window.requestAnimationFrame(() => {
+      approvalPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
   // ── Render ──────────────────────────────────────────────────────────────
   return (
     <section className="opp-detail" data-screen-label="Opportunity Detail">
@@ -334,12 +346,7 @@ export function OpportunityDetail({
           const nextStage = stages[currentStageIndex + 1];
           if (nextStage) setStagePopKey(nextStage.stageKey);
         }}
-        onSubmitApproval={() => {
-          setSubmitFlowOpen(true);
-          setSubmitPhase("draft");
-          setValidated(null);
-          setValidationErrors({});
-        }}
+        onSubmitApproval={openSubmitFlow}
         onToggleAddActivity={() => setComposerOpen((value) => !value)}
       />
 
@@ -409,48 +416,45 @@ export function OpportunityDetail({
             onSubmitActivity={submitActivity}
           />
 
-          <ApprovalPanel
-            approvalKey={approvalKey}
-            eligibleToSubmit={eligibleToSubmit}
-            isApprovalSubmitting={isApprovalSubmitting}
-            opportunity={opportunity}
-            requestType={requestType}
-            stageLabel={stageLabel}
-            submitFlowOpen={submitFlowOpen}
-            submitPhase={submitPhase}
-            urgency={urgency}
-            justification={justification}
-            customerImpact={customerImpact}
-            competition={competition}
-            supportingNotes={supportingNotes}
-            validated={validated}
-            validationErrors={validationErrors}
-            onCancelFlow={() => {
-              setSubmitFlowOpen(false);
-              setSubmitPhase("draft");
-              setValidated(null);
-              setValidationErrors({});
-            }}
-            onChangeCompetition={setCompetition}
-            onChangeCustomerImpact={setCustomerImpact}
-            onChangeJustification={setJustification}
-            onChangeRequestType={(value) => {
-              setRequestType(value);
-              setValidated(null);
-              setValidationErrors({});
-              setSubmitPhase("draft");
-            }}
-            onChangeSupportingNotes={setSupportingNotes}
-            onChangeUrgency={setUrgency}
-            onOpenFlow={() => {
-              setSubmitFlowOpen(true);
-              setSubmitPhase("draft");
-              setValidated(null);
-              setValidationErrors({});
-            }}
-            onSubmit={submitApprovalRequest}
-            onValidate={runValidation}
-          />
+          <div ref={approvalPanelRef}>
+            <ApprovalPanel
+              approvalKey={approvalKey}
+              eligibleToSubmit={eligibleToSubmit}
+              isApprovalSubmitting={isApprovalSubmitting}
+              opportunity={opportunity}
+              requestType={requestType}
+              stageLabel={stageLabel}
+              submitFlowOpen={submitFlowOpen}
+              submitPhase={submitPhase}
+              urgency={urgency}
+              justification={justification}
+              customerImpact={customerImpact}
+              competition={competition}
+              supportingNotes={supportingNotes}
+              validated={validated}
+              validationErrors={validationErrors}
+              onCancelFlow={() => {
+                setSubmitFlowOpen(false);
+                setSubmitPhase("draft");
+                setValidated(null);
+                setValidationErrors({});
+              }}
+              onChangeCompetition={setCompetition}
+              onChangeCustomerImpact={setCustomerImpact}
+              onChangeJustification={setJustification}
+              onChangeRequestType={(value) => {
+                setRequestType(value);
+                setValidated(null);
+                setValidationErrors({});
+                setSubmitPhase("draft");
+              }}
+              onChangeSupportingNotes={setSupportingNotes}
+              onChangeUrgency={setUrgency}
+              onOpenFlow={openSubmitFlow}
+              onSubmit={submitApprovalRequest}
+              onValidate={runValidation}
+            />
+          </div>
 
           <AuditTimeline events={timelineEvents} />
         </div>
@@ -1514,8 +1518,13 @@ function ApprovalPanel({
   onSubmit: () => void;
   onValidate: () => void;
 }) {
-  const hasActiveApproval = approvalKey === "pending" || approvalKey === "sent_back";
+  const hasActiveApproval = approvalKey === "pending" || opportunity.activeApproval !== null;
   const selectedType = REQUEST_TYPE_CATALOG.find((type) => type.key === requestType) ?? REQUEST_TYPE_CATALOG[0];
+  const activeApproval = opportunity.activeApproval;
+  const activeApprovalSla = describeApprovalSla(activeApproval?.activeStepDueAt);
+  const activeApprovalLabel = activeApproval
+    ? `REQ ${compactId(activeApproval.id)} · ${activeApproval.approverRoleKey.replace(/_/g, " ")}`
+    : null;
 
   const requiresExceptionFields = requestType !== "stage_progression";
   const requiredCount = requiresExceptionFields ? 3 : 1;
@@ -1559,8 +1568,10 @@ function ApprovalPanel({
             {approvalKey === "none" ? "No active request" : opportunity.approvalState.replace(/_/g, " ")}
           </div>
           <div className="sub">
-            {hasActiveApproval
-              ? `Active on ${opportunity.id} — wait for the decision before resubmitting`
+            {activeApproval
+              ? `${activeApprovalLabel} · ${activeApprovalSla.label}`
+              : hasActiveApproval
+                ? `Active on ${opportunity.id} — wait for the decision before resubmitting`
               : approvalKey === "approved"
                 ? "Decision recorded against this opportunity"
                 : approvalKey === "rejected"
@@ -1576,6 +1587,15 @@ function ApprovalPanel({
         </span>
       </div>
 
+      {activeApproval ? (
+        <div className="opp-appr-summary">
+          <span className="mono">REQ {activeApproval.id}</span>
+          <span>Current approver · {activeApproval.approverRoleKey.replace(/_/g, " ")}</span>
+          <span>Status · {activeApproval.activeStepStatus.replace(/_/g, " ")}</span>
+          <span title={activeApproval.activeStepDueAt ?? ""}>SLA · {activeApprovalSla.label}</span>
+        </div>
+      ) : null}
+
       {hasActiveApproval && !submitFlowOpen ? (
         <div className="opp-blocked" style={{ margin: 14 }}>
           <div className="opp-blocked-mark">!</div>
@@ -1583,10 +1603,21 @@ function ApprovalPanel({
             <div className="l">Submission blocked</div>
             <div className="t">An active approval request already exists on this opportunity</div>
             <div className="ds">
-              {opportunity.id} currently has an approval request in state{" "}
-              <strong>{opportunity.approvalState.replace(/_/g, " ")}</strong>. Policy does not allow more than one
-              active request per opportunity. Wait for the current decision, or — if you are the submitter and the
-              backend supports it — withdraw and resubmit.
+              {activeApproval ? (
+                <>
+                  <strong>{activeApproval.id}</strong> is currently routed to{" "}
+                  <strong>{activeApproval.approverRoleKey.replace(/_/g, " ")}</strong> with SLA{" "}
+                  <strong>{activeApprovalSla.label}</strong>. Policy does not allow more than one active request per
+                  opportunity. Wait for the current decision before resubmitting.
+                </>
+              ) : (
+                <>
+                  {opportunity.id} currently has an approval request in state{" "}
+                  <strong>{opportunity.approvalState.replace(/_/g, " ")}</strong>. Policy does not allow more than one
+                  active request per opportunity. Wait for the current decision, or — if you are the submitter and the
+                  backend supports it — withdraw and resubmit.
+                </>
+              )}
             </div>
           </div>
           <span style={{ fontFamily: "ui-monospace, monospace", color: "#9a3a2f", fontSize: "0.7rem" }}>
@@ -2260,6 +2291,30 @@ function daysUntil(value: string): string {
   if (days === 0) return "today";
   if (days < 0) return `${Math.abs(days)} d ago`;
   return `${days} d`;
+}
+
+function describeApprovalSla(value: string | null | undefined): { label: string } {
+  if (!value) {
+    return { label: "No SLA set" };
+  }
+  const dueMs = Date.parse(value);
+  if (Number.isNaN(dueMs)) {
+    return { label: "SLA invalid" };
+  }
+  const diffMs = dueMs - Date.now();
+  const absHours = Math.max(1, Math.round(Math.abs(diffMs) / 3_600_000));
+  if (diffMs < 0) {
+    return { label: `Overdue by ${absHours}h` };
+  }
+  if (diffMs <= 24 * 3_600_000) {
+    return { label: `Due in ${absHours}h` };
+  }
+  const days = Math.max(1, Math.round(diffMs / 86_400_000));
+  return { label: `Due in ${days}d` };
+}
+
+function compactId(value: string): string {
+  return value.slice(0, 8);
 }
 
 function formatCurrency(value: number | null): string {

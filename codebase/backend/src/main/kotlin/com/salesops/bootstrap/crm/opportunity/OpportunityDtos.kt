@@ -94,6 +94,17 @@ data class OpportunityDetailOwner(
     val displayName: String,
 )
 
+data class OpportunityActiveApprovalSummary(
+    val id: String,
+    val status: String,
+    val policyKey: String,
+    val activeStepId: String,
+    val activeStepStatus: String,
+    val activeStepDueAt: java.time.Instant?,
+    val approverRoleKey: String,
+    val submittedAt: java.time.Instant?,
+)
+
 data class OpportunityDetailResponse(
     val id: String,
     val title: String,
@@ -105,5 +116,6 @@ data class OpportunityDetailResponse(
     val closeDate: LocalDate?,
     val customFields: Map<String, Any?> = emptyMap(),
     val approvalState: String,
+    val activeApproval: OpportunityActiveApprovalSummary? = null,
     val timeline: List<Any> = emptyList(),
 )

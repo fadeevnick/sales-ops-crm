@@ -207,5 +207,15 @@ export type OpportunityDetail = {
   closeDate: string | null;
   customFields: Record<string, CustomFieldValue>;
   approvalState: string;
+  activeApproval: {
+    id: string;
+    status: string;
+    policyKey: string;
+    activeStepId: string;
+    activeStepStatus: string;
+    activeStepDueAt: string | null;
+    approverRoleKey: string;
+    submittedAt: string | null;
+  } | null;
   timeline: unknown[];
 };

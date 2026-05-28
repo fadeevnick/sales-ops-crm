@@ -3,6 +3,7 @@ package com.salesops.bootstrap.crm.opportunity
 import com.fasterxml.jackson.databind.JsonNode
 import com.salesops.bootstrap.api.ForbiddenOperationException
 import com.salesops.bootstrap.api.ValidationFailureException
+import com.salesops.bootstrap.approval.ApprovalRepository
 import com.salesops.bootstrap.auth.CurrentUserContext
 import com.salesops.bootstrap.crm.account.AccountRepository
 import com.salesops.bootstrap.crm.account.AccountVisibilityLookup
@@ -23,6 +24,7 @@ import java.util.UUID
 @Service
 class OpportunityService(
     private val opportunityRepository: OpportunityRepository,
+    private val approvalRepository: ApprovalRepository,
     private val accountRepository: AccountRepository,
     private val contactRepository: ContactRepository,
     private val userShellRepository: UserShellRepository,
@@ -216,6 +218,10 @@ class OpportunityService(
                 opportunityId = record.id,
             )
             .toCustomFieldResponseMap()
+        val activeApproval = approvalRepository.findActiveSummaryByOpportunityId(
+            tenantId = context.tenant.tenantId,
+            opportunityId = record.id,
+        )
 
         return OpportunityDetailResponse(
             id = record.id,
@@ -239,6 +245,18 @@ class OpportunityService(
             closeDate = record.closeDate,
             customFields = customFields,
             approvalState = record.approvalState,
+            activeApproval = activeApproval?.let { approval ->
+                OpportunityActiveApprovalSummary(
+                    id = approval.approvalRequestId,
+                    status = approval.requestStatus,
+                    policyKey = approval.policyKey,
+                    activeStepId = approval.activeStepId,
+                    activeStepStatus = approval.activeStepStatus,
+                    activeStepDueAt = approval.activeStepDueAt,
+                    approverRoleKey = approval.approverRoleKey,
+                    submittedAt = approval.submittedAt,
+                )
+            },
         )
     }
 
