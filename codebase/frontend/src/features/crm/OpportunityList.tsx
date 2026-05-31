@@ -10,8 +10,11 @@ type OpportunityListProps = {
   recentlyCreatedIds: string[];
   emptyLabel: string;
   hasActiveFilters: boolean;
+  canLoadMore: boolean;
+  isLoadingMore: boolean;
   onSelectOpportunity: (opportunityId: string) => void;
   onClearFilters: () => void;
+  onLoadMore: () => void;
 };
 
 export function OpportunityList({
@@ -23,8 +26,11 @@ export function OpportunityList({
   recentlyCreatedIds,
   emptyLabel,
   hasActiveFilters,
+  canLoadMore,
+  isLoadingMore,
   onSelectOpportunity,
   onClearFilters,
+  onLoadMore,
 }: OpportunityListProps) {
   const stageOrder = new Map(stages.map((stage, index) => [stage.stageKey, index]));
   const stageCount = stages.length || 5;
@@ -79,12 +85,12 @@ export function OpportunityList({
       <div className="rep-table-scroll">
         <table className="rep-table">
           <colgroup>
-            <col />
-            <col />
-            <col style={{ width: 110 }} />
-            <col style={{ width: 96 }} />
-            <col style={{ width: 110 }} />
-            <col style={{ width: 110 }} />
+            <col style={{ width: "30%" }} />
+            <col style={{ width: "22%" }} />
+            <col style={{ width: "15%" }} />
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "11%" }} />
           </colgroup>
           <thead>
             <tr>
@@ -116,11 +122,9 @@ export function OpportunityList({
                 >
                   <td>
                     <div className="rep-cell-truncate">{opportunity.title}</div>
-                    <span className="rep-cell-sub">{opportunity.id}</span>
                   </td>
                   <td>
                     <div className="rep-cell-truncate">{opportunity.accountName}</div>
-                    <span className="rep-cell-sub">{opportunity.accountId}</span>
                   </td>
                   <td>
                     <StagePip
@@ -151,6 +155,13 @@ export function OpportunityList({
           </tbody>
         </table>
       </div>
+      {canLoadMore ? (
+        <div className="rep-load-more">
+          <button className="rep-btn" disabled={isLoadingMore} onClick={onLoadMore} type="button">
+            {isLoadingMore ? "Loading…" : `Load more — showing ${opportunities.length} of ${totalRows}`}
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }

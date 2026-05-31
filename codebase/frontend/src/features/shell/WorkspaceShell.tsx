@@ -1,98 +1,60 @@
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import type { CurrentUser } from "../../types/session";
-import { ApproverInbox } from "../approvals/ApproverInbox";
-import { CrmReadWorkspace } from "../crm/CrmReadWorkspace";
-import { MetadataAdminWorkspace } from "../metadata/MetadataAdminWorkspace";
-import { ReportingDashboard } from "../reporting/ReportingDashboard";
+import {
+  activeWorkspaceFromPath,
+  getAvailableWorkspaces,
+  getDefaultWorkspace,
+  workspaceBasePath,
+  type WorkspaceNavItem,
+} from "./workspaceConfig";
 
 type WorkspaceShellProps = {
   currentUser: CurrentUser;
   onLogout: () => void;
 };
 
-type WorkspaceKey = "crm" | "approvals" | "reporting" | "metadata";
-
-type WorkspaceNavItem = {
-  key: WorkspaceKey;
-  label: string;
-  shortLabel: string;
-  section: "Workspace" | "Operations" | "Administration";
-  description: string;
-};
-
-const workspaceCatalog: WorkspaceNavItem[] = [
-  {
-    key: "crm",
-    label: "CRM Workspace",
-    shortLabel: "CRM",
-    section: "Workspace",
-    description: "Accounts, contacts, opportunities, activities",
-  },
-  {
-    key: "approvals",
-    label: "Approval Inbox",
-    shortLabel: "APR",
-    section: "Operations",
-    description: "Finance and legal approval decisions",
-  },
-  {
-    key: "reporting",
-    label: "Reporting",
-    shortLabel: "RPT",
-    section: "Operations",
-    description: "Pipeline health and projection metrics",
-  },
-  {
-    key: "metadata",
-    label: "Metadata Admin",
-    shortLabel: "ADM",
-    section: "Administration",
-    description: "Stages, custom fields, required rules",
-  },
-];
-
-const roleDefaultWorkspace: Record<string, WorkspaceKey> = {
-  finance_approver: "approvals",
-  legal_approver: "approvals",
-  revops_admin: "metadata",
-  sales_manager: "reporting",
-  sales_rep: "crm",
-};
-
 export function WorkspaceShell({ currentUser, onLogout }: WorkspaceShellProps) {
-  const canUseCrm = ["sales_rep", "sales_manager", "revops_admin"].includes(currentUser.roleKey);
-  const canUseApproverInbox = ["finance_approver", "legal_approver", "revops_admin"].includes(
-    currentUser.roleKey,
-  );
-  const canUseMetadataAdmin = currentUser.roleKey === "revops_admin";
-  const canUseReporting = ["sales_manager", "revops_admin"].includes(currentUser.roleKey);
-  const availableWorkspaces = useMemo(
-    () =>
-      workspaceCatalog.filter((item) => {
-        if (item.key === "crm") {
-          return canUseCrm;
-        }
+  const location = useLocation();
+  const navigate = useNavigate();
 
-        if (item.key === "approvals") {
-          return canUseApproverInbox;
-        }
-
-        if (item.key === "reporting") {
-          return canUseReporting;
-        }
-
-        return canUseMetadataAdmin;
-      }),
-    [canUseApproverInbox, canUseCrm, canUseMetadataAdmin, canUseReporting],
-  );
-  const defaultWorkspace =
-    availableWorkspaces.find((item) => item.key === roleDefaultWorkspace[currentUser.roleKey])?.key ??
-    availableWorkspaces[0]?.key ??
-    "crm";
-  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceKey>(defaultWorkspace);
+  const availableWorkspaces = getAvailableWorkspaces(currentUser);
+  const defaultWorkspace = getDefaultWorkspace(currentUser);
+  const activeWorkspace = activeWorkspaceFromPath(location.pathname, defaultWorkspace);
   const activeItem = availableWorkspaces.find((item) => item.key === activeWorkspace) ?? availableWorkspaces[0];
+
   const userInitials = getInitials(currentUser.displayName);
   const groupedNavItems = groupBySection(availableWorkspaces);
+
+  // Single canonical account control (top-right): avatar + name + dropdown.
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+    const onDocClick = (event: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(event.target as Node)) {
+        setAccountMenuOpen(false);
+      }
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setAccountMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [accountMenuOpen]);
+
+  // Close the menu on route change so it never lingers across navigations.
+  useEffect(() => {
+    setAccountMenuOpen(false);
+  }, [location.pathname]);
+
+  const navigateTo = (item: WorkspaceNavItem) => {
+    navigate(workspaceBasePath[item.key]);
+  };
 
   return (
     <div className="workspace-shell">
@@ -100,20 +62,7 @@ export function WorkspaceShell({ currentUser, onLogout }: WorkspaceShellProps) {
         <div className="brand">
           <div className="brand-mark" aria-hidden="true" />
           <div className="brand-name">
-            Sales Ops CRM <span>LOCAL PILOT</span>
-          </div>
-        </div>
-
-        <div className="tenant">
-          <div className="tenant-label">Tenant</div>
-          <div className="tenant-row">
-            <strong className="tenant-name">{currentUser.tenantName}</strong>
-            <span className="tenant-env">LOCAL</span>
-          </div>
-          <div className="tenant-meta">
-            <span>{currentUser.modules.length} modules</span>
-            <span className="dot">/</span>
-            <span>{currentUser.roleName}</span>
+            Sales Ops CRM
           </div>
         </div>
 
@@ -124,34 +73,42 @@ export function WorkspaceShell({ currentUser, onLogout }: WorkspaceShellProps) {
                 <span>{group.section}</span>
                 <em>{group.items.length}</em>
               </div>
-              {group.items.map((item) => (
-                <button
-                  className={item.key === activeWorkspace ? "nav-item active" : "nav-item"}
-                  key={item.key}
-                  onClick={() => setActiveWorkspace(item.key)}
-                  type="button"
-                >
-                  <span className="nav-mark">{item.shortLabel}</span>
-                  <span className="nav-copy">
-                    <span>{item.label}</span>
-                    <small>{item.description}</small>
-                  </span>
-                </button>
-              ))}
+              {group.items.map((item) => {
+                const isActive = item.key === activeWorkspace;
+                return (
+                  <div key={item.key}>
+                    <button
+                      className={isActive ? "nav-item active" : "nav-item"}
+                      onClick={() => navigateTo(item)}
+                      type="button"
+                    >
+                      <span className="nav-mark">{item.shortLabel}</span>
+                      <span className="nav-copy">
+                        <span>{item.label}</span>
+                        <small>{item.description}</small>
+                      </span>
+                    </button>
+                    {isActive && item.subNav ? (
+                      <div className="nav-subnav" role="group" aria-label={`${item.label} sections`}>
+                        {item.subNav.map((sub) => (
+                          <button
+                            className={sub.isActive(location.pathname) ? "nav-subitem active" : "nav-subitem"}
+                            key={sub.key}
+                            onClick={() => navigate(sub.path)}
+                            type="button"
+                          >
+                            <span className="nav-subitem-label">{sub.label}</span>
+                            <small>{sub.description}</small>
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </nav>
-
-        <div className="user-block">
-          <div className="avatar">{userInitials}</div>
-          <div className="user-meta">
-            <span className="user-name">{currentUser.displayName}</span>
-            <span className="user-role">{currentUser.roleName}</span>
-          </div>
-          <button className="switch-btn" onClick={onLogout} type="button">
-            Switch
-          </button>
-        </div>
       </aside>
 
       <div className="app-main">
@@ -160,40 +117,42 @@ export function WorkspaceShell({ currentUser, onLogout }: WorkspaceShellProps) {
             <span>Sales Ops CRM</span>
             <span className="sep">/</span>
             <strong>{activeItem?.label ?? "Workspace"}</strong>
-            <span className="pulse">
-              <span className="pulse-dot" />
-              Local Pilot
-            </span>
-          </div>
-
-          <div className="global-search" role="search">
-            <span aria-hidden="true">Search</span>
-            <input aria-label="Search Sales Ops CRM" placeholder="Accounts, opportunities, approvals" />
-            <kbd>/</kbd>
           </div>
 
           <div className="topbar-actions">
-            <span className="chip">{currentUser.roleName}</span>
-            <span className="chip">{currentUser.email}</span>
+            <div className="account-menu" ref={accountRef}>
+              <button
+                className="account-trigger"
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={accountMenuOpen}
+                onClick={() => setAccountMenuOpen((open) => !open)}
+              >
+                <span className="account-avatar">{userInitials}</span>
+                <span className="account-id">
+                  <span className="account-name">{currentUser.displayName}</span>
+                  <span className="account-role">{currentUser.roleName}</span>
+                </span>
+                <span className="account-caret" aria-hidden="true">▾</span>
+              </button>
+              {accountMenuOpen ? (
+                <div className="account-pop" role="menu">
+                  <div className="account-pop-head">
+                    <span className="account-pop-name">{currentUser.displayName}</span>
+                    <span className="account-pop-email">{currentUser.email}</span>
+                    <span className="account-pop-meta">{currentUser.tenantName}</span>
+                  </div>
+                  <button className="account-pop-item" type="button" role="menuitem" onClick={onLogout}>
+                    Switch user
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
         </header>
 
         <main className="app-content">
-          {activeWorkspace === "crm" && canUseCrm ? <CrmReadWorkspace currentUser={currentUser} /> : null}
-          {activeWorkspace === "approvals" && canUseApproverInbox ? (
-            <ApproverInbox currentUser={currentUser} />
-          ) : null}
-          {activeWorkspace === "reporting" && canUseReporting ? (
-            <ReportingDashboard
-              currentUser={currentUser}
-              onNavigateToApprovals={
-                canUseApproverInbox ? () => setActiveWorkspace("approvals") : undefined
-              }
-            />
-          ) : null}
-          {activeWorkspace === "metadata" && canUseMetadataAdmin ? (
-            <MetadataAdminWorkspace currentUser={currentUser} />
-          ) : null}
+          <Outlet />
         </main>
       </div>
     </div>

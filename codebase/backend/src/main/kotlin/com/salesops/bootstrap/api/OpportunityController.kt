@@ -1,11 +1,13 @@
 package com.salesops.bootstrap.api
 
+import com.salesops.bootstrap.crm.opportunity.AssignableOwnersResponse
 import com.salesops.bootstrap.crm.opportunity.CreateOpportunityRequest
 import com.salesops.bootstrap.crm.opportunity.CreateOpportunityResponse
 import com.salesops.bootstrap.crm.opportunity.MoveOpportunityStageRequest
 import com.salesops.bootstrap.crm.opportunity.MoveOpportunityStageResponse
 import com.salesops.bootstrap.crm.opportunity.OpportunityDetailResponse
 import com.salesops.bootstrap.crm.opportunity.OpportunityListResponse
+import com.salesops.bootstrap.crm.opportunity.OpportunitySummaryResponse
 import com.salesops.bootstrap.crm.opportunity.OpportunityService
 import com.salesops.bootstrap.crm.opportunity.ReassignOpportunityOwnerRequest
 import com.salesops.bootstrap.crm.opportunity.ReassignOpportunityOwnerResponse
@@ -51,6 +53,32 @@ class OpportunityController(
             customFieldFilters = allParams.customFieldFilters(),
             page = page,
             pageSize = pageSize,
+        )
+
+    @GetMapping("/summary")
+    fun summarizeOpportunities(
+        @RequestHeader("X-Demo-User-Id", required = false) demoUserId: String?,
+        @RequestParam("stage", required = false) stage: String?,
+        @RequestParam("ownerId", required = false) ownerId: String?,
+        @RequestParam("accountId", required = false) accountId: String?,
+        @RequestParam("q", required = false) query: String?,
+        @RequestParam allParams: Map<String, String>,
+    ): OpportunitySummaryResponse =
+        opportunityService.summarizeOpportunities(
+            context = sessionService.resolveCurrentUserContext(demoUserId),
+            stageKey = stage,
+            ownerId = ownerId,
+            accountId = accountId,
+            query = query,
+            customFieldFilters = allParams.customFieldFilters(),
+        )
+
+    @GetMapping("/assignable-owners")
+    fun listAssignableOwners(
+        @RequestHeader("X-Demo-User-Id", required = false) demoUserId: String?,
+    ): AssignableOwnersResponse =
+        opportunityService.listAssignableOwners(
+            context = sessionService.resolveCurrentUserContext(demoUserId),
         )
 
     @PostMapping

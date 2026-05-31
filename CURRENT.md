@@ -1,120 +1,191 @@
 # CURRENT
 
 ## Focus
-Frontend integration of the redesigned Sales Ops CRM screens into
-`codebase/frontend/src`. All 10 redesign screens are now integrated.
+UX remediation — sales_manager role (all pages). Post-integration polish pass:
+id-noise cleanup, design-language tokens, layout.
 
 ## Status
-Phase 1 shell and screens 1–9 were integrated in prior sessions.
-Executive Dashboard (Phase 2.10) was integrated as the final screen.
+**sales_manager pass complete.** All screens verified in browser.
 
-**What was done:**
-- Created `features/reporting/ExecutiveDashboard.tsx` from the prototype
-  component. The UX structure (KPI band, pipeline funnel, approval queues
-  panel, exception types accordion, projection health accordion, drill-down
-  table, sticky preview panel) is intact. The capability audit comment at the
-  top of that file was rewritten to reflect the real integrated data shape,
-  not the prototype design intent.
-- Added "Executive Dashboard" as a third tab in `ReportingDashboard.tsx`
-  alongside "Team Pipeline" and "Aggregate Metrics". Metrics data is
-  lazy-loaded and shared across both data-heavy tabs.
-- Wired `onNavigateToApprovals` from `WorkspaceShell` → `ReportingDashboard`
-  → `ExecutiveDashboard`. Available to revops_admin (who also has approvals
-  access). Renders as plain `<span>` for users without that access.
-- Appended `styles.phase2-10.css` + role-badge CSS to `styles.css`.
-- Added missing `--neg`, `--neg-soft`, `--warn`, `--warn-soft`, `--info`,
-  `--info-soft` CSS variables to `:root`. These were referenced throughout
-  the prior integrated phases but never defined.
+### What was done this session
 
-TS build: clean (zero diagnostics). Production build: clean
-(53 modules, 115.76 KB CSS, 420.15 KB JS).
+**Dual navigation removed (3 surfaces)**
+- `ReportingDashboard.tsx`: removed `<ReportingTabs>` internal tab strip;
+  URL-driven left subNav is the sole nav. Also removed `ReportingTabs`
+  component from `ReportingDashboardViews.tsx`.
+- `MetadataAdminWorkspace.tsx`: removed `<div className="ma-tab-strip">` tab
+  bar; removed `METADATA_ADMIN_TABS` constant from `metadataAdminForms.ts` and
+  barrel export from `useMetadataAdminController.ts`.
+- `RevOpsWorkspace.tsx`: removed `revops-subtabs` NavLink bar.
 
-## Degraded state — Executive Dashboard
+**Reporting first-render blank screen fixed**
+`isLoading` starts `false` then flips inside useEffect → empty first frame.
+Fixed: `metricsViewLoading = isLoading || !metricsLoaded` in
+`useReportingDashboardController.ts`; used for both Executive and Metrics views.
 
-The screen renders with real data where the API supports it. Several
-sections show reduced data because the backend does not yet expose the
-needed fields. Each degraded surface is visible to the user in the UI
-(empty state, "n/a", or 0 rather than fabricated values).
+**Executive Dashboard drill-down refactored**
+Drawer was stacking a record preview below the list (two scroll areas).
+Changed to list-only: rows navigate straight to opportunity page.
+Removed `OppPreview`, `selectedId`/`selectedOpp` state, `STAGE_LABELS`.
+Removed `opp_` UUID sub-label from each drill row.
 
-**Approval queues panel**
-The API exposes only aggregate `pendingRequests` / `activeSteps` totals,
-no per-department breakdown. One row is shown: "All Queues" with real
-pending count, `overdue: 0`, `avgH: "n/a"`. Finance / Legal / Manager
-rows do not appear. Clicking a per-queue funnel row (apprFin / apprLeg /
-apprMgr) always returns an empty drill-down table because real
-`approvalLabel` values ("Pending approval", "Sent back", etc.) do not
-contain department names.
+**Team Breakdown position (ManagerPipeline)**
+Moved from below Load-more button to summary zone (after KPI note, before
+controls). Toggle effect now visible immediately without scrolling down.
 
-**Exception types accordion**
-No per-type data in API. The accordion renders "Exception types 0" and
-opens to an empty body. Discount / Payment terms / Legal/indemnity rows
-do not appear.
+**Metadata Admin: design-language tokenization**
+Was using `primary-button`/`secondary-button`/`danger-button`/`record-row`
+shared classes with green/pink colors. Added `.ma-workspace` scoped CSS
+overrides → neutral ink tokens. No changes to Account Detail appearance.
+Removed duplicate version UUID and user identity noise from header.
 
-**Pipeline funnel — stuck signal**
-`stuck` is always 0; no stuck-deal signal in the API. All stage rows
-show "—" in the Stuck column. The funnel footer shows "Stuck: 0". Warn
-highlighting never triggers.
+**Import/Export (BulkOperations): layout + noise**
+- Content in `.rep-panel` was flush to edges — added margin-left/right 16px
+  for non-head, non-table-scroll children via `.ieo-body .rep-panel` override.
+- KPI foot: `exportJob.job.entityType · rowCount rows` instead of raw job UUID.
+- History rows: `HISTORY_MODE_LABEL` map for human-readable mode names.
+- Removed "Data & Quality /" breadcrumb prefix (duplicated sidebar item).
 
-**Closed Won QTD row**
-No closed-won data in the API. The row shows `0 / $0`. Clicking it
-triggers the `stageW` drill preset which always returns empty (opportunity
-list is open opportunities only) with an honest empty note.
+**Duplicate Review: full restyle**
+Was on old hardcoded hex green/pink palette; record labels expanded as full
+email+URL strings.
+- Filter chips, queue rows, score/type/deferred badges, impact note, empty
+  states → neutral CSS-variable tokens.
+- Record names clamped to 3 lines (`-webkit-line-clamp: 3`).
+- Reason chip: converted from pill to 2-line clamped text.
+- Replaced fake 5-row comparison table (3 identical columns) with honest
+  `drm-record-pair` two-card layout (Record A / vs / Record B).
+- Removed raw UUIDs from queue row headers and resolution panel.
+- Reject/Merge toast messages use record labels, not IDs.
 
-**Avg approval turnaround KPI**
-Displays hardcoded "36.4h". No per-request time data in the API; this
-is a placeholder, not a live metric.
-
-**Projection health accordion**
-`lastRefresh` is real (`projection.refreshedAt`). `refreshDuration`,
-`pendingImports`, `pendingMerges` are not in the API and show "n/a" / 0.
-
-**Drill-down table**
-`team` column always blank. `notes/context` field in preview always
-blank. Both are absent from the opportunity list API.
-
-**Export Summary button**
-`onExport` not provided → button absent. No export endpoint exists.
-
-**"Open opportunity ›" in preview panel**
-`onOpenOpportunity` not provided → button absent. Cross-workspace
-navigation (reporting → CRM opportunity detail) is not threaded.
-
-**Stage codes**
-Derived by position (pos 0→Q, 1→D, 2→P, 3→N, …). Stage-specific drill
-presets work correctly as long as real stage positions follow this
-mapping. If the tenant reorders stages, the single-letter codes shift.
-
-**Weighted forecast delta chip**
-Shows "+2.4%" — hardcoded estimate; no historical comparison data in API.
+**`styles.css` dead CSS removed**
+- `.ma-tab-strip` / `.ma-tab*` (~45 lines)
+- `.drm-qrow-id`, `.drm-field-name/val`, `.drm-cmp-table` and related
+- `.exe-pv-*` (all preview panel CSS, ~120 lines)
 
 ## Open questions / Backend follow-ups
 
-Prior session's open questions remain (Account Detail, Manager Pipeline,
-Import/Export, Duplicate Review). New items for Executive Dashboard:
+Executive Dashboard degraded surfaces (unchanged from last session):
+1. Approval queues: per-dept breakdown (Finance/Legal/Manager) not in API.
+2. Avg approval turnaround: no per-request elapsed time in API.
+3. Exception types: no per-type breakdown in API.
+4. Closed Won QTD: no closed-won aggregate in API.
+5. Stuck signal: no per-opportunity stuck flag in API.
+6. Projection health detail: refreshDuration/pendingImports/pendingMerges not in API.
 
-1. **Approval queues**: per-department breakdown (Finance / Legal / Manager
-   pending count, overdue count, avgH) needed for honest per-queue rows
-   and for apprFin / apprLeg / apprMgr drill presets to produce results.
-2. **Avg turnaround**: real per-request elapsed-time aggregate needed to
-   replace the hardcoded "36.4h" display.
-3. **Exception types**: per-type request breakdown (type, count, value)
-   needed for the accordion rows to populate.
-4. **Closed Won QTD**: closed-won opportunity aggregate by quarter needed
-   for the funnel W row and stageW drill preset.
-5. **Stuck signal**: per-opportunity stuck flag or last-stage-change date
-   needed for the funnel Stuck column and warn highlighting.
-6. **Projection health detail**: `refreshDuration`, `pendingImports`,
-   `pendingMerges` fields needed in the reporting API response.
-7. **`onOpenOpportunity`**: cross-workspace navigation state threading
-   (or a lightweight opportunity modal) needed to enable "Open opportunity ›".
-8. **Export Summary**: executive summary export endpoint needed.
+### What was done (sales_manager pass)
 
-## Verification
-- `tsc -b` clean (zero diagnostics)
-- `vite build --outDir /tmp/salesops-frontend-exec` clean
-  (53 modules, 115.76 KB CSS, 420.15 KB JS)
-- Runtime smoke (`npm run pilot:smoke`) requires live backend on
-  127.0.0.1:8081 — not run in this static integration session.
+**Raw ID noise removed (4 surfaces)**
+- `ManagerPipelineSections.tsx`: removed `opp_...` and `acc_...` sub-labels
+  from every table row; removed `opp.id` from detail panel head; removed
+  `{opp.id} ·` prefix from Reassign and Manager Note modal titles.
+- `CrmWorkspacePreviewSections.tsx`: removed `{listItem.id}` from the
+  OPPORTUNITY header row; removed `{listItem.accountId}` sub-label from the
+  account row in the preview rail.
 
-## Mode detection
-implement (final screen integration complete; capability audit corrected).
+**Metrics stage keys + user ID fixed**
+- `ReportingDashboardViews.tsx`: Stage Breakdown now uses display names
+  (`stageLabels.get(stageKey)`) instead of raw keys (`qualification` →
+  "Qualification", `pending_approval` → "Pending Approval"). Drill-down rows
+  also use display names.
+- "Refreshed by user_irina" → "Refreshed by Irina": added `formatUserId()`
+  helper that strips `user_` prefix and title-cases the result.
+- Wired `stageLabels` from controller → `ReportingDashboard` →
+  `ReportingMetricsView` (was missing from controller return).
+
+**Duplicate Review breadcrumb**
+- `DuplicateReviewPanel.tsx`: removed "Data & Quality /" prefix from the
+  content-area header (same cleanup already applied to BulkOperations).
+
+### What was done (bug fixes)
+
+**Bug #2 — OPEN OPPORTUNITIES KPI stale after opportunity creation**
+- Root cause: `refreshLists` only re-fetched the paginated list; `routeAccount`
+  (fetched directly by ID, source of the KPI counter) stayed stale.
+- Fix: `useCrmWorkspaceData.ts` → `refreshLists` now parallel-fetches
+  `fetchAccount(userId, routeAccountId)` when `routeAccountId` is set and
+  applies the result with `setRouteAccount(freshRouteAccount)`.
+- Verified: counter 0 → 1 immediately after creating an opportunity from
+  Account Detail, no page reload.
+
+**Bug #3 — Audit tab empty after stage move**
+- Root cause: `OpportunityDetailResponse.timeline` was hardcoded to
+  `List<Any> = emptyList()` — no DB table, no writes.
+- Fix: Full implementation:
+  - V21 migration: `opportunity_timeline_events` table.
+  - `OpportunityRepository`: `appendTimelineEvent` + `listTimelineEvents`.
+  - `OpportunityService.moveStage()`: writes a `STAGE_MOVE` event after each
+    successful stage transition ("Qualification → Negotiation" etc.).
+  - `OpportunityService.getOpportunity()`: populates `timeline` from DB.
+- Verified: Audit tab shows badge "1" and event line immediately after
+  a stage move; `actor`, `title`, `description` all correct.
+
+### What was done (sales_rep pass — Anna's screens)
+
+**Raw ID noise removed (3 surfaces)**
+- `WorkspaceShell.tsx`: removed the third breadcrumb segment that was showing
+  the raw URL path param (`opp_xxx` / `acc_xxx`) for detail pages. Also removed
+  now-dead `useMatch` calls and imports.
+- `OpportunityDetailHeaderSections.tsx`: removed `<span className="opp-id">{opportunity.id}</span>`
+  from the heading row next to the title.
+- `styles.css`: removed `.opp-id` and `.crumb-detail` dead CSS rules.
+
+**No dual nav, no layout issues, no token issues** found on Anna's screens —
+the Opportunities list, preview rail, Accounts list, and Account Detail all use
+the correct design-language tokens and have no redundant internal tab strips.
+
+### What was done (FR-051 approval turnaround)
+
+**Avg approval turnaround implemented end-to-end**
+- Backend `ReportingDtos.kt`: added `avgTurnaroundHours: Double?` to
+  `ReportingApprovalBacklogMetric`.
+- Backend `ReportingProjectionRepository.kt`: added SQL query —
+  `AVG(EXTRACT(EPOCH FROM (resolved_at - submitted_at)) / 3600)` for
+  `status IN ('approved', 'rejected')` with both timestamps set.
+  Built on decision history per FR-051 constraint ("не на эвристиках").
+- Frontend `types/reporting.ts`: added `avgTurnaroundHours?: number | null`.
+- Frontend `reportingDashboardAdapters.ts`: added `fmtTurnaround()` helper
+  (`Xh` / `Xm` formatting); passes real value to `avgH` instead of `"n/a"`.
+- Frontend `ReportingDashboardViews.tsx`: added "Avg approval turnaround" KPI
+  tile in the Metrics view (alongside pending/active steps).
+- Executive Dashboard approval queue row: already wired — shows `· avg Xh`
+  when value is non-null/non-"n/a" (was always suppressed before).
+
+## Status
+**All items complete. Executive Dashboard fully wired.**
+
+### What was done (Executive Dashboard gaps)
+
+**#1 Approval queue dept breakdown**
+- SQL: join `approval_requests` + `approval_steps` WHERE `step.status = 'active'`, group by `approver_role_key`.
+- Overdue: `due_at < NOW()`. Avg turnaround: per-step `decided_at - activated_at`.
+- Frontend: Finance (FIN/r-fin/SLA 24h), Legal (LEG/r-leg/SLA 48h), fallback Manager.
+- Bottleneck badge on dept with highest pending count.
+
+**#2 Exception types breakdown**
+- SQL: join `approval_requests` + `opportunities`, group by `policy_key` WHERE `status = 'pending_step'`.
+- Frontend: `POLICY_LABELS` map (`large_deal_stage_progression` → "Large Deal" etc.).
+- Accordion renders when data exists; was always empty before.
+
+**#3 Closed Won QTD**
+- SQL: `global_status = 'closed_won'` AND `COALESCE(close_date, updated_at)` in current quarter.
+- `pctOfMax` computed relative to max stage value in stageBreakdown.
+- Row renders only when `count > 0 || value > 0`.
+
+**#4 Stuck deal signal**
+- SQL: open opps with no activity (`COALESCE(last_timeline_event, updated_at) < NOW() - 14 days`).
+- Threshold: 14 days (seed data all within 25 days; 30-day threshold gave 0).
+- Added `stuckCount` to `ReportingStageMetric` DTO.
+- Frontend: `exe-stuck-badge` below stage name; bar turns amber (`warn: stuck > 0`).
+- Layout fix: `exe-funnel-row` → `align-items: start`; `exe-funnel-stage-name` column flex.
+
+**#5 Projection health detail**
+- V22 migration: `refresh_duration_ms BIGINT` column on `reporting_projection_snapshots`.
+- `refreshDuration`: measured in `refreshDashboardProjection()` with `System.currentTimeMillis()`.
+- `pendingImports`: import_jobs WHERE `status = 'previewed'`.
+- `pendingMerges`: duplicate_candidates WHERE `status = 'open'`.
+- Both stored in `ReportingSourceCounters` snapshot.
+- Frontend: formatted as `Xms`/`X.Xs`; pending counts show amber with warning flag in header.
+
+## Next
+No immediate next step.

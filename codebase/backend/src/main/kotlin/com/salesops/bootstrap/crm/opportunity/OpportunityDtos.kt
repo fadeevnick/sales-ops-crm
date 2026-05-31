@@ -5,6 +5,15 @@ import com.fasterxml.jackson.databind.JsonNode
 import java.math.BigDecimal
 import java.time.LocalDate
 
+data class AssignableOwnerItem(
+    val id: String,
+    val displayName: String,
+)
+
+data class AssignableOwnersResponse(
+    val owners: List<AssignableOwnerItem>,
+)
+
 data class CreateOpportunityRequest(
     @field:NotBlank(message = "Opportunity title is required")
     val title: String,
@@ -79,6 +88,14 @@ data class OpportunityListResponse(
     val total: Int,
 )
 
+/** Full-scope aggregate for the workspace KPI cards — independent of pagination. */
+data class OpportunitySummaryResponse(
+    val open: Int,
+    val pipelineValue: BigDecimal,
+    val pendingApprovals: Int,
+    val closingThisMonth: Int,
+)
+
 data class OpportunityDetailAccount(
     val id: String,
     val name: String,
@@ -117,5 +134,14 @@ data class OpportunityDetailResponse(
     val customFields: Map<String, Any?> = emptyMap(),
     val approvalState: String,
     val activeApproval: OpportunityActiveApprovalSummary? = null,
-    val timeline: List<Any> = emptyList(),
+    val timeline: List<OpportunityTimelineEventItem> = emptyList(),
+)
+
+data class OpportunityTimelineEventItem(
+    val type: String,
+    val code: String,
+    val title: String,
+    val description: String,
+    val actor: String,
+    val at: java.time.Instant,
 )

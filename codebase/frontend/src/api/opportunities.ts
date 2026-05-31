@@ -16,6 +16,7 @@ import type {
 export function fetchOpportunities(
   userId: string,
   filters: OpportunitySavedViewFilters = {},
+  pagination: { page?: number; pageSize?: number } = {},
 ): Promise<OpportunityListResponse> {
   const params = new URLSearchParams();
   appendParam(params, "stage", filters.stageKey);
@@ -27,10 +28,41 @@ export function fetchOpportunities(
       appendParam(params, `cf.${fieldKey}`, String(value));
     }
   });
+  if (pagination.page) appendParam(params, "page", String(pagination.page));
+  if (pagination.pageSize) appendParam(params, "pageSize", String(pagination.pageSize));
   const query = params.toString();
 
   return requestJson<OpportunityListResponse>(
     `/api/opportunities${query ? `?${query}` : ""}`,
+    { userId },
+  );
+}
+
+export type OpportunitySummary = {
+  open: number;
+  pipelineValue: number;
+  pendingApprovals: number;
+  closingThisMonth: number;
+};
+
+/** Full-scope KPI aggregate — stable regardless of how many list pages are loaded. */
+export function fetchOpportunitySummary(
+  userId: string,
+  filters: OpportunitySavedViewFilters = {},
+): Promise<OpportunitySummary> {
+  const params = new URLSearchParams();
+  appendParam(params, "stage", filters.stageKey);
+  appendParam(params, "ownerId", filters.ownerId);
+  appendParam(params, "accountId", filters.accountId);
+  appendParam(params, "q", filters.query);
+  Object.entries(filters.customFields ?? {}).forEach(([fieldKey, value]) => {
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      appendParam(params, `cf.${fieldKey}`, String(value));
+    }
+  });
+  const query = params.toString();
+  return requestJson<OpportunitySummary>(
+    `/api/opportunities/summary${query ? `?${query}` : ""}`,
     { userId },
   );
 }
@@ -40,6 +72,12 @@ export function fetchOpportunityDetail(
   opportunityId: string,
 ): Promise<OpportunityDetail> {
   return requestJson<OpportunityDetail>(`/api/opportunities/${opportunityId}`, { userId });
+}
+
+export type AssignableOwner = { id: string; displayName: string };
+
+export function fetchAssignableOwners(userId: string): Promise<{ owners: AssignableOwner[] }> {
+  return requestJson<{ owners: AssignableOwner[] }>("/api/opportunities/assignable-owners", { userId });
 }
 
 export function createOpportunity(

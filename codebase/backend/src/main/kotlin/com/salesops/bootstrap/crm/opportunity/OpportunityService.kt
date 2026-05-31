@@ -100,6 +100,62 @@ class OpportunityService(
         )
     }
 
+    fun summarizeOpportunities(
+        context: CurrentUserContext,
+        stageKey: String?,
+        ownerId: String?,
+        accountId: String?,
+        query: String?,
+        customFieldFilters: Map<String, String>,
+    ): OpportunitySummaryResponse {
+        assertCanReadOpportunities(context)
+        val publishedSnapshot = metadataRuntimeService.loadPublishedSnapshot(context.tenant.tenantId)
+        val stageBridge = publishedStageKeyByLegacyStageId(context.tenant.tenantId, publishedSnapshot)
+        val resolvedStageId = stageKey?.trim()?.takeIf { it.isNotEmpty() }?.let { requestedStageKey ->
+            findPublishedOpportunityStage(snapshot = publishedSnapshot, stageKey = requestedStageKey)
+            stageBridge.entries.firstOrNull { (_, bridgeStageKey) -> bridgeStageKey == requestedStageKey }?.key
+                ?: return OpportunitySummaryResponse(0, BigDecimal.ZERO, 0, 0)
+        }
+
+        val filter = OpportunityListFilter(
+            tenantId = context.tenant.tenantId,
+            ownerScope = teamScopePolicy.opportunityOwnerScope(context),
+            stageId = resolvedStageId,
+            ownerUserId = ownerId?.trim()?.takeIf { it.isNotEmpty() },
+            accountId = accountId?.trim()?.takeIf { it.isNotEmpty() },
+            queryText = query?.trim()?.takeIf { it.isNotEmpty() }?.lowercase()?.let { "%$it%" },
+            customFieldFilters = normalizeOpportunityCustomFieldFilters(
+                publishedSnapshot = publishedSnapshot,
+                customFieldFilters = customFieldFilters,
+            ),
+            page = 1,
+            pageSize = 1,
+        )
+
+        val record = opportunityRepository.summarizeVisible(filter, java.time.YearMonth.now().toString())
+        return OpportunitySummaryResponse(
+            open = record.openCount,
+            pipelineValue = record.pipelineValue,
+            pendingApprovals = record.pendingApprovals,
+            closingThisMonth = record.closingThisMonth,
+        )
+    }
+
+    fun listAssignableOwners(context: CurrentUserContext): AssignableOwnersResponse {
+        val owners = when (val scope = teamScopePolicy.opportunityOwnerScope(context)) {
+            is OpportunityOwnerScope.AllTenant ->
+                userShellRepository.findAllByTenant(context.tenant.tenantId)
+            is OpportunityOwnerScope.Limited ->
+                userShellRepository.findByTenantAndIds(context.tenant.tenantId, scope.ownerUserIds.distinct())
+        }
+
+        return AssignableOwnersResponse(
+            owners = owners
+                .map { AssignableOwnerItem(id = it.userId, displayName = it.displayName) }
+                .sortedBy { it.displayName.lowercase() },
+        )
+    }
+
     @Transactional
     fun createOpportunity(
         context: CurrentUserContext,
@@ -257,6 +313,19 @@ class OpportunityService(
                     submittedAt = approval.submittedAt,
                 )
             },
+            timeline = opportunityRepository.listTimelineEvents(
+                tenantId = context.tenant.tenantId,
+                opportunityId = record.id,
+            ).map { event ->
+                OpportunityTimelineEventItem(
+                    type = event.eventType,
+                    code = event.eventCode,
+                    title = event.title,
+                    description = event.description,
+                    actor = event.actorName,
+                    at = event.createdAt,
+                )
+            },
         )
     }
 
@@ -296,12 +365,12 @@ class OpportunityService(
         val publishedSnapshot = request.customFields?.let {
             metadataRuntimeService.loadPublishedSnapshot(context.tenant.tenantId)
         }
-        val customFieldValues = publishedSnapshot?.let {
-            normalizeOpportunityCustomFields(
+        val customFieldPlan = publishedSnapshot?.let {
+            resolveCustomFieldUpdates(
                 publishedSnapshot = it,
                 customFields = request.customFields.orEmpty(),
             )
-        }.orEmpty()
+        }
 
         val updated = opportunityRepository.updateMutableFields(
             UpdateOpportunityCommand(
@@ -318,13 +387,20 @@ class OpportunityService(
             throw ValidationFailureException("Opportunity update was not applied")
         }
 
-        if (publishedSnapshot != null) {
+        if (publishedSnapshot != null && customFieldPlan != null) {
             saveCustomFieldValues(
                 context = context,
                 opportunityId = record.id,
                 publishedSnapshot = publishedSnapshot,
-                values = customFieldValues,
+                values = customFieldPlan.upserts,
             )
+            if (customFieldPlan.clears.isNotEmpty()) {
+                opportunityRepository.deleteCustomFieldValues(
+                    tenantId = context.tenant.tenantId,
+                    opportunityId = record.id,
+                    fieldKeys = customFieldPlan.clears,
+                )
+            }
         }
 
         return UpdateOpportunityResponse(
@@ -358,11 +434,11 @@ class OpportunityService(
         val targetStage = opportunityRepository.findStageByKey(context.tenant.tenantId, targetStageKey)
             ?: throw ValidationFailureException("Stage key does not exist in the CRM stage catalog")
 
+        val stageBridge = publishedStageKeyByLegacyStageId(context.tenant.tenantId, publishedSnapshot)
+        val currentStageKey = stageBridge.stageKeyFor(record.stageId)
+
         val decision = stageTransitionPolicy.decideMove(
-            currentStageKey = publishedStageKeyByLegacyStageId(
-                tenantId = context.tenant.tenantId,
-                publishedSnapshot = publishedSnapshot,
-            ).stageKeyFor(record.stageId),
+            currentStageKey = currentStageKey,
             currentGlobalStatus = record.globalStatus,
             currentApprovalState = record.approvalState,
             targetStageKey = publishedTargetStage.stageKey,
@@ -400,6 +476,23 @@ class OpportunityService(
         if (!updated) {
             throw ValidationFailureException("Opportunity stage transition was not applied")
         }
+
+        val actorName = userShellRepository.findByUserId(context.userId)?.displayName ?: context.userId
+        val fromLabel = publishedSnapshot.stages.firstOrNull { it.stageKey == currentStageKey }?.displayName ?: currentStageKey
+        val toLabel = publishedTargetStage.displayName
+        opportunityRepository.appendTimelineEvent(
+            AppendOpportunityTimelineEventCommand(
+                id = "evt_${UUID.randomUUID().toString().replace("-", "").take(16)}",
+                tenantId = context.tenant.tenantId,
+                opportunityId = record.id,
+                eventType = "stage_move",
+                eventCode = "STAGE_MOVE",
+                title = "Stage changed to $toLabel",
+                description = "$fromLabel → $toLabel",
+                actorUserId = context.userId,
+                actorName = actorName,
+            ),
+        )
 
         return MoveOpportunityStageResponse(
             id = record.id,
@@ -599,6 +692,47 @@ class OpportunityService(
         }
     }
 
+    /**
+     * Splits a custom-field patch into values to upsert and field keys to clear.
+     * A key present with a null/blank value is an explicit clear (delete the stored
+     * value); a key absent from the map is simply left untouched by the caller.
+     */
+    private fun resolveCustomFieldUpdates(
+        publishedSnapshot: PublishedMetadataRuntimeSnapshot,
+        customFields: Map<String, JsonNode?>,
+    ): CustomFieldUpdatePlan {
+        if (customFields.isEmpty()) {
+            return CustomFieldUpdatePlan(upserts = emptyList(), clears = emptyList())
+        }
+
+        val opportunityFieldsByKey = publishedSnapshot.fields
+            .filter { it.entityType == "opportunity" }
+            .associateBy { it.fieldKey }
+
+        val upserts = mutableListOf<NormalizedOpportunityCustomFieldValue>()
+        val clears = mutableListOf<String>()
+
+        customFields.forEach { (rawFieldKey, rawValue) ->
+            val fieldKey = rawFieldKey.trim()
+            val field = opportunityFieldsByKey[fieldKey]
+                ?: throw ValidationFailureException("Custom opportunity field '$fieldKey' is not published")
+            val normalizedValue = normalizeCustomFieldValue(field, rawValue)
+            if (normalizedValue == null) {
+                clears.add(field.fieldKey)
+            } else {
+                upserts.add(
+                    NormalizedOpportunityCustomFieldValue(
+                        fieldKey = field.fieldKey,
+                        fieldType = field.fieldType,
+                        value = normalizedValue,
+                    ),
+                )
+            }
+        }
+
+        return CustomFieldUpdatePlan(upserts = upserts, clears = clears)
+    }
+
     private fun normalizeCustomFieldValue(
         field: PublishedMetadataRuntimeFieldDefinition,
         value: JsonNode?,
@@ -748,6 +882,11 @@ private data class OpportunityStandardRequiredFieldValues(
             else -> customFields[fieldKey].isMissingCustomValue()
         }
 }
+
+private data class CustomFieldUpdatePlan(
+    val upserts: List<NormalizedOpportunityCustomFieldValue>,
+    val clears: List<String>,
+)
 
 private data class NormalizedOpportunityCustomFieldValue(
     val fieldKey: String,

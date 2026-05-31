@@ -35,10 +35,6 @@ active prototype files now live directly in `prototypes/`.
 - `DuplicateReviewMerge.tsx` + `styles.phase2-9.css`
 - `ExecutiveDashboard.tsx` + `styles.phase2-10.css`
 
-3. Shared redesign reference
-
-- `UX Simplification Plan.html`
-
 ## Source-of-truth rule
 
 - `prototypes/` = current prototype and redesign handoff artifacts

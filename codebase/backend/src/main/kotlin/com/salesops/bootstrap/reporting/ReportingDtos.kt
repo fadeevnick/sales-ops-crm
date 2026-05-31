@@ -9,6 +9,7 @@ data class ReportingDashboardResponse(
     val refreshedByUserId: String,
     val metrics: ReportingDashboardMetrics,
     val sourceCounters: ReportingSourceCounters,
+    val refreshDurationMs: Long? = null,
 )
 
 data class ReportingProjectionRefreshResponse(
@@ -21,12 +22,14 @@ data class ReportingDashboardMetrics(
     val stageBreakdown: List<ReportingStageMetric>,
     val forecastByMonth: List<ReportingForecastMetric>,
     val approvalBacklog: ReportingApprovalBacklogMetric,
+    val closedWonQtd: ReportingClosedWonQtdMetric = ReportingClosedWonQtdMetric(0, BigDecimal.ZERO),
 )
 
 data class ReportingStageMetric(
     val stageKey: String,
     val opportunityCount: Int,
     val expectedAmount: BigDecimal,
+    val stuckCount: Int = 0,
 )
 
 data class ReportingForecastMetric(
@@ -38,11 +41,34 @@ data class ReportingForecastMetric(
 data class ReportingApprovalBacklogMetric(
     val pendingRequests: Int,
     val activeSteps: Int,
+    val avgTurnaroundHours: Double? = null,
+    val queueBreakdown: List<ReportingApprovalQueueMetric> = emptyList(),
+    val exceptionBreakdown: List<ReportingExceptionTypeMetric> = emptyList(),
+)
+
+data class ReportingApprovalQueueMetric(
+    val roleKey: String,
+    val pending: Int,
+    val overdue: Int,
+    val avgTurnaroundHours: Double? = null,
+)
+
+data class ReportingExceptionTypeMetric(
+    val policyKey: String,
+    val count: Int,
+    val totalExpectedAmount: BigDecimal,
+)
+
+data class ReportingClosedWonQtdMetric(
+    val count: Int,
+    val totalExpectedAmount: BigDecimal,
 )
 
 data class ReportingSourceCounters(
     val opportunityCount: Int,
     val approvalRequestCount: Int,
+    val pendingImports: Int = 0,
+    val pendingMerges: Int = 0,
 )
 
 data class ReportingOpportunityDrillDownResponse(

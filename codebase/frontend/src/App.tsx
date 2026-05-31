@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import {
   describeRequestError,
   fetchCurrentUser,
@@ -6,8 +7,21 @@ import {
   isUnauthorizedError,
   loginDemoUser,
 } from "./api/session";
+import { ApproverInbox } from "./features/approvals/ApproverInbox";
+import { AccountDetailRoute } from "./features/crm/routes/AccountDetailRoute";
+import { CrmWorkspaceRoute } from "./features/crm/routes/CrmWorkspaceRoute";
+import { OpportunityDetailRoute } from "./features/crm/routes/OpportunityDetailRoute";
+import { MetadataAdminWorkspace } from "./features/metadata/MetadataAdminWorkspace";
+import { ReportingDashboard } from "./features/reporting/ReportingDashboard";
+import { RevOpsWorkspace } from "./features/revops/RevOpsWorkspace";
+import { RevOpsBulkRoute } from "./features/revops/routes/RevOpsBulkRoute";
+import { RevOpsDuplicateRoute } from "./features/revops/routes/RevOpsDuplicateRoute";
 import { LoginScreen } from "./features/shell/LoginScreen";
 import { WorkspaceShell } from "./features/shell/WorkspaceShell";
+import {
+  canUseWorkspace,
+  getDefaultWorkspacePath,
+} from "./features/shell/workspaceConfig";
 import {
   clearStoredSessionUserId,
   readStoredSessionUserId,
@@ -132,9 +146,82 @@ export default function App() {
   const authenticatedUser = currentUser;
 
   if (authenticatedUser) {
+    const defaultWorkspacePath = getDefaultWorkspacePath(authenticatedUser);
+    const canUseCrm = canUseWorkspace(authenticatedUser, "opportunities");
+    const canUseApprovals = canUseWorkspace(authenticatedUser, "approvals");
+    const canUseReporting = canUseWorkspace(authenticatedUser, "reporting");
+    const canUseMetadata = canUseWorkspace(authenticatedUser, "metadata");
+    const canUseRevOps = canUseWorkspace(authenticatedUser, "revops");
+
     return (
       <div className="app app-auth">
-        <WorkspaceShell currentUser={authenticatedUser} onLogout={logout} />
+        <Routes>
+          <Route
+            element={<WorkspaceShell currentUser={authenticatedUser} onLogout={logout} />}
+          >
+            <Route index element={<Navigate replace to={defaultWorkspacePath} />} />
+            {canUseCrm ? (
+              <>
+                <Route path="opportunities" element={<CrmWorkspaceRoute currentUser={authenticatedUser} />} />
+                <Route
+                  path="accounts"
+                  element={<CrmWorkspaceRoute currentUser={authenticatedUser} workspaceTab="accounts" />}
+                />
+                <Route
+                  path="opportunities/:opportunityId"
+                  element={<OpportunityDetailRoute currentUser={authenticatedUser} />}
+                />
+                <Route
+                  path="accounts/:accountId"
+                  element={<AccountDetailRoute currentUser={authenticatedUser} />}
+                />
+                {/* Legacy /crm/* deep links continue to resolve. */}
+                <Route path="crm" element={<Navigate replace to="/opportunities" />} />
+                <Route path="crm/accounts" element={<Navigate replace to="/accounts" />} />
+                <Route path="crm/opportunities/:opportunityId" element={<LegacyOpportunityRedirect />} />
+                <Route path="crm/opportunity/:opportunityId" element={<LegacyOpportunityRedirect />} />
+                <Route path="crm/accounts/:accountId" element={<LegacyAccountRedirect />} />
+                <Route path="crm/account/:accountId" element={<LegacyAccountRedirect />} />
+              </>
+            ) : null}
+            {canUseApprovals ? (
+              <Route path="approvals/*" element={<ApproverInbox currentUser={authenticatedUser} />} />
+            ) : null}
+            {canUseReporting ? (
+              <Route
+                path="reporting/*"
+                element={
+                  <ReportingDashboardRoute
+                    currentUser={authenticatedUser}
+                    canUseApprovals={canUseApprovals}
+                  />
+                }
+              />
+            ) : null}
+            {canUseMetadata ? (
+              <Route
+                path="metadata/*"
+                element={<MetadataAdminWorkspace currentUser={authenticatedUser} />}
+              />
+            ) : null}
+            {canUseRevOps ? (
+              <Route path="revops" element={<RevOpsWorkspace />}>
+                <Route index element={<Navigate replace to="import-export" />} />
+                <Route
+                  path="import-export"
+                  element={<RevOpsBulkRoute currentUser={authenticatedUser} />}
+                />
+                <Route path="bulk" element={<Navigate replace to="/revops/import-export" />} />
+                <Route
+                  path="duplicates"
+                  element={<RevOpsDuplicateRoute currentUser={authenticatedUser} />}
+                />
+                <Route path="*" element={<Navigate replace to="/revops/import-export" />} />
+              </Route>
+            ) : null}
+            <Route path="*" element={<Navigate replace to={defaultWorkspacePath} />} />
+          </Route>
+        </Routes>
       </div>
     );
   }
@@ -195,5 +282,32 @@ export default function App() {
             </section>
       </main>
     </div>
+  );
+}
+
+function LegacyOpportunityRedirect() {
+  const { opportunityId } = useParams<{ opportunityId: string }>();
+  return <Navigate replace to={opportunityId ? `/opportunities/${opportunityId}` : "/opportunities"} />;
+}
+
+function LegacyAccountRedirect() {
+  const { accountId } = useParams<{ accountId: string }>();
+  return <Navigate replace to={accountId ? `/accounts/${accountId}` : "/accounts"} />;
+}
+
+function ReportingDashboardRoute({
+  currentUser,
+  canUseApprovals,
+}: {
+  currentUser: CurrentUser;
+  canUseApprovals: boolean;
+}) {
+  const navigate = useNavigate();
+
+  return (
+    <ReportingDashboard
+      currentUser={currentUser}
+      onNavigateToApprovals={canUseApprovals ? () => navigate("/approvals") : undefined}
+    />
   );
 }

@@ -67,6 +67,12 @@ class AccountRepository(
             .optional()
             .orElse(null)
 
+    fun findVisibleDetailById(filter: AccountVisibilityLookup): AccountRecord? =
+        bindVisibilityLookupParams(jdbcClient.sql(findVisibleDetailByIdSql(filter)), filter)
+            .query { rs, _ -> rs.toAccountRecord() }
+            .optional()
+            .orElse(null)
+
     fun findTenantAccountForImport(command: AccountImportLookup): VisibleAccountRecord? {
         val accountId = command.accountId?.trim()?.takeIf { it.isNotEmpty() }
         val accountName = command.accountName?.trim()?.takeIf { it.isNotEmpty() }
@@ -181,6 +187,24 @@ class AccountRepository(
             a.owner_user_id
         FROM accounts a
         ${visibilityLookupWhereClause(filter)}
+        """.trimIndent()
+
+    private fun findVisibleDetailByIdSql(filter: AccountVisibilityLookup): String =
+        """
+        SELECT
+            a.id,
+            a.name,
+            a.owner_user_id,
+            owner.display_name AS owner_name,
+            COALESCE(COUNT(o.id), 0) AS open_opportunity_count
+        FROM accounts a
+        JOIN app_users owner ON owner.id = a.owner_user_id
+        LEFT JOIN opportunities o
+            ON o.account_id = a.id
+           AND o.tenant_id = a.tenant_id
+           AND o.global_status NOT IN ('closed_won', 'closed_lost')
+        ${visibilityLookupWhereClause(filter)}
+        GROUP BY a.id, a.name, a.owner_user_id, owner.display_name
         """.trimIndent()
 
     private fun visibilityLookupWhereClause(filter: AccountVisibilityLookup): String {

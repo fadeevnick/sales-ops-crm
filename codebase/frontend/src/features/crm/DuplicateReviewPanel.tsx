@@ -9,54 +9,16 @@ import {
 import { describeRequestError } from "../../api/session";
 import type { DuplicateCandidateItem } from "../../types/duplicateCandidates";
 import type { CurrentUser } from "../../types/session";
+import {
+  DuplicateActionPanel,
+  DuplicateComparisonPanel,
+  DuplicateQueuePanel,
+} from "./DuplicateReviewSections";
+import { type QueueFilter } from "./DuplicateReviewShared";
 
 type DuplicateReviewPanelProps = {
   currentUser: CurrentUser;
 };
-
-type QueueFilter = "all" | "high" | "account" | "contact" | "needs" | "deferred";
-
-function formatDate(value: string): string {
-  return new Date(value).toLocaleString([], {
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    month: "short",
-  });
-}
-
-function formatScore(score: number): string {
-  return score.toFixed(2);
-}
-
-function filterLabel(filter: QueueFilter): string {
-  switch (filter) {
-    case "all":
-      return "All Open";
-    case "high":
-      return "High Confidence";
-    case "account":
-      return "Accounts";
-    case "contact":
-      return "Contacts";
-    case "needs":
-      return "Needs Review";
-    case "deferred":
-      return "Deferred";
-  }
-}
-
-function flashConstraint(currentUser: CurrentUser, callback: (message: string) => void, candidate: DuplicateCandidateItem, side: "left" | "right" | "related") {
-  if (side === "related") {
-    callback(
-      `Related records for ${candidate.id} are not exposed by the current API in ${currentUser.tenantName.toUpperCase()} · CONSTRAINT`,
-    );
-    return;
-  }
-
-  const recordId = side === "left" ? candidate.leftRecordId : candidate.rightRecordId;
-  callback(`Open ${recordId} is not wired yet in ${currentUser.tenantName.toUpperCase()} · CONSTRAINT`);
-}
 
 export function DuplicateReviewPanel({ currentUser }: DuplicateReviewPanelProps) {
   const [candidates, setCandidates] = useState<DuplicateCandidateItem[]>([]);
@@ -233,7 +195,7 @@ export function DuplicateReviewPanel({ currentUser }: DuplicateReviewPanelProps)
       await rejectDuplicateCandidate(currentUser.userId, candidate.id, { reviewReason });
       removeCandidate(candidate.id);
       setResolvedCounts((current) => ({ ...current, rejected: current.rejected + 1 }));
-      setMessage(`Rejected ${candidate.id} as false positive`);
+      setMessage(`Rejected ${candidate.leftRecordLabel} ↔ ${candidate.rightRecordLabel} as not a duplicate`);
     } catch (error) {
       setErrorMessage(describeRequestError(error));
     } finally {
@@ -254,10 +216,12 @@ export function DuplicateReviewPanel({ currentUser }: DuplicateReviewPanelProps)
           : await mergeContactDuplicateCandidate(currentUser.userId, candidate.id, { masterRecordId, mergeReason });
       removeCandidate(candidate.id);
       setResolvedCounts((current) => ({ ...current, merged: current.merged + 1 }));
+      const masterLabel =
+        masterRecordId === candidate.rightRecordId ? candidate.rightRecordLabel : candidate.leftRecordLabel;
       setMessage(
         "reassignedContacts" in response
-          ? `Merged ${candidate.id} · ${response.reassignedContacts} contacts and ${response.reassignedOpportunities} opportunities reassigned`
-          : `Merged ${candidate.id} · ${response.reassignedPrimaryContactOpportunities} primary-contact opportunities reassigned`,
+          ? `Merged into ${masterLabel} · ${response.reassignedContacts} contacts and ${response.reassignedOpportunities} opportunities reassigned`
+          : `Merged into ${masterLabel} · ${response.reassignedPrimaryContactOpportunities} primary-contact opportunities reassigned`,
       );
     } catch (error) {
       setErrorMessage(describeRequestError(error));
@@ -266,27 +230,20 @@ export function DuplicateReviewPanel({ currentUser }: DuplicateReviewPanelProps)
     }
   };
 
-  const comparisonRows = selectedCandidate
-    ? [
-        { label: "Record ID", left: selectedCandidate.leftRecordId, right: selectedCandidate.rightRecordId, tone: "exact" },
-        { label: "Record label", left: selectedCandidate.leftRecordLabel, right: selectedCandidate.rightRecordLabel, tone: "conflict" },
-        { label: "Entity scope", left: selectedCandidate.entityType, right: selectedCandidate.entityType, tone: "exact" },
-        { label: "Match summary", left: selectedCandidate.reasonSummary, right: selectedCandidate.reasonSummary, tone: "exact" },
-        { label: "Generated", left: formatDate(selectedCandidate.generatedAt), right: formatDate(selectedCandidate.generatedAt), tone: "exact" },
-      ]
-    : [];
-
   return (
     <section className="rep-workspace drm-workspace crm-section duplicate-review-section">
       <div className="drm-page-head">
         <div className="drm-head-left">
           <div className="drm-crumb">
-            <span>Data &amp; Quality</span>
-            <span className="sep">/</span>
             <strong>Duplicate Review</strong>
             <span className="drm-live-chip">
               <span className="drm-pulse-dot" />
-              <span className="mono">{counts.open} open</span>
+              <span className="mono">
+                {counts.open} open
+                {resolvedCounts.merged + resolvedCounts.rejected > 0
+                  ? ` · ${resolvedCounts.merged + resolvedCounts.rejected} resolved`
+                  : ""}
+              </span>
             </span>
           </div>
         </div>
@@ -312,270 +269,85 @@ export function DuplicateReviewPanel({ currentUser }: DuplicateReviewPanelProps)
         </div>
       </div>
 
-      <div className="drm-kpi-band">
-        {[
-          { label: "Open candidates", value: counts.open, foot: "Current review queue" },
-          { label: "High confidence", value: counts.high, foot: "score ≥ 0.85" },
-          { label: "Needs review", value: counts.low, foot: "low score or deferred" },
-          { label: "Accounts pending", value: counts.account, foot: "account entity" },
-          { label: "Contacts pending", value: counts.contact, foot: "contact entity" },
-          { label: "Resolved now", value: resolvedCounts.merged + resolvedCounts.rejected, foot: `${resolvedCounts.merged} merged · ${resolvedCounts.rejected} rejected` },
-        ].map((metric) => (
-          <div className="drm-kpi-item" key={metric.label}>
-            <div className="drm-kpi-l">{metric.label}</div>
-            <div className="drm-kpi-v mono">{metric.value}</div>
-            <div className="drm-kpi-foot">{metric.foot}</div>
-          </div>
-        ))}
-      </div>
-
       {errorMessage ? <div className="error-box">{errorMessage}</div> : null}
       {message ? <div className="success-box">{message}</div> : null}
 
       <div className="drm-main-grid">
-        <section className="rep-panel drm-queue">
-          <div className="rep-panel-head">
-            <div className="rep-panel-title">
-              Queue
-              <em>{filteredCandidates.length} visible</em>
-            </div>
-          </div>
-          <div className="drm-queue-filter">
-            {(["all", "high", "account", "contact", "needs", "deferred"] as QueueFilter[]).map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                className={`drm-filter-chip${queueFilter === filter ? " active" : ""}`}
-                onClick={() => setQueueFilter(filter)}
-              >
-                {filterLabel(filter)}
-              </button>
-            ))}
-          </div>
-          <div className="drm-queue-list">
-            {isLoading ? <div className="drm-queue-empty">Loading candidates…</div> : null}
-            {!isLoading && !filteredCandidates.length ? <div className="drm-queue-empty">No candidates match the current filters.</div> : null}
-            {!isLoading &&
-              filteredCandidates.map((candidate) => {
-                const isSelected = candidate.id === selectedCandidate?.id;
-                const isDeferred = Boolean(deferredIds[candidate.id]);
-                return (
-                  <button
-                    key={candidate.id}
-                    type="button"
-                    className={`drm-qrow${isSelected ? " selected" : ""}${isDeferred ? " deferred" : ""}`}
-                    onClick={() => setSelectedId(candidate.id)}
-                  >
-                    <div className="drm-qrow-header">
-                      <span className="mono drm-qrow-id">{candidate.id}</span>
-                      <span className="drm-type-badge mono">{candidate.entityType}</span>
-                      {isDeferred ? <span className="drm-deferred-tag mono">Deferred</span> : null}
-                      <span className="mono drm-qrow-score">{formatScore(Number(candidate.matchScore))}</span>
-                    </div>
-                    <div className="drm-qrow-names">
-                      <strong className="drm-qrow-a">{candidate.leftRecordLabel}</strong>
-                      <span className="drm-qrow-sep">vs</span>
-                      <strong className="drm-qrow-b">{candidate.rightRecordLabel}</strong>
-                    </div>
-                    <div className="drm-qrow-reasons">
-                      <span className="drm-reason-chip">{candidate.reasonSummary}</span>
-                    </div>
-                  </button>
-                );
-              })}
-          </div>
-        </section>
+        <DuplicateQueuePanel
+          isLoading={isLoading}
+          filteredCandidates={filteredCandidates}
+          selectedId={selectedCandidate?.id ?? null}
+          deferredIds={deferredIds}
+          queueFilter={queueFilter}
+          counts={counts}
+          onSelect={setSelectedId}
+          onQueueFilterChange={setQueueFilter}
+        />
 
-        <div className="drm-comparison">
-          {selectedCandidate ? (
-            <>
-              <section className="rep-panel drm-match-bar">
-                <div className="drm-match-top">
-                  <div>
-                    <div className="drm-score-badge">
-                      <span className="mono drm-score-num">{formatScore(Number(selectedCandidate.matchScore))}</span>
-                      <span className="drm-score-conf mono">
-                        {Number(selectedCandidate.matchScore) >= 0.85 ? "High confidence" : "Needs review"}
-                      </span>
-                    </div>
-                    <div className="drm-interpretation">
-                      <span className="drm-interp-label mono">Signal</span>
-                      <span className="drm-interp-text">{selectedCandidate.reasonSummary}</span>
-                    </div>
-                  </div>
-                  <div className="drm-match-actions">
-                    <button
-                      className="rep-btn rep-btn-ghost"
-                      type="button"
-                      onClick={() => flashConstraint(currentUser, flash, selectedCandidate, "left")}
-                    >
-                      Open A ›
-                    </button>
-                    <button
-                      className="rep-btn rep-btn-ghost"
-                      type="button"
-                      onClick={() => flashConstraint(currentUser, flash, selectedCandidate, "right")}
-                    >
-                      Open B ›
-                    </button>
-                    <button
-                      className="rep-btn rep-btn-ghost"
-                      type="button"
-                      onClick={() => flashConstraint(currentUser, flash, selectedCandidate, "related")}
-                    >
-                      Related opps
-                    </button>
-                  </div>
-                </div>
-                <div className="drm-reasons-row">
-                  <span className="drm-reason-tag mono">{selectedCandidate.entityType}</span>
-                  <span className="drm-reason-tag mono">generated {formatDate(selectedCandidate.generatedAt)}</span>
-                  {isSelectedDeferred ? <span className="drm-reason-tag mono">deferred</span> : null}
-                </div>
-              </section>
+        <DuplicateComparisonPanel
+          candidate={selectedCandidate}
+          isSelectedDeferred={isSelectedDeferred}
+        />
 
-              <section className="rep-panel drm-field-panel">
-                <div className="rep-panel-head">
-                  <div className="rep-panel-title">
-                    Comparison workspace
-                    <em>API-backed summary</em>
-                  </div>
-                  <div className="rep-panel-actions">
-                    <span className="drm-legend">Deep field comparison is not exposed by the current API.</span>
-                  </div>
-                </div>
-                <div className="rep-table-scroll">
-                  <table className="rep-table drm-cmp-table">
-                    <thead>
-                      <tr>
-                        <th>Field</th>
-                        <th>{selectedCandidate.leftRecordLabel}</th>
-                        <th>{selectedCandidate.rightRecordLabel}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {comparisonRows.map((row) => (
-                        <tr key={row.label}>
-                          <td className="drm-field-name">{row.label}</td>
-                          <td className="drm-field-val">{row.left}</td>
-                          <td className="drm-field-val">{row.right}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="drm-section-note">
-                  Merge is real. Per-field conflict selection is currently limited by `DuplicateCandidateItem` shape; the backend exposes only pair identity, score, and summary.
-                </div>
-              </section>
-            </>
-          ) : (
-            <section className="rep-panel drm-empty-workspace">
-              <div className="drm-empty-icon mono">DUP</div>
-              <div className="drm-empty-title">No open duplicate candidates</div>
-            </section>
-          )}
-        </div>
-
-        <aside className="rep-panel drm-action-panel">
-          <div className="rep-panel-head">
-            <div className="rep-panel-title">
-              Resolution
-              <em>{selectedCandidate ? selectedCandidate.id : "queue empty"}</em>
-            </div>
-          </div>
-          {selectedCandidate ? (
-            <>
-              <label className="ieo-config-label">
-                <span>Master record</span>
-                <select
-                  value={masterSelections[selectedCandidate.id] ?? selectedCandidate.leftRecordId}
-                  onChange={(event) =>
-                    setMasterSelections((current) => ({
-                      ...current,
-                      [selectedCandidate.id]: event.target.value,
-                    }))
-                  }
-                >
-                  <option value={selectedCandidate.leftRecordId}>{selectedCandidate.leftRecordLabel}</option>
-                  <option value={selectedCandidate.rightRecordId}>{selectedCandidate.rightRecordLabel}</option>
-                </select>
-              </label>
-              <label className="ieo-config-label">
-                <span>Merge reason</span>
-                <textarea
-                  value={mergeReasons[selectedCandidate.id] ?? ""}
-                  onChange={(event) =>
-                    setMergeReasons((current) => ({
-                      ...current,
-                      [selectedCandidate.id]: event.target.value,
-                    }))
-                  }
-                  placeholder="Required for audit clarity. Defaults to “Duplicate merge”."
-                />
-              </label>
-              <label className="ieo-config-label">
-                <span>Reject reason</span>
-                <textarea
-                  value={rejectReasons[selectedCandidate.id] ?? ""}
-                  onChange={(event) =>
-                    setRejectReasons((current) => ({
-                      ...current,
-                      [selectedCandidate.id]: event.target.value,
-                    }))
-                  }
-                  placeholder="Required when rejecting as false positive."
-                />
-              </label>
-              <div className="drm-impact-note">
-                Merge will archive the secondary record and preserve reassignment behavior exposed by the merge endpoints. Preview of detailed field-level impact is not yet available.
-              </div>
-              <div className="button-row">
-                <button
-                  className="rep-btn rep-btn-primary"
-                  disabled={isSubmitting}
-                  onClick={() => void handleMerge(selectedCandidate)}
-                  type="button"
-                >
-                  Merge
-                </button>
-                <button
-                  className="rep-btn rep-btn-ghost"
-                  disabled={isSubmitting}
-                  onClick={() =>
-                    setDeferredIds((current) =>
-                      current[selectedCandidate.id]
-                        ? current
-                        : {
-                            ...current,
-                            [selectedCandidate.id]: true,
-                          },
-                    )
-                  }
-                  type="button"
-                >
-                  Defer
-                </button>
-                <button
-                  className="rep-btn"
-                  disabled={isSubmitting}
-                  onClick={() => void handleReject(selectedCandidate)}
-                  type="button"
-                >
-                  Reject
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="drm-queue-empty">Select a candidate to review.</div>
-          )}
-        </aside>
-      </div>
-
-      <div className="rep-foot-ruler">
-        <span>SALES OPS CRM · {currentUser.tenantName.toUpperCase()} · LOCAL PILOT</span>
-        <span>{currentUser.roleKey.toUpperCase()} · {currentUser.displayName}</span>
-        <span>{counts.open} OPEN · {resolvedCounts.merged} MERGED · {resolvedCounts.rejected} REJECTED</span>
+        <DuplicateActionPanel
+          candidate={selectedCandidate}
+          isSubmitting={isSubmitting}
+          masterSelection={selectedCandidate ? masterSelections[selectedCandidate.id] : undefined}
+          mergeReason={selectedCandidate ? mergeReasons[selectedCandidate.id] ?? "" : ""}
+          rejectReason={selectedCandidate ? rejectReasons[selectedCandidate.id] ?? "" : ""}
+          onMasterChange={(value) => {
+            if (!selectedCandidate) {
+              return;
+            }
+            setMasterSelections((current) => ({
+              ...current,
+              [selectedCandidate.id]: value,
+            }));
+          }}
+          onMergeReasonChange={(value) => {
+            if (!selectedCandidate) {
+              return;
+            }
+            setMergeReasons((current) => ({
+              ...current,
+              [selectedCandidate.id]: value,
+            }));
+          }}
+          onRejectReasonChange={(value) => {
+            if (!selectedCandidate) {
+              return;
+            }
+            setRejectReasons((current) => ({
+              ...current,
+              [selectedCandidate.id]: value,
+            }));
+          }}
+          onMerge={() => {
+            if (!selectedCandidate) {
+              return;
+            }
+            void handleMerge(selectedCandidate);
+          }}
+          onDefer={() => {
+            if (!selectedCandidate) {
+              return;
+            }
+            setDeferredIds((current) =>
+              current[selectedCandidate.id]
+                ? current
+                : {
+                    ...current,
+                    [selectedCandidate.id]: true,
+                  },
+            );
+          }}
+          onReject={() => {
+            if (!selectedCandidate) {
+              return;
+            }
+            void handleReject(selectedCandidate);
+          }}
+        />
       </div>
 
       {toast ? (

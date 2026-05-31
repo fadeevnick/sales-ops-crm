@@ -26,6 +26,24 @@ class UserShellRepository(
             .optional()
             .orElse(null)
 
+    fun findAllByTenant(tenantId: String): List<UserShellRecord> =
+        jdbcClient.sql(baseSelect + "\nWHERE u.tenant_id = :tenantId\nORDER BY u.display_name")
+            .param("tenantId", tenantId)
+            .query { rs, _ -> rs.toUserShellRecord() }
+            .list()
+
+    fun findByTenantAndIds(tenantId: String, userIds: List<String>): List<UserShellRecord> {
+        if (userIds.isEmpty()) {
+            return emptyList()
+        }
+
+        return jdbcClient.sql(baseSelect + "\nWHERE u.tenant_id = :tenantId\n  AND u.id IN (:userIds)\nORDER BY u.display_name")
+            .param("tenantId", tenantId)
+            .param("userIds", userIds)
+            .query { rs, _ -> rs.toUserShellRecord() }
+            .list()
+    }
+
     private companion object {
         val baseSelect =
             """

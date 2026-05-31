@@ -16,12 +16,18 @@ class ReportingService(
     fun refreshDashboardProjection(context: CurrentUserContext): ReportingProjectionRefreshResponse {
         assertCanRefreshReporting(context)
 
+        val startMs = System.currentTimeMillis()
+        val metrics = reportingProjectionRepository.calculateMetrics(context.tenant.tenantId)
+        val sourceCounters = reportingProjectionRepository.calculateSourceCounters(context.tenant.tenantId)
+        val durationMs = System.currentTimeMillis() - startMs
+
         val snapshot = reportingProjectionRepository.upsertSnapshot(
             UpsertReportingProjectionCommand(
                 tenantId = context.tenant.tenantId,
                 refreshedByUserId = context.userId,
-                metrics = reportingProjectionRepository.calculateMetrics(context.tenant.tenantId),
-                sourceCounters = reportingProjectionRepository.calculateSourceCounters(context.tenant.tenantId),
+                metrics = metrics,
+                sourceCounters = sourceCounters,
+                refreshDurationMs = durationMs,
             ),
         )
 
@@ -92,5 +98,6 @@ class ReportingService(
             refreshedByUserId = refreshedByUserId,
             metrics = metrics,
             sourceCounters = sourceCounters,
+            refreshDurationMs = refreshDurationMs,
         )
 }

@@ -59,49 +59,19 @@
 //
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { createActivity } from "../../api/activities";
 import { reassignOpportunityOwner } from "../../api/opportunities";
 import type { CurrentUser } from "../../types/session";
+import { ManagerNoteModal, OppPreviewPanel, PipelineTable, ReassignModal, TeamSummary } from "./ManagerPipelineSections";
+import {
+  PIPELINE_VIEWS,
+  type PipelineOpportunity,
+  type TeamMember,
+  fmtMoney,
+} from "./ManagerPipelineShared";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Local types
-// ─────────────────────────────────────────────────────────────────────────────
-
-export type PipelineOpportunity = {
-  id: string;
-  title: string;
-  accountName: string;
-  accountId: string;
-  ownerId: string;
-  ownerName: string;
-  stageKey: string;
-  stageLabel?: string;
-  stageIndex?: number;           // 0–4 for 5-stage pip
-  expectedAmount?: number;
-  closeDate?: string;
-  approvalState?: string;        // none | pending | overdue | legal | sentback | approved
-  approvalLabel?: string;
-  approvalRequestId?: string | null;
-  riskKey?: string;              // none | sla | close | stuck | overdue | nonext
-  riskLabel?: string;            // CONSTRAINT: not in current OpportunityListItem
-  nextActivityNote?: string;     // CONSTRAINT: not in current OpportunityListItem
-  managerNotes?: string;         // CONSTRAINT: not in current OpportunityListItem
-  primaryContact?: string;
-};
-
-export type TeamMember = {
-  id: string;
-  displayName: string;
-  initials?: string;
-  colorKey?: string;
-  openOppsCount?: number;
-  pipelineTotal?: number;
-  weightedPipeline?: number;
-  pendingApprovals?: number;
-  overdueActivities?: number;
-  closingThisMonth?: number;
-};
+export type { PipelineOpportunity, TeamMember } from "./ManagerPipelineShared";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -112,93 +82,14 @@ type ManagerPipelineProps = {
   teamMembers: TeamMember[];
   opportunities: PipelineOpportunity[];
   teamName?: string;
+  total?: number;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void;
   onOpenOpportunity?: (id: string) => void;
   onOpenApproval?: (requestId: string) => void;
   onBack?: () => void;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-function fmtMoney(n: number | undefined): string {
-  if (typeof n !== "number" || !Number.isFinite(n)) return "—";
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
-  return `$${n}`;
-}
-
-function fmtDate(v: string | undefined): string {
-  if (!v) return "—";
-  return v.slice(0, 10);
-}
-
-type RiskMeta = { color: string; bg: string; border: string };
-
-function riskMeta(key: string | undefined): RiskMeta | null {
-  if (!key || key === "none") return null;
-  if (key === "overdue") return { color: "var(--neg)", bg: "var(--neg-soft)", border: "#D6B0A8" };
-  if (key === "stuck" || key === "sla") return { color: "var(--accent-2)", bg: "var(--accent-soft)", border: "#D9BFA0" };
-  if (key === "close") return { color: "var(--info,#2D5B6B)", bg: "var(--info-soft,#DDE9ED)", border: "#A4C0C8" };
-  if (key === "nonext") return { color: "var(--muted)", bg: "var(--paper-2)", border: "var(--line)" };
-  return null;
-}
-
-function approvalPillState(state: string | undefined): string {
-  if (!state || state === "none") return "none";
-  if (state === "approved") return "approved";
-  if (state === "pending") return "pending";
-  if (state === "overdue") return "rejected";
-  if (state === "legal" || state === "sentback") return "sent_back";
-  return "none";
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// StagePip
-// ─────────────────────────────────────────────────────────────────────────────
-
-function StagePip({ index = 0, total = 5 }: { index?: number; total?: number }) {
-  return (
-    <span className="pipe-stage-pip">
-      {Array.from({ length: total }, (_, i) => (
-        <i key={i} className={i < index ? "on" : i === index ? "cur" : ""} />
-      ))}
-    </span>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// RiskTag
-// ─────────────────────────────────────────────────────────────────────────────
-
-function RiskTag({ riskKey, riskLabel }: { riskKey?: string; riskLabel?: string }) {
-  const meta = riskMeta(riskKey);
-  if (!meta || !riskLabel) return <span style={{ color: "var(--muted)", fontSize: 12 }}>—</span>;
-  return (
-    <span className="pipe-risk-tag" style={{ color: meta.color, background: meta.bg, borderColor: meta.border }}>
-      {riskLabel}
-    </span>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// View definitions
-// ─────────────────────────────────────────────────────────────────────────────
-
-type ViewDef = { key: string; label: string; test: (o: PipelineOpportunity) => boolean };
-
-const PIPELINE_VIEWS: ViewDef[] = [
-  { key: "all",      label: "Team Pipeline",     test: () => true },
-  { key: "closing",  label: "Closing This Month", test: o => {
-    // Evaluated lazily at filter time so it always reflects the runtime month.
-    const now = new Date();
-    const prefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    return !!o.closeDate && o.closeDate.startsWith(prefix);
-  }},
-  { key: "approval", label: "Pending Approval",   test: o => ["pending","overdue","legal","sentback"].includes(o.approvalState ?? "") },
-  { key: "stuck",    label: "Stuck / SLA",        test: o => ["stuck","overdue","sla"].includes(o.riskKey ?? "") },
-  { key: "nonext",   label: "No Next Step",       test: o => o.riskKey === "nonext" },
-];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ManagerPipeline — main component
@@ -209,6 +100,9 @@ export function ManagerPipeline({
   teamMembers,
   opportunities,
   teamName = "Team",
+  total,
+  isLoadingMore = false,
+  onLoadMore,
   onOpenOpportunity,
   onOpenApproval,
   onBack,
@@ -258,6 +152,21 @@ export function ManagerPipeline({
     return out;
   }, [effectiveOpps]);
 
+  // Stage filter options come from the actual loaded opportunities (real stageKeys),
+  // not a hardcoded list — otherwise the filter compares a display name against
+  // stageKey and silently matches nothing.
+  const stageOptions = useMemo<[string, string][]>(() => {
+    const map = new Map<string, { label: string; index: number }>();
+    for (const o of effectiveOpps) {
+      if (!map.has(o.stageKey)) {
+        map.set(o.stageKey, { label: o.stageLabel ?? o.stageKey, index: o.stageIndex ?? 999 });
+      }
+    }
+    return [...map.entries()]
+      .sort((a, b) => a[1].index - b[1].index)
+      .map(([key, v]) => [key, v.label] as [string, string]);
+  }, [effectiveOpps]);
+
   const selectedOpp = rows.find(o => o.id === selectedId) ?? null;
 
   // KPI band
@@ -268,6 +177,16 @@ export function ManagerPipeline({
 
   const hasFilters = !!(filterOwner || filterStage || filterApproval || filterRisk || search);
 
+  // Restore a per-opp patch to its previous value (used to roll back failed optimistic writes).
+  function restorePatch(oppId: string, prevPatch: Partial<PipelineOpportunity> | undefined) {
+    setLocalPatches(prev => {
+      const next = { ...prev };
+      if (prevPatch === undefined) delete next[oppId];
+      else next[oppId] = prevPatch;
+      return next;
+    });
+  }
+
   async function handleRequestUpdate(opp: PipelineOpportunity) {
     try {
       await createActivity(currentUser.userId, opp.id, {
@@ -275,12 +194,15 @@ export function ManagerPipeline({
         type: "followup",
         dueDate: new Date().toISOString().slice(0, 10),
       });
-    } catch { /* offline */ }
-    flash(`↻ Update requested from ${opp.ownerName} on ${opp.id}`);
+      flash(`↻ Update requested from ${opp.ownerName} on ${opp.id}`);
+    } catch {
+      flash(`✗ Update request failed for ${opp.id} — not sent`);
+    }
   }
 
   async function handleSaveReassign(opp: PipelineOpportunity, newOwnerId: string, newOwnerName: string, reason: string) {
     // Patch immediately — table row and preview panel update in the same render.
+    const prevPatch = localPatches[opp.id];
     setLocalPatches(prev => ({
       ...prev,
       [opp.id]: { ...prev[opp.id], ownerId: newOwnerId, ownerName: newOwnerName },
@@ -288,14 +210,18 @@ export function ManagerPipeline({
     try {
       await reassignOpportunityOwner(currentUser.userId, opp.id, { newOwnerId });
       void reason;
-    } catch { /* offline — optimistic patch already applied */ }
-    flash(`✓ ${opp.id} reassigned to ${newOwnerName}`);
-    setModal(null);
+      flash(`✓ ${opp.id} reassigned to ${newOwnerName}`);
+      setModal(null);
+    } catch {
+      restorePatch(opp.id, prevPatch);
+      flash(`✗ Reassign failed for ${opp.id} — change reverted`);
+    }
   }
 
   async function handleSaveNote(opp: PipelineOpportunity, note: string) {
     const trimmed = note.trim();
     // Patch managerNotes immediately so the preview panel shows the new note at once.
+    const prevPatch = localPatches[opp.id];
     if (trimmed) {
       setLocalPatches(prev => ({
         ...prev,
@@ -308,9 +234,12 @@ export function ManagerPipeline({
         type: "note",
         dueDate: new Date().toISOString().slice(0, 10),
       });
-    } catch { /* offline — optimistic patch already applied */ }
-    flash(`✓ Manager note saved on ${opp.id}`);
-    setModal(null);
+      flash(`✓ Manager note saved on ${opp.id}`);
+      setModal(null);
+    } catch {
+      if (trimmed) restorePatch(opp.id, prevPatch);
+      flash(`✗ Note failed to save on ${opp.id} — reverted`);
+    }
   }
 
   return (
@@ -321,11 +250,6 @@ export function ManagerPipeline({
         {onBack ? (
           <button className="pipe-back-btn" type="button" onClick={onBack}>← Back</button>
         ) : null}
-        <div className="pipe-crumb">
-          <span>Opportunities</span>
-          <span className="sep">/</span>
-          <strong>Team pipeline</strong>
-        </div>
         <div
           className="pipe-scope-chip"
           title={`Manager scope: ${teamName} · ${teamMembers.length} direct reports · Approval visibility: monitor only — cannot decide Finance / Legal steps`}
@@ -359,6 +283,19 @@ export function ManagerPipeline({
         ))}
       </div>
 
+      {total != null && total > opportunities.length ? (
+        <div className="rep-kpi-note">
+          Showing {opportunities.length} of {total} team opportunities — these KPIs and the team breakdown
+          cover the loaded subset only. Load more below to include the rest.
+        </div>
+      ) : null}
+
+      {/* Team breakdown (collapsible) — sits in the summary zone, right under the
+          KPIs and its own toggle, so expanding it is visible immediately. */}
+      {teamExpanded ? (
+        <TeamSummary teamMembers={teamMembers} opportunities={effectiveOpps} />
+      ) : null}
+
       {/* Controls: tabs + filter row */}
       <div className="pipe-controls">
         <div className="pipe-tab-strip">
@@ -390,7 +327,7 @@ export function ManagerPipeline({
             { label: "Owner",    value: filterOwner,    set: setFilterOwner,
               opts: [["","All owners"], ...teamMembers.map(t => [t.id, t.displayName.split(" ")[0]])] },
             { label: "Stage",    value: filterStage,    set: setFilterStage,
-              opts: [["","All stages"], ...["Qualification","Discovery","Proposal","Negotiation"].map(s => [s,s])] },
+              opts: [["","All stages"] as [string, string], ...stageOptions] },
             { label: "Approval", value: filterApproval, set: setFilterApproval,
               opts: [["","Any"],["pending","Pending"],["overdue","Overdue"],["legal","Legal"],["sentback","Sent Back"],["approved","Approved"]] },
             { label: "Risk",     value: filterRisk,     set: setFilterRisk,
@@ -437,17 +374,13 @@ export function ManagerPipeline({
         />
       </div>
 
-      {/* Team breakdown (collapsible) */}
-      {teamExpanded ? (
-        <TeamSummary teamMembers={teamMembers} opportunities={effectiveOpps} />
+      {total != null && opportunities.length < total && onLoadMore ? (
+        <div className="rep-load-more">
+          <button className="rep-btn" disabled={isLoadingMore} onClick={onLoadMore} type="button">
+            {isLoadingMore ? "Loading…" : `Load more — showing ${opportunities.length} of ${total}`}
+          </button>
+        </div>
       ) : null}
-
-      {/* Footer */}
-      <div className="rep-foot-ruler">
-        <span>SALES OPS CRM · {currentUser.tenantName.toUpperCase()} · LOCAL PILOT</span>
-        <span>{currentUser.roleKey.toUpperCase()} · {currentUser.displayName} · {teamName}</span>
-        <span>{effectiveOpps.length} OPPS · {fmtMoney(totalPipeline)} PIPELINE</span>
-      </div>
 
       {/* Modals */}
       {modal?.kind === "reassign" ? (
@@ -469,586 +402,8 @@ export function ManagerPipeline({
       ) : null}
 
       {toast ? (
-        <div className="rep-toast"><span className="ok">✓</span>{toast}</div>
+        <div className="rep-toast">{toast}</div>
       ) : null}
     </section>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PipelineTable
-// ─────────────────────────────────────────────────────────────────────────────
-
-function PipelineTable({
-  rows,
-  teamMembers,
-  selectedId,
-  onSelect,
-}: {
-  rows: PipelineOpportunity[];
-  teamMembers: TeamMember[];
-  selectedId: string | null;
-  onSelect: (id: string) => void;
-}) {
-  return (
-    <div className="rep-panel pipe-table-panel">
-      <div className="rep-panel-head">
-        <div className="rep-panel-title">
-          Team pipeline
-          <em>{rows.length}</em>
-        </div>
-        <div className="rep-panel-actions">
-          <button className="rep-btn rep-btn-ghost" style={{ fontSize: 11.5, padding: "3px 8px" }} type="button">Export</button>
-          <button className="rep-btn rep-btn-ghost" style={{ fontSize: 11.5, padding: "3px 8px" }} type="button">Columns</button>
-        </div>
-      </div>
-
-      {rows.length === 0 ? (
-        <div className="rep-empty" style={{ padding: "48px 24px" }}>
-          <div className="icon">OP</div>
-          <div className="ttl">No opportunities match</div>
-          <div>Try a different view or clear the active filters.</div>
-        </div>
-      ) : (
-        <div className="rep-table-scroll">
-          <table className="rep-table pipe-table">
-            <colgroup>
-              <col style={{ width: "18%" }} /><col style={{ width: "15%" }} />
-              <col style={{ width: "10%" }} /><col style={{ width: "8%" }} />
-              <col style={{ width: "8%" }} /><col style={{ width: "9%" }} />
-              <col style={{ width: "12%" }} /><col /><col style={{ width: "12%" }} />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>Opportunity</th><th>Account</th><th>Owner</th>
-                <th>Stage</th><th className="num">Amount</th><th>Close</th>
-                <th>Approval</th><th>Next step</th><th>Risk</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(o => {
-                const member = teamMembers.find(t => t.id === o.ownerId);
-                return (
-                  <tr
-                    key={o.id}
-                    className={[
-                      selectedId === o.id ? "selected" : "",
-                      o.riskKey === "overdue" ? "pipe-row-overdue" : "",
-                    ].filter(Boolean).join(" ")}
-                    style={{ cursor: "pointer" }}
-                    onClick={() => onSelect(o.id)}
-                  >
-                    <td>
-                      <div className="rep-cell-truncate" style={{ fontWeight: 500 }}>{o.title}</div>
-                      <span className="rep-cell-sub mono">{o.id}</span>
-                    </td>
-                    <td>
-                      <div className="rep-cell-truncate">{o.accountName}</div>
-                      <span className="rep-cell-sub mono">{o.accountId}</span>
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                        {member?.initials ? (
-                          <div className={`pipe-avatar${member.colorKey ? ` ${member.colorKey}` : ""}`}>
-                            {member.initials}
-                          </div>
-                        ) : null}
-                        <span style={{ fontSize: 12 }}>{o.ownerName.split(" ")[0]}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        <StagePip index={o.stageIndex ?? 0} />
-                        <span className="rep-cell-sub">{o.stageLabel ?? o.stageKey}</span>
-                      </div>
-                    </td>
-                    <td className="num">
-                      <span className="mono" style={{ fontWeight: 600, fontSize: 12.5 }}>{fmtMoney(o.expectedAmount)}</span>
-                    </td>
-                    <td>
-                      <span className="mono" style={{ fontSize: 11.5 }}>{fmtDate(o.closeDate)}</span>
-                    </td>
-                    <td>
-                      {o.approvalState && o.approvalState !== "none" ? (
-                        <span className={`rep-pill p-${approvalPillState(o.approvalState)}`}>
-                          <span className="dot" />
-                          {o.approvalLabel ?? o.approvalState}
-                        </span>
-                      ) : (
-                        <span style={{ color: "var(--muted)", fontSize: 12 }}>—</span>
-                      )}
-                    </td>
-                    <td>
-                      <div className="rep-cell-truncate" style={{ fontSize: 12 }}>
-                        {o.nextActivityNote ?? "—"}
-                      </div>
-                    </td>
-                    <td>
-                      <RiskTag riskKey={o.riskKey} riskLabel={o.riskLabel} />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// OppPreviewPanel
-// ─────────────────────────────────────────────────────────────────────────────
-
-type ManagerActionKind = "reassign" | "note" | "update" | "detail";
-
-function OppPreviewPanel({
-  opp,
-  allOpps,
-  onManagerAction,
-  onOpenApproval,
-}: {
-  opp: PipelineOpportunity | null;
-  allOpps: PipelineOpportunity[];
-  onManagerAction: (kind: ManagerActionKind, opp: PipelineOpportunity) => void;
-  onOpenApproval?: (requestId: string) => void;
-}) {
-  if (!opp) {
-    const riskItems = [
-      { label: "Overdue approval",  count: allOpps.filter(o => o.approvalState === "overdue").length,      color: "var(--neg)"      },
-      { label: "SLA at risk",       count: allOpps.filter(o => o.riskKey === "sla").length,                color: "var(--accent-2)" },
-      { label: "Stuck > 14 days",   count: allOpps.filter(o => o.riskKey === "stuck").length,              color: "var(--accent-2)" },
-      { label: "No next step",      count: allOpps.filter(o => o.riskKey === "nonext").length,             color: "var(--muted)"    },
-    ];
-    return (
-      <div className="rep-panel pipe-preview">
-        <div className="rep-panel-head">
-          <div className="rep-panel-title">Opportunity detail</div>
-        </div>
-        <div className="pipe-preview-empty">
-          <div className="pipe-preview-empty-icon">OP</div>
-          <div className="pipe-preview-empty-title">Select an opportunity</div>
-          <div>Click any row to see deal context and manager actions.</div>
-        </div>
-        <div className="pipe-risk-summary">
-          <div className="pipe-risk-summary-head">Risk summary</div>
-          {riskItems.map((r, i) => (
-            <div key={i} className="pipe-risk-item">
-              <span>{r.label}</span>
-              <span
-                className="mono"
-                style={{
-                  color: r.count > 0 ? r.color : "var(--muted)",
-                  fontWeight: r.count > 0 ? 700 : 400,
-                }}
-              >
-                {r.count}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  const rm = riskMeta(opp.riskKey);
-
-  return (
-    <div className="rep-panel pipe-preview">
-      {/* Header */}
-      <div className="pipe-pv-head">
-        <div className="pipe-pv-id-row">
-          <span className="mono pipe-pv-id">{opp.id}</span>
-          {opp.approvalState && opp.approvalState !== "none" ? (
-            <span className={`rep-pill p-${approvalPillState(opp.approvalState)}`}>
-              <span className="dot" />{opp.approvalLabel ?? opp.approvalState}
-            </span>
-          ) : (
-            <span style={{ fontSize: 11.5, color: "var(--muted)" }}>No approval</span>
-          )}
-        </div>
-        <div className="pipe-pv-title">{opp.title}</div>
-        <div className="pipe-pv-account">
-          {opp.accountName}{opp.primaryContact ? ` · ${opp.primaryContact}` : ""}
-        </div>
-        {rm ? (
-          <div className="pipe-pv-risk-alert" style={{ color: rm.color, background: rm.bg, borderColor: rm.border }}>
-            ⚠ {opp.riskLabel}
-          </div>
-        ) : null}
-      </div>
-
-      {/* Key fields */}
-      <div className="pipe-pv-fields">
-        {([
-          ["Amount", fmtMoney(opp.expectedAmount), true],
-          ["Close",  fmtDate(opp.closeDate),        true],
-          ["Stage",  opp.stageLabel ?? opp.stageKey, false],
-          ["Owner",  opp.ownerName,                  false],
-        ] as [string, string, boolean][]).map(([l, v, isMono], i) => (
-          <div key={i} className="pipe-pv-field">
-            <div className="pipe-pv-fl">{l}</div>
-            <div className={`pipe-pv-fv${isMono ? " mono" : ""}`}>{v}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Next step */}
-      <div className="pipe-pv-section">
-        <div className="pipe-pv-section-l">Next step</div>
-        <div className="pipe-pv-section-v">{opp.nextActivityNote ?? "—"}</div>
-      </div>
-
-      {/* Approval link */}
-      {opp.approvalRequestId ? (
-        <div className="pipe-pv-section pipe-pv-section-appr">
-          <div className="pipe-pv-section-l">
-            Linked approval
-            <span className="pipe-pv-appr-caveat">Monitor only — cannot decide Finance / Legal</span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 5 }}>
-            <span className="mono" style={{ fontWeight: 600, fontSize: 12.5 }}>{opp.approvalRequestId}</span>
-            {onOpenApproval ? (
-              <button
-                className="rep-btn rep-btn-ghost"
-                style={{ fontSize: 11, padding: "3px 8px" }}
-                type="button"
-                onClick={() => onOpenApproval(opp.approvalRequestId!)}
-              >
-                View ›
-              </button>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-
-      {/* Manager notes */}
-      {opp.managerNotes ? (
-        <div className="pipe-pv-section">
-          <div className="pipe-pv-section-l">Manager context</div>
-          <div className="pipe-pv-notes">{opp.managerNotes}</div>
-        </div>
-      ) : null}
-
-      {/* Manager actions */}
-      <div className="pipe-pv-actions">
-        <div className="pipe-pv-section-l" style={{ marginBottom: 8 }}>Manager actions</div>
-        <button
-          className="rep-btn rep-btn-primary"
-          type="button"
-          style={{ justifyContent: "center" }}
-          onClick={() => onManagerAction("reassign", opp)}
-        >
-          → Reassign owner
-        </button>
-        <button
-          className="rep-btn"
-          type="button"
-          style={{ justifyContent: "center" }}
-          onClick={() => onManagerAction("note", opp)}
-        >
-          ✎ Add manager note
-        </button>
-        <div style={{ display: "flex", gap: 6 }}>
-          <button
-            className="rep-btn"
-            type="button"
-            style={{ flex: 1, justifyContent: "center" }}
-            onClick={() => onManagerAction("update", opp)}
-          >
-            ↻ Request update
-          </button>
-          <button
-            className="rep-btn rep-btn-ghost"
-            type="button"
-            style={{ flex: 1, justifyContent: "center" }}
-            onClick={() => onManagerAction("detail", opp)}
-          >
-            Open detail ›
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TeamSummary
-// ─────────────────────────────────────────────────────────────────────────────
-
-function TeamSummary({
-  teamMembers,
-}: {
-  teamMembers: TeamMember[];
-  opportunities: PipelineOpportunity[];
-}) {
-  const totals = teamMembers.reduce(
-    (acc, t) => ({
-      opps:     acc.opps     + (t.openOppsCount      ?? 0),
-      pipeline: acc.pipeline + (t.pipelineTotal       ?? 0),
-      weighted: acc.weighted + (t.weightedPipeline    ?? 0),
-      appr:     acc.appr     + (t.pendingApprovals    ?? 0),
-      overdue:  acc.overdue  + (t.overdueActivities   ?? 0),
-      closing:  acc.closing  + (t.closingThisMonth    ?? 0),
-    }),
-    { opps: 0, pipeline: 0, weighted: 0, appr: 0, overdue: 0, closing: 0 }
-  );
-
-  return (
-    <div className="rep-panel pipe-team-summary">
-      <div className="rep-panel-head">
-        <div className="rep-panel-title">
-          Team breakdown
-          <em>{teamMembers.length} reps</em>
-        </div>
-        <div className="rep-panel-actions">
-          <span className="mono" style={{ fontSize: 11, color: "var(--muted)" }}>
-            Total {fmtMoney(totals.pipeline)} · weighted {fmtMoney(totals.weighted)}
-          </span>
-        </div>
-      </div>
-      <div className="rep-table-scroll">
-        <table className="rep-table">
-          <colgroup>
-            <col style={{ width: 180 }} />
-            <col /><col /><col /><col /><col /><col />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Rep</th>
-              <th className="num">Open opps</th>
-              <th className="num">Pipeline</th>
-              <th className="num">Weighted</th>
-              <th className="num">Pending approvals</th>
-              <th className="num">Overdue tasks</th>
-              <th className="num">Closing · month</th>
-            </tr>
-          </thead>
-          <tbody>
-            {teamMembers.map(t => (
-              <tr key={t.id}>
-                <td>
-                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                    {t.initials ? (
-                      <div className={`pipe-avatar${t.colorKey ? ` ${t.colorKey}` : ""}`} style={{ flexShrink: 0 }}>
-                        {t.initials}
-                      </div>
-                    ) : null}
-                    <span style={{ fontWeight: 500, fontSize: 12.5 }}>{t.displayName}</span>
-                  </div>
-                </td>
-                <td className="num mono">{t.openOppsCount ?? "—"}</td>
-                <td className="num mono">{fmtMoney(t.pipelineTotal)}</td>
-                <td className="num mono">{fmtMoney(t.weightedPipeline)}</td>
-                <td className="num">
-                  <span className="mono" style={{
-                    color: (t.pendingApprovals ?? 0) > 2 ? "var(--accent-2)" : "inherit",
-                    fontWeight: (t.pendingApprovals ?? 0) > 2 ? 700 : 400,
-                  }}>
-                    {t.pendingApprovals ?? "—"}
-                  </span>
-                </td>
-                <td className="num">
-                  <span className="mono" style={{
-                    color: (t.overdueActivities ?? 0) >= 4 ? "var(--neg)" : (t.overdueActivities ?? 0) >= 2 ? "var(--accent-2)" : "inherit",
-                    fontWeight: (t.overdueActivities ?? 0) >= 2 ? 700 : 400,
-                  }}>
-                    {t.overdueActivities ?? "—"}
-                  </span>
-                </td>
-                <td className="num mono">{t.closingThisMonth ?? "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr className="pipe-team-total">
-              <td style={{ fontWeight: 600 }}>Team total</td>
-              <td className="num mono" style={{ fontWeight: 600 }}>{totals.opps}</td>
-              <td className="num mono" style={{ fontWeight: 600 }}>{fmtMoney(totals.pipeline)}</td>
-              <td className="num mono" style={{ fontWeight: 600 }}>{fmtMoney(totals.weighted)}</td>
-              <td className="num mono" style={{ fontWeight: 600, color: totals.appr > 0 ? "var(--accent-2)" : "inherit" }}>{totals.appr}</td>
-              <td className="num mono" style={{ fontWeight: 600, color: totals.overdue > 0 ? "var(--neg)" : "inherit" }}>{totals.overdue}</td>
-              <td className="num mono" style={{ fontWeight: 600 }}>{totals.closing}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ReassignModal
-// ─────────────────────────────────────────────────────────────────────────────
-
-function ReassignModal({
-  opp,
-  teamMembers,
-  onClose,
-  onSave,
-}: {
-  opp: PipelineOpportunity;
-  teamMembers: TeamMember[];
-  onClose: () => void;
-  onSave: (newOwnerId: string, newOwnerName: string, reason: string) => void;
-}) {
-  const [newOwnerId, setNewOwnerId] = useState("");
-  const [reason,     setReason]     = useState("");
-  const [touched,    setTouched]    = useState(false);
-  const ownerErr = touched && !newOwnerId;
-
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", h);
-    return () => document.removeEventListener("keydown", h);
-  }, [onClose]);
-
-  function save() {
-    setTouched(true);
-    if (!newOwnerId) return;
-    const member = teamMembers.find(t => t.id === newOwnerId);
-    onSave(newOwnerId, member?.displayName ?? newOwnerId, reason);
-  }
-
-  return (
-    <>
-      <div className="rep-scrim" onClick={onClose} />
-      <div className="rep-modal" role="dialog" aria-label="Reassign owner">
-        <div className="rep-modal-card" style={{ width: 500 }}>
-          <div className="head">
-            <h3>Reassign owner</h3>
-            <p>{opp.id} · {opp.title} · currently {opp.ownerName}</p>
-          </div>
-          <div className="body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div>
-              <div className="pipe-modal-lbl">
-                New owner <span className="pipe-modal-required">*</span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 5 }}>
-                {teamMembers.filter(t => t.id !== opp.ownerId).map(t => (
-                  <label key={t.id} className={`pipe-owner-option${newOwnerId === t.id ? " selected" : ""}`}>
-                    <input
-                      type="radio"
-                      name="reassign-owner"
-                      value={t.id}
-                      checked={newOwnerId === t.id}
-                      onChange={() => setNewOwnerId(t.id)}
-                      style={{ accentColor: "var(--accent-2)" }}
-                    />
-                    {t.initials ? (
-                      <div className={`pipe-avatar${t.colorKey ? ` ${t.colorKey}` : ""}`}>{t.initials}</div>
-                    ) : null}
-                    <div>
-                      <div style={{ fontWeight: 500, fontSize: 13 }}>{t.displayName}</div>
-                      <div className="mono" style={{ fontSize: 11, color: "var(--muted)" }}>
-                        {t.openOppsCount ?? "?"} open opps · {fmtMoney(t.pipelineTotal)} pipeline
-                      </div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-              {ownerErr ? <div className="pipe-modal-err">Select a new owner to continue</div> : null}
-            </div>
-            <div>
-              <div className="pipe-modal-lbl">
-                Reason / note <span style={{ fontWeight: 400, color: "var(--muted)" }}>(optional)</span>
-              </div>
-              <div className="pipe-modal-textarea" style={{ marginTop: 5 }}>
-                <textarea
-                  value={reason}
-                  onChange={e => setReason(e.target.value)}
-                  placeholder="e.g. Anna at capacity · Jonas has DACH-North relationship"
-                />
-              </div>
-            </div>
-          </div>
-          <div className="foot">
-            <button className="rep-btn rep-btn-ghost" type="button" onClick={onClose}>Cancel</button>
-            <button className="rep-btn rep-btn-primary" type="button" onClick={save}>Reassign owner</button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ManagerNoteModal
-// ─────────────────────────────────────────────────────────────────────────────
-
-const NOTE_TEMPLATES = [
-  "Flag for QBR review",
-  "Escalate to executive",
-  "Needs immediate attention",
-  "Customer deadline risk",
-  "On track — monitor weekly",
-];
-
-function ManagerNoteModal({
-  opp,
-  onClose,
-  onSave,
-}: {
-  opp: PipelineOpportunity;
-  onClose: () => void;
-  onSave: (note: string) => void;
-}) {
-  const [note, setNote] = useState("");
-
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", h);
-    return () => document.removeEventListener("keydown", h);
-  }, [onClose]);
-
-  return (
-    <>
-      <div className="rep-scrim" onClick={onClose} />
-      <div className="rep-modal" role="dialog" aria-label="Add manager note">
-        <div className="rep-modal-card" style={{ width: 480 }}>
-          <div className="head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div>
-              <h3>Add manager note</h3>
-              <p>{opp.id} · {opp.title}</p>
-            </div>
-            <button className="rep-btn rep-btn-ghost" type="button" onClick={onClose} style={{ fontSize: 14, padding: "3px 8px" }}>✕</button>
-          </div>
-          <div className="body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div>
-              <div className="pipe-modal-lbl">
-                Note
-                <span style={{ fontWeight: 400, color: "var(--muted)", marginLeft: 5 }}>
-                  · visible to manager and above only
-                </span>
-              </div>
-              <div className="pipe-modal-textarea" style={{ marginTop: 5 }}>
-                <textarea
-                  value={note}
-                  onChange={e => setNote(e.target.value)}
-                  placeholder="e.g. Discussed with rep — customer has given EOD deadline. Escalating to Finance today."
-                />
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-              {NOTE_TEMPLATES.map((t, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className="pipe-note-chip"
-                  onClick={() => setNote(n => n ? `${n} · ${t}` : t)}
-                >
-                  + {t}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="foot">
-            <button className="rep-btn rep-btn-ghost" type="button" onClick={onClose}>Cancel</button>
-            <button className="rep-btn rep-btn-primary" type="button" onClick={() => onSave(note)}>Save note</button>
-          </div>
-        </div>
-      </div>
-    </>
   );
 }

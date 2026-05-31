@@ -1,5 +1,6 @@
 package com.salesops.bootstrap.api
 
+import com.salesops.bootstrap.crm.account.AccountListItem
 import com.salesops.bootstrap.crm.account.AccountListResponse
 import com.salesops.bootstrap.crm.account.AccountService
 import com.salesops.bootstrap.crm.account.CreateAccountRequest
@@ -8,6 +9,7 @@ import com.salesops.bootstrap.service.SessionService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
@@ -36,6 +38,16 @@ class AccountController(
             query = query,
             page = page,
             pageSize = pageSize,
+        )
+
+    @GetMapping("/{accountId}")
+    fun getAccount(
+        @RequestHeader("X-Demo-User-Id", required = false) demoUserId: String?,
+        @PathVariable accountId: String,
+    ): AccountListItem =
+        accountService.getAccount(
+            context = sessionService.resolveCurrentUserContext(demoUserId),
+            accountId = accountId,
         )
 
     @PostMapping

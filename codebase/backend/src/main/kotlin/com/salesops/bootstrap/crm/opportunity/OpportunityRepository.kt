@@ -73,6 +73,19 @@ class OpportunityRepository(
             .query { rs, _ -> rs.getInt(1) }
             .single()
 
+    fun summarizeVisible(filter: OpportunityListFilter, monthKey: String): OpportunitySummaryRecord =
+        bindListFilterParams(jdbcClient.sql(summarySql(filter)), filter)
+            .param("monthKey", monthKey)
+            .query { rs, _ ->
+                OpportunitySummaryRecord(
+                    openCount = rs.getInt("open_count"),
+                    pipelineValue = rs.getBigDecimal("pipeline_value") ?: java.math.BigDecimal.ZERO,
+                    pendingApprovals = rs.getInt("pending_approvals"),
+                    closingThisMonth = rs.getInt("closing_this_month"),
+                )
+            }
+            .single()
+
     fun findVisibleById(filter: OpportunityVisibilityLookup): OpportunityDetailRecord? =
         bindVisibilityLookupParams(jdbcClient.sql(findVisibleByIdSql(filter)), filter)
             .query { rs, _ -> rs.toOpportunityDetailRecord() }
@@ -337,6 +350,46 @@ class OpportunityRepository(
         return updatedRows == 1
     }
 
+    fun appendTimelineEvent(command: AppendOpportunityTimelineEventCommand) {
+        jdbcClient.sql(
+            """
+            INSERT INTO opportunity_timeline_events (
+                id, tenant_id, opportunity_id,
+                event_type, event_code, title, description,
+                actor_user_id, actor_name
+            ) VALUES (
+                :id, :tenantId, :opportunityId,
+                :eventType, :eventCode, :title, :description,
+                :actorUserId, :actorName
+            )
+            """.trimIndent(),
+        )
+            .param("id", command.id)
+            .param("tenantId", command.tenantId)
+            .param("opportunityId", command.opportunityId)
+            .param("eventType", command.eventType)
+            .param("eventCode", command.eventCode)
+            .param("title", command.title)
+            .param("description", command.description)
+            .param("actorUserId", command.actorUserId)
+            .param("actorName", command.actorName)
+            .update()
+    }
+
+    fun listTimelineEvents(tenantId: String, opportunityId: String): List<OpportunityTimelineEventRecord> =
+        jdbcClient.sql(
+            """
+            SELECT id, event_type, event_code, title, description, actor_name, created_at
+            FROM opportunity_timeline_events
+            WHERE tenant_id = :tenantId AND opportunity_id = :opportunityId
+            ORDER BY created_at DESC
+            """.trimIndent(),
+        )
+            .param("tenantId", tenantId)
+            .param("opportunityId", opportunityId)
+            .query { rs, _ -> rs.toOpportunityTimelineEventRecord() }
+            .list()
+
     fun findApprovalContext(
         tenantId: String,
         opportunityId: String,
@@ -396,6 +449,16 @@ class OpportunityRepository(
     private fun countSql(filter: OpportunityListFilter): String =
         """
         SELECT COUNT(*)
+        ${baseFromAndWhereClause(filter)}
+        """.trimIndent()
+
+    private fun summarySql(filter: OpportunityListFilter): String =
+        """
+        SELECT
+            COUNT(*) AS open_count,
+            COALESCE(SUM(o.expected_amount), 0) AS pipeline_value,
+            COUNT(*) FILTER (WHERE o.approval_state IN ('pending', 'sent_back')) AS pending_approvals,
+            COUNT(*) FILTER (WHERE o.close_date IS NOT NULL AND to_char(o.close_date, 'YYYY-MM') = :monthKey) AS closing_this_month
         ${baseFromAndWhereClause(filter)}
         """.trimIndent()
 
@@ -620,6 +683,13 @@ data class UpsertOpportunityCustomFieldValueCommand(
     val updatedByUserId: String,
 )
 
+data class OpportunitySummaryRecord(
+    val openCount: Int,
+    val pipelineValue: java.math.BigDecimal,
+    val pendingApprovals: Int,
+    val closingThisMonth: Int,
+)
+
 data class OpportunityListFilter(
     val tenantId: String,
     val ownerScope: OpportunityOwnerScope,
@@ -768,3 +838,36 @@ private fun java.sql.ResultSet.getNullableBoolean(columnLabel: String): Boolean?
     val value = getBoolean(columnLabel)
     return if (wasNull()) null else value
 }
+
+private fun java.sql.ResultSet.toOpportunityTimelineEventRecord(): OpportunityTimelineEventRecord =
+    OpportunityTimelineEventRecord(
+        id = getString("id"),
+        eventType = getString("event_type"),
+        eventCode = getString("event_code"),
+        title = getString("title"),
+        description = getString("description"),
+        actorName = getString("actor_name"),
+        createdAt = getObject("created_at", java.time.OffsetDateTime::class.java).toInstant(),
+    )
+
+data class AppendOpportunityTimelineEventCommand(
+    val id: String,
+    val tenantId: String,
+    val opportunityId: String,
+    val eventType: String,
+    val eventCode: String,
+    val title: String,
+    val description: String,
+    val actorUserId: String,
+    val actorName: String,
+)
+
+data class OpportunityTimelineEventRecord(
+    val id: String,
+    val eventType: String,
+    val eventCode: String,
+    val title: String,
+    val description: String,
+    val actorName: String,
+    val createdAt: java.time.Instant,
+)

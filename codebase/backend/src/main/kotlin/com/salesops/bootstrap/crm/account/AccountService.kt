@@ -54,6 +54,26 @@ class AccountService(
         )
     }
 
+    fun getAccount(context: CurrentUserContext, accountId: String): AccountListItem {
+        assertCanListAccounts(context)
+
+        val record = accountRepository.findVisibleDetailById(
+            AccountVisibilityLookup(
+                tenantId = context.tenant.tenantId,
+                ownerScope = teamScopePolicy.opportunityOwnerScope(context),
+                accountId = accountId,
+            ),
+        ) ?: throw ValidationFailureException("Account does not exist in visible scope")
+
+        return AccountListItem(
+            id = record.id,
+            name = record.name,
+            ownerId = record.ownerUserId,
+            ownerName = record.ownerName,
+            openOpportunityCount = record.openOpportunityCount,
+        )
+    }
+
     fun createAccount(
         context: CurrentUserContext,
         request: CreateAccountRequest,
