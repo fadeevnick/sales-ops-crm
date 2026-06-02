@@ -1,13 +1,13 @@
-const storageKey = "salesops-demo-user-id";
+const storageKey = "salesops-auth-token";
 
-export function readStoredSessionUserId(): string | null {
+export function readStoredToken(): string | null {
   return localStorage.getItem(storageKey);
 }
 
-export function writeStoredSessionUserId(userId: string): void {
-  localStorage.setItem(storageKey, userId);
+export function writeStoredToken(token: string): void {
+  localStorage.setItem(storageKey, token);
 }
 
-export function clearStoredSessionUserId(): void {
+export function clearStoredToken(): void {
   localStorage.removeItem(storageKey);
 }

@@ -1,11 +1,17 @@
-import type { ApiError, CurrentUser, DemoLoginResponse, DemoUser } from "../types/session";
+import type { ApiError, AuthLoginResponse, CurrentUser } from "../types/session";
 
 const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+
+let activeToken: string | null = null;
+
+export function setActiveToken(token: string | null): void {
+  activeToken = token;
+}
 
 type RequestOptions = {
   method?: string;
   body?: unknown;
-  userId?: string;
+  userId?: string; // legacy param — kept so existing API files compile unchanged
 };
 
 export class ApiRequestError extends Error {
@@ -25,7 +31,7 @@ export async function requestJson<T>(path: string, options: RequestOptions = {})
     method: options.method ?? "GET",
     headers: {
       ...(options.body ? { "Content-Type": "application/json" } : undefined),
-      ...(options.userId ? { "X-Demo-User-Id": options.userId } : undefined),
+      ...(activeToken ? { "Authorization": `Bearer ${activeToken}` } : undefined),
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
@@ -83,17 +89,13 @@ export function describeRequestError(error: unknown): string {
   return "Unknown request failure";
 }
 
-export function fetchDemoUsers(): Promise<DemoUser[]> {
-  return requestJson<DemoUser[]>("/api/session/demo-users");
-}
-
-export function loginDemoUser(email: string): Promise<DemoLoginResponse> {
-  return requestJson<DemoLoginResponse>("/api/session/demo-login", {
+export function loginUser(email: string, password: string): Promise<AuthLoginResponse> {
+  return requestJson<AuthLoginResponse>("/api/auth/login", {
     method: "POST",
-    body: { email },
+    body: { email, password },
   });
 }
 
-export function fetchCurrentUser(userId: string): Promise<CurrentUser> {
-  return requestJson<CurrentUser>("/api/me", { userId });
+export function fetchCurrentUser(): Promise<CurrentUser> {
+  return requestJson<CurrentUser>("/api/me");
 }

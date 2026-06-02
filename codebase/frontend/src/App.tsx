@@ -3,9 +3,9 @@ import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-do
 import {
   describeRequestError,
   fetchCurrentUser,
-  fetchDemoUsers,
   isUnauthorizedError,
-  loginDemoUser,
+  loginUser,
+  setActiveToken,
 } from "./api/session";
 import { ApproverInbox } from "./features/approvals/ApproverInbox";
 import { AccountDetailRoute } from "./features/crm/routes/AccountDetailRoute";
@@ -23,18 +23,18 @@ import {
   getDefaultWorkspacePath,
 } from "./features/shell/workspaceConfig";
 import {
-  clearStoredSessionUserId,
-  readStoredSessionUserId,
-  writeStoredSessionUserId,
+  clearStoredToken,
+  readStoredToken,
+  writeStoredToken,
 } from "./lib/sessionStorage";
-import type { CurrentUser, DemoUser } from "./types/session";
+import type { CurrentUser } from "./types/session";
 
 type ScreenState = "loading" | "logged-out" | "authenticated" | "invalid-session";
 
 export default function App() {
-  const [demoUsers, setDemoUsers] = useState<DemoUser[]>([]);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-  const [selectedEmail, setSelectedEmail] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [screenState, setScreenState] = useState<ScreenState>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,55 +46,33 @@ export default function App() {
       setScreenState("loading");
       setErrorMessage(null);
 
-      try {
-        const users = await fetchDemoUsers();
-
-        if (cancelled) {
-          return;
-        }
-
-        setDemoUsers(users);
-        setSelectedEmail((current) => current || users[0]?.email || "");
-
-        const storedUserId = readStoredSessionUserId();
-        if (!storedUserId) {
-          setCurrentUser(null);
-          setScreenState("logged-out");
-          return;
-        }
-
-        try {
-          const me = await fetchCurrentUser(storedUserId);
-
-          if (cancelled) {
-            return;
-          }
-
-          setCurrentUser(me);
-          setScreenState("authenticated");
-        } catch (error) {
-          if (cancelled) {
-            return;
-          }
-
-          clearStoredSessionUserId();
-          setCurrentUser(null);
-
-          if (isUnauthorizedError(error)) {
-            setScreenState("invalid-session");
-            return;
-          }
-
-          setErrorMessage(describeRequestError(error));
-          setScreenState("logged-out");
-        }
-      } catch (error) {
-        if (cancelled) {
-          return;
-        }
-
-        setDemoUsers([]);
+      const storedToken = readStoredToken();
+      if (!storedToken) {
         setCurrentUser(null);
+        setScreenState("logged-out");
+        return;
+      }
+
+      try {
+        setActiveToken(storedToken);
+        const me = await fetchCurrentUser();
+
+        if (cancelled) return;
+
+        setCurrentUser(me);
+        setScreenState("authenticated");
+      } catch (error) {
+        if (cancelled) return;
+
+        setActiveToken(null);
+        clearStoredToken();
+        setCurrentUser(null);
+
+        if (isUnauthorizedError(error)) {
+          setScreenState("invalid-session");
+          return;
+        }
+
         setErrorMessage(describeRequestError(error));
         setScreenState("logged-out");
       }
@@ -108,22 +86,23 @@ export default function App() {
   }, []);
 
   const login = async () => {
-    if (!selectedEmail) {
-      return;
-    }
+    if (!email || !password) return;
 
     try {
       setIsSubmitting(true);
       setErrorMessage(null);
 
-      const session = await loginDemoUser(selectedEmail);
-      writeStoredSessionUserId(session.userId);
+      const session = await loginUser(email, password);
+      writeStoredToken(session.token);
+      setActiveToken(session.token);
 
-      const me = await fetchCurrentUser(session.userId);
+      const me = await fetchCurrentUser();
       setCurrentUser(me);
+      setPassword("");
       setScreenState("authenticated");
     } catch (error) {
-      clearStoredSessionUserId();
+      setActiveToken(null);
+      clearStoredToken();
       setCurrentUser(null);
       setErrorMessage(describeRequestError(error));
       setScreenState("logged-out");
@@ -133,7 +112,8 @@ export default function App() {
   };
 
   const logout = () => {
-    clearStoredSessionUserId();
+    setActiveToken(null);
+    clearStoredToken();
     setCurrentUser(null);
     setErrorMessage(null);
     setScreenState("logged-out");
@@ -230,56 +210,54 @@ export default function App() {
     <div className="app app-public">
       <header className="public-topbar">
         <div>
-          <div className="eyebrow">Local Pilot</div>
+          <div className="eyebrow">Pilot</div>
           <h1>Sales Ops CRM</h1>
         </div>
         <div className="topbar-actions">
-          <span className="chip">Shell session unresolved</span>
+          <span className="chip">Sign in to continue</span>
         </div>
       </header>
 
       <main className="layout">
-            <section className="panel hero-panel">
-              <div className="eyebrow">Pilot Workspace</div>
-              <h2>What exists now</h2>
-              <p>
-                This local pilot contains demo authentication, role-aware workspaces, CRM records,
-                approval workflows, metadata administration, import operations, duplicate review, and reporting.
-              </p>
-              <ul className="bullet-list">
-                <li>tenant / user / role seed data</li>
-                <li>temporary demo login path</li>
-                <li>health and readiness endpoints</li>
-                <li>role-aware workspace shell</li>
-                <li>containerized local runtime</li>
-              </ul>
-            </section>
+        <section className="panel hero-panel">
+          <div className="eyebrow">Pilot Workspace</div>
+          <h2>What exists now</h2>
+          <p>
+            This pilot contains role-aware workspaces, CRM records,
+            approval workflows, metadata administration, import operations, duplicate review, and reporting.
+          </p>
+          <ul className="bullet-list">
+            <li>tenant / user / role data</li>
+            <li>bearer token authentication</li>
+            <li>health and readiness endpoints</li>
+            <li>role-aware workspace shell</li>
+            <li>containerized runtime</li>
+          </ul>
+        </section>
 
-            <section className="panel login-panel">
-            <LoginScreen
-              demoUsers={demoUsers}
-              selectedEmail={selectedEmail}
-              onSelectEmail={setSelectedEmail}
-              onLogin={login}
-              isSubmitting={isSubmitting}
-              errorMessage={errorMessage}
-              showInvalidSessionState={screenState === "invalid-session"}
-            />
-            </section>
+        <section className="panel login-panel">
+          <LoginScreen
+            email={email}
+            onEmailChange={setEmail}
+            password={password}
+            onPasswordChange={setPassword}
+            onLogin={login}
+            isSubmitting={isSubmitting}
+            errorMessage={errorMessage}
+            showInvalidSessionState={screenState === "invalid-session"}
+          />
+        </section>
 
-            <section className="panel notes-panel">
-              <div className="eyebrow">Role Coverage</div>
-              <h2>Demo workspaces</h2>
-              <ol className="ordered-list">
-                <li>Sales rep CRM workspace</li>
-                <li>Finance and legal approval queues</li>
-                <li>RevOps metadata, import, and duplicate operations</li>
-                <li>Manager and RevOps reporting</li>
-              </ol>
-              <p className="muted-copy notes-copy">
-                Select a demo user to enter the role-specific local pilot environment.
-              </p>
-            </section>
+        <section className="panel notes-panel">
+          <div className="eyebrow">Role Coverage</div>
+          <h2>Workspaces</h2>
+          <ol className="ordered-list">
+            <li>Sales rep CRM workspace</li>
+            <li>Finance and legal approval queues</li>
+            <li>RevOps metadata, import, and duplicate operations</li>
+            <li>Manager and RevOps reporting</li>
+          </ol>
+        </section>
       </main>
     </div>
   );

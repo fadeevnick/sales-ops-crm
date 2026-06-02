@@ -575,12 +575,15 @@ input {
   color: #60584d;
 }
 
-.select-input {
+.select-input,
+.text-input {
   width: 100%;
   padding: 14px 16px;
   border-radius: 16px;
   border: 1px solid #d8c8b2;
   background: #fffaf4;
+  font-size: inherit;
+  box-sizing: border-box;
 }
 
 .primary-button,

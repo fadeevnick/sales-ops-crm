@@ -32,6 +32,13 @@ class UserShellRepository(
             .query { rs, _ -> rs.toUserShellRecord() }
             .list()
 
+    fun findPasswordHash(email: String): String? =
+        jdbcClient.sql("SELECT password_hash FROM app_users WHERE lower(email) = lower(:email)")
+            .param("email", email)
+            .query { rs, _ -> rs.getString("password_hash") }
+            .optional()
+            .orElse(null)
+
     fun findByTenantAndIds(tenantId: String, userIds: List<String>): List<UserShellRecord> {
         if (userIds.isEmpty()) {
             return emptyList()

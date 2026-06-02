@@ -1,4 +1,4 @@
-export type DemoUser = {
+export type UserProfile = {
   userId: string;
   email: string;
   displayName: string;
@@ -8,12 +8,12 @@ export type DemoUser = {
   tenantName: string;
 };
 
-export type CurrentUser = DemoUser & {
+export type CurrentUser = UserProfile & {
   modules: string[];
 };
 
-export type DemoLoginResponse = DemoUser & {
-  tokenHint: string;
+export type AuthLoginResponse = UserProfile & {
+  token: string;
 };
 
 export type ApiError = {

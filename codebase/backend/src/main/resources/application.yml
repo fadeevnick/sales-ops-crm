@@ -24,3 +24,4 @@ management:
 
 app:
   allowed-origin: ${APP_ALLOWED_ORIGIN:http://localhost:5173}
+  token-secret: ${APP_TOKEN_SECRET:dev-secret-change-in-production}

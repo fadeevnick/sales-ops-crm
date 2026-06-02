@@ -1,9 +1,8 @@
-import type { DemoUser } from "../../types/session";
-
 type LoginScreenProps = {
-  demoUsers: DemoUser[];
-  selectedEmail: string;
-  onSelectEmail: (email: string) => void;
+  email: string;
+  onEmailChange: (email: string) => void;
+  password: string;
+  onPasswordChange: (password: string) => void;
   onLogin: () => void;
   isSubmitting: boolean;
   errorMessage: string | null;
@@ -11,56 +10,65 @@ type LoginScreenProps = {
 };
 
 export function LoginScreen({
-  demoUsers,
-  selectedEmail,
-  onSelectEmail,
+  email,
+  onEmailChange,
+  password,
+  onPasswordChange,
   onLogin,
   isSubmitting,
   errorMessage,
   showInvalidSessionState,
 }: LoginScreenProps) {
-  const canLogin = selectedEmail.length > 0 && !isSubmitting;
+  const canLogin = email.length > 0 && password.length > 0 && !isSubmitting;
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && canLogin) onLogin();
+  };
 
   return (
     <div className="shell-stack">
-      <div className="eyebrow">Demo Entry</div>
-      <h2>Seeded Users</h2>
-      <p className="muted-copy">
-        The shell still uses demo transport, but login and workspace state already follow the
-        stable `GET /api/me` contract.
-      </p>
+      <div className="eyebrow">Sign In</div>
+      <h2>Access Workspace</h2>
 
       {showInvalidSessionState ? (
         <div className="warning-box">
-          Stored session is no longer valid. Choose a seeded user and enter again.
+          Session expired. Please sign in again.
         </div>
       ) : null}
 
       {errorMessage ? <div className="error-box">{errorMessage}</div> : null}
 
-      <label className="field-label" htmlFor="demo-user">
-        Choose a temporary identity
+      <label className="field-label" htmlFor="login-email">
+        Email
       </label>
+      <input
+        id="login-email"
+        type="email"
+        className="text-input"
+        value={email}
+        onChange={(e) => onEmailChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        disabled={isSubmitting}
+        placeholder="you@example.com"
+        autoComplete="email"
+      />
 
-      <select
-        id="demo-user"
-        className="select-input"
-        value={selectedEmail}
-        onChange={(event) => onSelectEmail(event.target.value)}
-        disabled={demoUsers.length === 0 || isSubmitting}
-      >
-        {demoUsers.length === 0 ? (
-          <option value="">No seeded users available</option>
-        ) : null}
-        {demoUsers.map((user) => (
-          <option key={user.userId} value={user.email}>
-            {user.displayName} — {user.roleName}
-          </option>
-        ))}
-      </select>
+      <label className="field-label" htmlFor="login-password">
+        Password
+      </label>
+      <input
+        id="login-password"
+        type="password"
+        className="text-input"
+        value={password}
+        onChange={(e) => onPasswordChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        disabled={isSubmitting}
+        autoComplete="current-password"
+      />
 
       <button className="primary-button" onClick={onLogin} disabled={!canLogin}>
-        {isSubmitting ? "Entering workspace..." : "Enter workspace"}
+        {isSubmitting ? "Signing in..." : "Sign in"}
       </button>
     </div>
   );
