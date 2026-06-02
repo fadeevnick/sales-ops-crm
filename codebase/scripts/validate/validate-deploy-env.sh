@@ -4,7 +4,7 @@ set -euo pipefail
 ENV_FILE="${1:-}"
 
 if [ -z "${ENV_FILE}" ]; then
-  echo "Usage: scripts/validate-deploy-env.sh /path/to/env-file" >&2
+  echo "Usage: scripts/validate/validate-deploy-env.sh /path/to/env-file" >&2
   exit 1
 fi
 

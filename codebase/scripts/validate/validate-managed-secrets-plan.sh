@@ -5,7 +5,7 @@ MAPPING_FILE="${1:-}"
 ENV_FILE="${2:-}"
 
 if [ -z "${MAPPING_FILE}" ] || [ -z "${ENV_FILE}" ]; then
-  echo "Usage: scripts/validate-managed-secrets-plan.sh deploy/secrets.mapping.example /path/to/env-file" >&2
+  echo "Usage: scripts/validate/validate-managed-secrets-plan.sh deploy/secrets.mapping.example /path/to/env-file" >&2
   exit 1
 fi
 

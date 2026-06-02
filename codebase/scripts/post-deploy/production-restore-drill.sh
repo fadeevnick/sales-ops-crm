@@ -9,7 +9,7 @@ BACKUP_FILE="${1:-${RESTORE_DRILL_BACKUP_FILE:-}}"
 KEEP_STACK="${RESTORE_DRILL_KEEP_STACK:-0}"
 
 if [ -z "${BACKUP_FILE}" ]; then
-  echo "Usage: scripts/production-restore-drill.sh /path/to/backup.dump" >&2
+  echo "Usage: scripts/post-deploy/production-restore-drill.sh /path/to/backup.dump" >&2
   echo "Or set RESTORE_DRILL_BACKUP_FILE." >&2
   exit 1
 fi

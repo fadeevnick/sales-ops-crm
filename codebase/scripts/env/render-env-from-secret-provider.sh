@@ -15,10 +15,10 @@ fail() {
 usage() {
   cat >&2 <<'USAGE'
 Usage:
-  SECRET_PROVIDER_ADAPTER=env scripts/render-env-from-secret-provider.sh /path/base.env deploy/secrets.mapping.example /path/output.env
+  SECRET_PROVIDER_ADAPTER=env scripts/env/render-env-from-secret-provider.sh /path/base.env deploy/secrets.mapping.example /path/output.env
 
   SECRET_PROVIDER_ADAPTER=dotenv SECRET_PROVIDER_SOURCE_FILE=/path/secrets.env \
-    scripts/render-env-from-secret-provider.sh /path/base.env deploy/secrets.mapping.example /path/output.env
+    scripts/env/render-env-from-secret-provider.sh /path/base.env deploy/secrets.mapping.example /path/output.env
 
 Supported adapters:
   env     Read mapped secret values from current process environment variables.

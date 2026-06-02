@@ -188,4 +188,37 @@ the correct design-language tokens and have no redundant internal tab strips.
 - Frontend: formatted as `Xms`/`X.Xs`; pending counts show amber with warning flag in header.
 
 ## Next
-No immediate next step.
+Production path: домен + HTTPS.
+
+---
+
+## GCP Pilot Deployment
+
+**Статус:** приложение запущено на GCP, доступно по `http://34.62.55.118:5173`
+
+### Что сделано
+
+- GCP проект: `salesops-crm-pilot`
+- Billing account: `01B783-DB5F57-874E7E`
+- Region: `europe-west1` (Бельгия)
+- Artifact Registry: `europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker`
+  - `salesops-backend:pilot`
+  - `salesops-frontend:pilot`
+- GCE VM: `salesops-pilot`, zone `europe-west1-b`, `e2-medium`, 20GB disk
+- External IP: `34.62.55.118`
+- Firewall: порты 8081 и 5173 открыты
+- Docker установлен на VM (v29.5.2)
+- Деплой: `docker-compose.production.yml` + `.env` на VM
+- Миграции применены (V1–V22)
+
+### Открытые вопросы
+
+- Нет домена → нет HTTPS
+- Demo auth (X-Demo-User-Id) — не production-safe
+- Нет мониторинга
+- Нет автоматического деплоя (CI/CD)
+
+### Файлы
+
+- `deploy.sh` — создание `.env` на VM (разовый скрипт)
+- `codebase/tmp.sh` — временные команды текущей сессии

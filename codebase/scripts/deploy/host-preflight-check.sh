@@ -68,8 +68,8 @@ if ! docker compose version >/dev/null 2>&1; then
   fail "Docker Compose v2 is not available through 'docker compose'"
 fi
 
-scripts/validate-deploy-env.sh "${ENV_FILE}" >/dev/null
-scripts/validate-managed-secrets-plan.sh deploy/secrets.mapping.example "${ENV_FILE}" >/dev/null
+scripts/validate/validate-deploy-env.sh "${ENV_FILE}" >/dev/null
+scripts/validate/validate-managed-secrets-plan.sh deploy/secrets.mapping.example "${ENV_FILE}" >/dev/null
 docker compose --project-name salesops-host-preflight --env-file "${ENV_FILE}" -f docker-compose.production.yml config --quiet
 
 mode="$(file_mode "${ENV_FILE}")"

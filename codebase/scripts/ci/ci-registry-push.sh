@@ -56,9 +56,9 @@ FRONTEND_IMAGE=${frontend_image}
 ENV
 
 if [ -n "${release_tag}" ]; then
-  IMAGE_PROMOTION_EXPECTED_TAG="${release_tag}" scripts/validate-image-promotion.sh "${validation_env}" >/dev/null
+  IMAGE_PROMOTION_EXPECTED_TAG="${release_tag}" scripts/validate/validate-image-promotion.sh "${validation_env}" >/dev/null
 else
-  scripts/validate-image-promotion.sh "${validation_env}" >/dev/null
+  scripts/validate/validate-image-promotion.sh "${validation_env}" >/dev/null
 fi
 
 backend_registry="$(registry_host "${backend_image}")"

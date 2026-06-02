@@ -74,8 +74,8 @@ BACKEND_IMAGE=${BACKEND_IMAGE}
 FRONTEND_IMAGE=${FRONTEND_IMAGE}
 ENV
 
-scripts/validate-deploy-env.sh "${RELEASE_ENV_FILE}" >/dev/null
-IMAGE_PROMOTION_EXPECTED_TAG="${RELEASE_TAG}" scripts/validate-image-promotion.sh "${RELEASE_ENV_FILE}" >/dev/null
+scripts/validate/validate-deploy-env.sh "${RELEASE_ENV_FILE}" >/dev/null
+IMAGE_PROMOTION_EXPECTED_TAG="${RELEASE_TAG}" scripts/validate/validate-image-promotion.sh "${RELEASE_ENV_FILE}" >/dev/null
 docker compose --env-file "${RELEASE_ENV_FILE}" -f docker-compose.production.yml config --quiet
 docker compose --env-file "${RELEASE_ENV_FILE}" -f docker-compose.production.yml build backend frontend
 docker image inspect "${BACKEND_IMAGE}" >/dev/null 2>&1 || fail "built backend image missing: ${BACKEND_IMAGE}"

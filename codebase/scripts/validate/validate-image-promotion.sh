@@ -70,7 +70,7 @@ validate_ref() {
 }
 
 if [ -z "${ENV_FILE}" ]; then
-  echo "Usage: scripts/validate-image-promotion.sh /path/to/env-file" >&2
+  echo "Usage: scripts/validate/validate-image-promotion.sh /path/to/env-file" >&2
   exit 1
 fi
 

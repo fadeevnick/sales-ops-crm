@@ -27,7 +27,7 @@ require_file() {
 }
 
 if [ -z "${BASE_ENV_FILE}" ] || [ -z "${MANIFEST_FILE}" ] || [ -z "${OUTPUT_ENV_FILE}" ]; then
-  echo "Usage: scripts/render-deploy-env-from-manifest.sh /path/base.env /path/image-promotion.manifest /path/output.env" >&2
+  echo "Usage: scripts/env/render-deploy-env-from-manifest.sh /path/base.env /path/image-promotion.manifest /path/output.env" >&2
   exit 1
 fi
 
