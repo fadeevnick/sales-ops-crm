@@ -55,6 +55,11 @@ private class InjectUserIdRequestWrapper(
         return super.getHeader(name)
     }
 
+    override fun getHeaders(name: String): Enumeration<String> {
+        if (name.equals("X-Demo-User-Id", ignoreCase = true)) return Collections.enumeration(listOf(userId))
+        return super.getHeaders(name)
+    }
+
     override fun getHeaderNames(): Enumeration<String> {
         val names = Collections.list(super.getHeaderNames()).toMutableList()
         if (names.none { it.equals("X-Demo-User-Id", ignoreCase = true) }) {
