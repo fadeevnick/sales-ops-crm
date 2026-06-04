@@ -2,14 +2,14 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CODEBASE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-ENV_FILE="${PRODUCTION_ENV_FILE:-${CODEBASE_DIR}/.env.production}"
+CODEBASE_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+ENV_FILE="${PRODUCTION_ENV_FILE:-${CODEBASE_DIR}/.env}"
 PROJECT_NAME="${RESTORE_DRILL_COMPOSE_PROJECT_NAME:-salesops-restore-drill-$(date -u +%Y%m%d%H%M%S)}"
 BACKUP_FILE="${1:-${RESTORE_DRILL_BACKUP_FILE:-}}"
 KEEP_STACK="${RESTORE_DRILL_KEEP_STACK:-0}"
 
 if [ -z "${BACKUP_FILE}" ]; then
-  echo "Usage: scripts/post-deploy/production-restore-drill.sh /path/to/backup.dump" >&2
+  echo "Usage: scripts/core/production-restore-drill.sh /path/to/backup.dump" >&2
   echo "Or set RESTORE_DRILL_BACKUP_FILE." >&2
   exit 1
 fi

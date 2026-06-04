@@ -1,3 +1,0 @@
-RELEASE_TAG=2026-05-10T2145Z-gitabc123
-BACKEND_IMAGE=registry.example.com/salesops-backend:2026-05-10T2145Z-gitabc123
-FRONTEND_IMAGE=registry.example.com/salesops-frontend:2026-05-10T2145Z-gitabc123

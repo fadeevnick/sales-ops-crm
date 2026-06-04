@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CODEBASE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+CODEBASE_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 FRONTEND_DIR="${CODEBASE_DIR}/frontend"
 ENV_FILE="${CODEBASE_DIR}/.env"
 ENV_BACKUP=""

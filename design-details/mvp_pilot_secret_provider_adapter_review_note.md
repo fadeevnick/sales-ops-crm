@@ -9,7 +9,7 @@ It deliberately does not select AWS Secrets Manager, Vault, Doppler, SOPS, Kuber
 ## Added
 
 - `codebase/deploy/SECRET_PROVIDER_ADAPTERS.md`
-- `codebase/scripts/render-env-from-secret-provider.sh`
+- `codebase/scripts/env/render-env-from-secret-provider.sh`
 
 ## Updated
 

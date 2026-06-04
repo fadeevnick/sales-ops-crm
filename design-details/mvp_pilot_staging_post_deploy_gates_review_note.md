@@ -13,11 +13,11 @@ accepted on post-deploy gate dry-run validation
 ## Implemented
 
 - Added `codebase/deploy/STAGING_POST_DEPLOY_GATES.md`.
-- Added `codebase/scripts/staging-post-deploy-gates.sh`.
+- Added `codebase/scripts/orchestration/staging-post-deploy-gates.sh`.
 - Updated `codebase/deploy/STAGING_DEPLOY_APPLY_DRILL.md`.
 - Updated `codebase/deploy/EXTERNAL_STAGING_HANDOFF.md`.
 - Updated `codebase/DEPLOYMENT.md`.
-- Updated `codebase/scripts/staging-handoff-check.sh`.
+- Updated `codebase/scripts/checks/staging-handoff-check.sh`.
 - Updated `codebase/README.md`.
 - Updated `implementation_status.md`.
 - Updated `design_status.md`.
@@ -39,9 +39,9 @@ It does not:
 Expected checks:
 
 ```bash
-bash -n scripts/staging-post-deploy-gates.sh scripts/staging-handoff-check.sh
-STAGING_POST_DEPLOY_ENV_FILE=/tmp/salesops-rendered-staging.env STAGING_POST_DEPLOY_BACKUP_DIR=/tmp scripts/staging-post-deploy-gates.sh
-scripts/staging-handoff-check.sh
+bash -n scripts/orchestration/staging-post-deploy-gates.sh scripts/checks/staging-handoff-check.sh
+STAGING_POST_DEPLOY_ENV_FILE=/tmp/salesops-rendered-staging.env STAGING_POST_DEPLOY_BACKUP_DIR=/tmp scripts/orchestration/staging-post-deploy-gates.sh
+scripts/checks/staging-handoff-check.sh
 curl -fsS http://127.0.0.1:8081/readyz
 ```
 

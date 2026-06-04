@@ -13,7 +13,7 @@ accepted on env validation and staging compose config sanity check
 ## Implemented
 
 - Added `codebase/.env.staging.example`.
-- Added `codebase/scripts/validate-deploy-env.sh`.
+- Added `codebase/scripts/checks/validate-deploy-env.sh`.
 - Added `codebase/deploy/STAGING_READINESS.md`.
 - Updated `codebase/.gitignore` to ignore real `.env.staging` and `.env.production`.
 - Updated `codebase/DEPLOYMENT.md` with staging/secrets stance.
@@ -23,10 +23,10 @@ accepted on env validation and staging compose config sanity check
 Passed:
 
 ```bash
-bash -n scripts/validate-deploy-env.sh scripts/production-rollback-dry-run.sh scripts/production-migrate.sh
-scripts/validate-deploy-env.sh .env.staging.example
-scripts/validate-deploy-env.sh .env.production.example
-scripts/validate-deploy-env.sh /tmp/salesops-staging-valid.env
+bash -n scripts/checks/validate-deploy-env.sh scripts/core/production-rollback-dry-run.sh scripts/core/production-migrate.sh
+scripts/checks/validate-deploy-env.sh .env.staging.example
+scripts/checks/validate-deploy-env.sh .env.production.example
+scripts/checks/validate-deploy-env.sh /tmp/salesops-staging-valid.env
 docker compose --project-name salesops-staging-check --env-file /tmp/salesops-staging-valid.env -f docker-compose.production.yml config --quiet
 docker compose --project-name salesops-staging-check --env-file /tmp/salesops-staging-valid.env -f docker-compose.production.yml --profile tools config --services
 curl -fsS http://127.0.0.1:8081/readyz

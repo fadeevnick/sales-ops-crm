@@ -23,7 +23,7 @@ accepted on production image build and deployment smoke sanity check
   - `codebase/docker-compose.production.yml`
   - `codebase/.env.production.example`
 - Added deployment smoke wrapper:
-  - `codebase/scripts/deployment-smoke.sh`
+  - `codebase/scripts/core/deployment-smoke.sh`
 - Added deployment runbook:
   - `codebase/DEPLOYMENT.md`
 
@@ -34,10 +34,10 @@ Passed:
 ```bash
 docker compose --env-file .env.production.example -f docker-compose.production.yml config --quiet
 docker compose -f docker-compose.yml config --quiet
-bash -n scripts/deployment-smoke.sh
+bash -n scripts/core/deployment-smoke.sh
 docker compose --env-file .env.production.example -f docker-compose.production.yml build
 docker run --rm --entrypoint bash salesops-backend:local -lc 'echo ok'
-scripts/deployment-smoke.sh health
+scripts/core/deployment-smoke.sh health
 ```
 
 The production image build completed successfully:

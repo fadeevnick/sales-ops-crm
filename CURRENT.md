@@ -188,13 +188,13 @@ the correct design-language tokens and have no redundant internal tab strips.
 - Frontend: formatted as `Xms`/`X.Xs`; pending counts show amber with warning flag in header.
 
 ## Next
-Production path: домен + HTTPS.
+Операционный слой — изучить и реально использовать скрипты из `scripts/`.
 
 ---
 
 ## GCP Pilot Deployment
 
-**Статус:** приложение запущено на GCP, доступно по `http://34.62.55.118:5173`
+**Статус:** приложение запущено, доступно по `https://sales-ops-crm.duckdns.org`
 
 ### Что сделано
 
@@ -205,20 +205,36 @@ Production path: домен + HTTPS.
   - `salesops-backend:pilot`
   - `salesops-frontend:pilot`
 - GCE VM: `salesops-pilot`, zone `europe-west1-b`, `e2-medium`, 20GB disk
-- External IP: `34.62.55.118`
-- Firewall: порты 8081 и 5173 открыты
+- External IP: `34.76.69.146` (ephemeral, меняется при рестарте VM)
+- Firewall: порты 80, 443, 8081, 5173 открыты (rule: `salesops-allow-http`)
 - Docker установлен на VM (v29.5.2)
 - Деплой: `docker-compose.production.yml` + `.env` на VM
-- Миграции применены (V1–V22)
+- Миграции применены (V1–V23)
+
+### HTTPS
+
+- Домен: `sales-ops-crm.duckdns.org` → DuckDNS → `34.76.69.146`
+- nginx-proxy контейнер: SSL termination, роутит `/api/*` → backend, `/*` → frontend
+- Сертификат Let's Encrypt, истекает 2026-09-01
+- Конфиги: `codebase/nginx/http-only.conf`, `codebase/nginx/https.conf`
+- **Важно:** при смене IP VM нужно обновить DuckDNS вручную
+
+### Bearer token auth
+
+- Логин: `POST /api/auth/login` → JWT-подобный токен (HMAC-SHA256, 7 дней)
+- Пользователи: `anna@orion.local/anna2026`, `michael@orion.local/michael2026` и др.
+- `BearerTokenFilter` инжектирует `X-Demo-User-Id` через `HttpServletRequestWrapper`
+- Секрет: `APP_TOKEN_SECRET` в `.env` (дефолт: `dev-secret-change-in-production`)
 
 ### Открытые вопросы
 
-- Нет домена → нет HTTPS
-- Demo auth (X-Demo-User-Id) — не production-safe
+- IP ephemeral — при рестарте VM нужно обновлять DuckDNS и перезапускать контейнеры
+- Нет автоматического обновления сертификата (истекает 2026-09-01)
 - Нет мониторинга
 - Нет автоматического деплоя (CI/CD)
 
 ### Файлы
 
-- `deploy.sh` — создание `.env` на VM (разовый скрипт)
-- `codebase/tmp.sh` — временные команды текущей сессии
+- `codebase/docker-compose.production.yml` — production конфиг
+- `codebase/nginx/` — конфиги nginx-proxy
+- `codebase/scripts/` — операционные скрипты (разбиты по папкам: ci/, deploy/, post-deploy/, validate/, env/, drills/)

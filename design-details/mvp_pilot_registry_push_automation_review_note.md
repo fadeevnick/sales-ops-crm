@@ -13,13 +13,13 @@ accepted on registry push dry-run validation
 ## Implemented
 
 - Added `codebase/deploy/REGISTRY_PUSH_AUTOMATION.md`.
-- Added `codebase/scripts/ci-registry-push.sh`.
+- Added `codebase/scripts/ci/ci-registry-push.sh`.
 - Updated `.github/workflows/release-build.yml`.
 - Updated `codebase/deploy/CI_RELEASE_AUTOMATION.md`.
 - Updated `codebase/deploy/IMAGE_REGISTRY_PROMOTION.md`.
 - Updated `codebase/deploy/EXTERNAL_STAGING_HANDOFF.md`.
 - Updated `codebase/DEPLOYMENT.md`.
-- Updated `codebase/scripts/staging-handoff-check.sh`.
+- Updated `codebase/scripts/checks/staging-handoff-check.sh`.
 - Updated `codebase/README.md`.
 - Updated `implementation_status.md`.
 - Updated `design_status.md`.
@@ -41,9 +41,9 @@ It does not add:
 Expected checks:
 
 ```bash
-bash -n scripts/ci-registry-push.sh scripts/staging-handoff-check.sh
-scripts/ci-registry-push.sh build/release/image-promotion.manifest
-scripts/staging-handoff-check.sh
+bash -n scripts/ci/ci-registry-push.sh scripts/checks/staging-handoff-check.sh
+scripts/ci/ci-registry-push.sh build/release/image-promotion.manifest
+scripts/checks/staging-handoff-check.sh
 curl -fsS http://127.0.0.1:8081/readyz
 ```
 

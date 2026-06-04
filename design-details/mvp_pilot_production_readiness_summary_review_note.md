@@ -15,7 +15,7 @@ accepted as staging-package-ready production-readiness summary
 - Added `codebase/deploy/PRODUCTION_READINESS_SUMMARY.md`.
 - Updated `codebase/DEPLOYMENT.md`.
 - Updated `codebase/deploy/EXTERNAL_STAGING_HANDOFF.md`.
-- Updated `codebase/scripts/staging-handoff-check.sh`.
+- Updated `codebase/scripts/checks/staging-handoff-check.sh`.
 - Updated `codebase/README.md`.
 - Updated `implementation_status.md`.
 - Updated `design_status.md`.
@@ -34,7 +34,7 @@ Static checks:
 
 ```bash
 rg -n "PRODUCTION_READINESS_SUMMARY|production readiness|staging-package-ready" codebase/DEPLOYMENT.md codebase/README.md implementation_status.md design_status.md
-scripts/staging-handoff-check.sh
+scripts/checks/staging-handoff-check.sh
 curl -fsS http://127.0.0.1:8081/readyz
 ```
 

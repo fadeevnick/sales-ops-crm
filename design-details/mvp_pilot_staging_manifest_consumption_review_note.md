@@ -13,11 +13,11 @@ accepted on rendered deploy env validation
 ## Implemented
 
 - Added `codebase/deploy/STAGING_MANIFEST_CONSUMPTION.md`.
-- Added `codebase/scripts/render-deploy-env-from-manifest.sh`.
+- Added `codebase/scripts/env/render-deploy-env-from-manifest.sh`.
 - Updated `codebase/deploy/REGISTRY_PUSH_AUTOMATION.md`.
 - Updated `codebase/deploy/EXTERNAL_STAGING_HANDOFF.md`.
 - Updated `codebase/DEPLOYMENT.md`.
-- Updated `codebase/scripts/staging-handoff-check.sh`.
+- Updated `codebase/scripts/checks/staging-handoff-check.sh`.
 - Updated `codebase/README.md`.
 - Updated `implementation_status.md`.
 - Updated `design_status.md`.
@@ -39,11 +39,11 @@ It does not:
 Expected checks:
 
 ```bash
-bash -n scripts/render-deploy-env-from-manifest.sh scripts/staging-handoff-check.sh
-scripts/render-deploy-env-from-manifest.sh /tmp/salesops-staging-valid.env build/release/image-promotion.manifest /tmp/salesops-rendered-staging.env
-scripts/validate-deploy-env.sh /tmp/salesops-rendered-staging.env
-scripts/validate-image-promotion.sh /tmp/salesops-rendered-staging.env
-scripts/staging-handoff-check.sh
+bash -n scripts/env/render-deploy-env-from-manifest.sh scripts/checks/staging-handoff-check.sh
+scripts/env/render-deploy-env-from-manifest.sh /tmp/salesops-staging-valid.env build/release/image-promotion.manifest /tmp/salesops-rendered-staging.env
+scripts/checks/validate-deploy-env.sh /tmp/salesops-rendered-staging.env
+scripts/checks/validate-image-promotion.sh /tmp/salesops-rendered-staging.env
+scripts/checks/staging-handoff-check.sh
 curl -fsS http://127.0.0.1:8081/readyz
 ```
 

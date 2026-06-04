@@ -13,10 +13,10 @@ accepted on staging deploy dry-run validation
 ## Implemented
 
 - Added `codebase/deploy/STAGING_DEPLOY_AUTOMATION.md`.
-- Added `codebase/scripts/staging-deploy.sh`.
+- Added `codebase/scripts/orchestration/staging-deploy.sh`.
 - Updated `codebase/deploy/EXTERNAL_STAGING_HANDOFF.md`.
 - Updated `codebase/DEPLOYMENT.md`.
-- Updated `codebase/scripts/staging-handoff-check.sh`.
+- Updated `codebase/scripts/checks/staging-handoff-check.sh`.
 - Updated `codebase/README.md`.
 - Updated `implementation_status.md`.
 - Updated `design_status.md`.
@@ -39,9 +39,9 @@ It does not:
 Expected checks:
 
 ```bash
-bash -n scripts/staging-deploy.sh scripts/staging-handoff-check.sh
-STAGING_DEPLOY_ENV_FILE=/tmp/salesops-rendered-staging.env scripts/staging-deploy.sh
-scripts/staging-handoff-check.sh
+bash -n scripts/orchestration/staging-deploy.sh scripts/checks/staging-handoff-check.sh
+STAGING_DEPLOY_ENV_FILE=/tmp/salesops-rendered-staging.env scripts/orchestration/staging-deploy.sh
+scripts/checks/staging-handoff-check.sh
 curl -fsS http://127.0.0.1:8081/readyz
 ```
 

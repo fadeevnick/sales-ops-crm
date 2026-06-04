@@ -14,21 +14,21 @@ accepted on provider-neutral secret mapping validation
 
 - Added `codebase/deploy/MANAGED_SECRETS.md`.
 - Added `codebase/deploy/secrets.mapping.example`.
-- Added `codebase/scripts/validate-managed-secrets-plan.sh`.
+- Added `codebase/scripts/checks/validate-managed-secrets-plan.sh`.
 - Updated `codebase/deploy/STAGING_READINESS.md`.
 - Updated `codebase/deploy/EXTERNAL_STAGING_HANDOFF.md`.
 - Updated `codebase/DEPLOYMENT.md`.
-- Updated `codebase/scripts/staging-handoff-check.sh` so handoff validation includes managed secret mapping coverage.
+- Updated `codebase/scripts/checks/staging-handoff-check.sh` so handoff validation includes managed secret mapping coverage.
 
 ## Verification
 
 Passed:
 
 ```bash
-bash -n scripts/validate-managed-secrets-plan.sh scripts/staging-handoff-check.sh scripts/validate-deploy-env.sh
-scripts/validate-managed-secrets-plan.sh deploy/secrets.mapping.example .env.staging.example
-scripts/validate-managed-secrets-plan.sh deploy/secrets.mapping.example /tmp/salesops-staging-valid.env
-scripts/staging-handoff-check.sh
+bash -n scripts/checks/validate-managed-secrets-plan.sh scripts/checks/staging-handoff-check.sh scripts/checks/validate-deploy-env.sh
+scripts/checks/validate-managed-secrets-plan.sh deploy/secrets.mapping.example .env.staging.example
+scripts/checks/validate-managed-secrets-plan.sh deploy/secrets.mapping.example /tmp/salesops-staging-valid.env
+scripts/checks/staging-handoff-check.sh
 curl -fsS http://127.0.0.1:8081/readyz
 ```
 
@@ -39,7 +39,7 @@ Expected negative check:
 Positive checks:
 
 - `/tmp/salesops-staging-valid.env` passed managed secret mapping validation with one mapped secret.
-- `scripts/staging-handoff-check.sh` still passed after adding managed secret mapping coverage.
+- `scripts/checks/staging-handoff-check.sh` still passed after adding managed secret mapping coverage.
 - Active dev runtime remained healthy.
 
 ## Boundary

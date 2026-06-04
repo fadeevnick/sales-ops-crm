@@ -12,8 +12,8 @@ accepted on isolated PostgreSQL backup/restore drill
 
 ## Implemented
 
-- Added `codebase/scripts/production-backup.sh`.
-- Added `codebase/scripts/production-restore-drill.sh`.
+- Added `codebase/scripts/core/production-backup.sh`.
+- Added `codebase/scripts/core/production-restore-drill.sh`.
 - Added `codebase/backups/` to `.gitignore`.
 - Updated `codebase/DEPLOYMENT.md` with backup and restore drill commands.
 
@@ -22,10 +22,10 @@ accepted on isolated PostgreSQL backup/restore drill
 Passed:
 
 ```bash
-bash -n scripts/production-backup.sh scripts/production-restore-drill.sh scripts/production-migrate.sh
+bash -n scripts/core/production-backup.sh scripts/core/production-restore-drill.sh scripts/core/production-migrate.sh
 docker compose --env-file .env.production.example -f docker-compose.production.yml config --quiet
-PRODUCTION_ENV_FILE=/tmp/does-not-exist scripts/production-backup.sh
-scripts/production-restore-drill.sh /tmp/does-not-exist.dump
+PRODUCTION_ENV_FILE=/tmp/does-not-exist scripts/core/production-backup.sh
+scripts/core/production-restore-drill.sh /tmp/does-not-exist.dump
 docker compose --project-name salesops-backup-source --env-file .env -f docker-compose.production.yml build backend
 docker compose --project-name salesops-backup-source --env-file .env -f docker-compose.production.yml up -d db
 docker compose --project-name salesops-backup-source --env-file .env -f docker-compose.production.yml run --rm migrate
@@ -40,7 +40,7 @@ docker compose --project-name salesops-restore-drill-check --env-file .env -f do
 docker compose --project-name salesops-backup-source --env-file .env -f docker-compose.production.yml down -v
 docker compose --project-name salesops-restore-drill-check --env-file .env -f docker-compose.production.yml down -v
 curl -fsS http://127.0.0.1:8081/readyz
-scripts/deployment-smoke.sh health
+scripts/core/deployment-smoke.sh health
 ```
 
 The isolated drill:

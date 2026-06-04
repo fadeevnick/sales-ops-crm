@@ -14,10 +14,10 @@ accepted on image reference validation sanity check
 
 - Added `codebase/deploy/IMAGE_REGISTRY_PROMOTION.md`.
 - Added `codebase/deploy/image-promotion.manifest.example`.
-- Added `codebase/scripts/validate-image-promotion.sh`.
+- Added `codebase/scripts/checks/validate-image-promotion.sh`.
 - Updated `codebase/deploy/EXTERNAL_STAGING_HANDOFF.md`.
 - Updated `codebase/DEPLOYMENT.md`.
-- Updated `codebase/scripts/staging-handoff-check.sh`.
+- Updated `codebase/scripts/checks/staging-handoff-check.sh`.
 - Updated `codebase/README.md`.
 - Updated `implementation_status.md`.
 - Updated `design_status.md`.
@@ -39,10 +39,10 @@ It does not add:
 Expected checks:
 
 ```bash
-bash -n scripts/validate-image-promotion.sh scripts/staging-handoff-check.sh
-scripts/validate-image-promotion.sh .env.staging.example
-IMAGE_PROMOTION_ALLOW_LOCAL=1 scripts/validate-image-promotion.sh .env.production.example
-scripts/staging-handoff-check.sh
+bash -n scripts/checks/validate-image-promotion.sh scripts/checks/staging-handoff-check.sh
+scripts/checks/validate-image-promotion.sh .env.staging.example
+IMAGE_PROMOTION_ALLOW_LOCAL=1 scripts/checks/validate-image-promotion.sh .env.production.example
+scripts/checks/staging-handoff-check.sh
 curl -fsS http://127.0.0.1:8081/readyz
 ```
 

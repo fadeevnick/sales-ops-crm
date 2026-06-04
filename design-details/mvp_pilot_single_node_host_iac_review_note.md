@@ -13,11 +13,11 @@ accepted on local host preflight sanity check
 ## Implemented
 
 - Added `codebase/deploy/SINGLE_NODE_HOST_IAC.md`.
-- Added `codebase/scripts/host-preflight-check.sh`.
+- Added `codebase/scripts/checks/host-preflight-check.sh`.
 - Updated `codebase/deploy/PRODUCTION_PLATFORM_IAC.md`.
 - Updated `codebase/deploy/EXTERNAL_STAGING_HANDOFF.md`.
 - Updated `codebase/DEPLOYMENT.md`.
-- Updated `codebase/scripts/staging-handoff-check.sh`.
+- Updated `codebase/scripts/checks/staging-handoff-check.sh`.
 - Updated `codebase/README.md`.
 - Updated `implementation_status.md`.
 - Updated `design_status.md`.
@@ -40,9 +40,9 @@ It does not add:
 Expected checks:
 
 ```bash
-bash -n scripts/host-preflight-check.sh scripts/staging-handoff-check.sh
-scripts/staging-handoff-check.sh
-SALESOPS_BACKUP_DIR=/tmp HOST_PREFLIGHT_SKIP_PORT_CHECK=1 scripts/host-preflight-check.sh /tmp/salesops-host-preflight.env
+bash -n scripts/checks/host-preflight-check.sh scripts/checks/staging-handoff-check.sh
+scripts/checks/staging-handoff-check.sh
+SALESOPS_BACKUP_DIR=/tmp HOST_PREFLIGHT_SKIP_PORT_CHECK=1 scripts/checks/host-preflight-check.sh /tmp/salesops-host-preflight.env
 curl -fsS http://127.0.0.1:8081/readyz
 ```
 

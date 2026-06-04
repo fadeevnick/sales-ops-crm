@@ -12,12 +12,12 @@ accepted on isolated production migration sanity check
 
 ## Implemented
 
-- Added `codebase/scripts/production-migrate.sh`.
+- Added `codebase/scripts/core/production-migrate.sh`.
 - Added a `migrate` service to `codebase/docker-compose.production.yml`.
 - Disabled implicit Flyway migrations for the production backend service by default through `SPRING_FLYWAY_ENABLED=false`.
 - Updated `codebase/DEPLOYMENT.md` so deployment order is:
   1. create `.env.production`;
-  2. run `scripts/production-migrate.sh`;
+  2. run `scripts/core/production-migrate.sh`;
   3. start `backend` and `frontend`.
 - Made `SecurityConfig` servlet-web-only so the backend artifact can run in non-web migration mode.
 
@@ -26,14 +26,14 @@ accepted on isolated production migration sanity check
 Passed:
 
 ```bash
-bash -n scripts/production-migrate.sh
+bash -n scripts/core/production-migrate.sh
 docker compose --env-file .env.production.example -f docker-compose.production.yml config --quiet
 docker compose --project-name salesops-migrate-check --env-file .env -f docker-compose.production.yml --profile tools config --quiet
-PRODUCTION_ENV_FILE=/tmp/does-not-exist scripts/production-migrate.sh
-PRODUCTION_ENV_FILE=.env PRODUCTION_COMPOSE_PROJECT_NAME=salesops-migrate-check scripts/production-migrate.sh
+PRODUCTION_ENV_FILE=/tmp/does-not-exist scripts/core/production-migrate.sh
+PRODUCTION_ENV_FILE=.env PRODUCTION_COMPOSE_PROJECT_NAME=salesops-migrate-check scripts/core/production-migrate.sh
 docker compose --project-name salesops-migrate-check --env-file .env -f docker-compose.production.yml down
 curl -fsS http://127.0.0.1:8081/readyz
-scripts/deployment-smoke.sh health
+scripts/core/deployment-smoke.sh health
 ```
 
 The isolated migration run:

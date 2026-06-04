@@ -2,12 +2,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CODEBASE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+CODEBASE_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 PROJECT_NAME="${ROLLBACK_DRILL_COMPOSE_PROJECT_NAME:-salesops-rollback-drill}"
 PREVIOUS_ENV_FILE="${ROLLBACK_PREVIOUS_ENV_FILE:-${CODEBASE_DIR}/deploy/rollback-drill.previous.env}"
 CANDIDATE_ENV_FILE="${ROLLBACK_CANDIDATE_ENV_FILE:-${CODEBASE_DIR}/deploy/rollback-drill.candidate.env}"
-BACKEND_URL="${ROLLBACK_DRILL_BACKEND_URL:-http://127.0.0.1:18081}"
-FRONTEND_URL="${ROLLBACK_DRILL_FRONTEND_URL:-http://localhost:15173}"
+PUBLIC_URL="${ROLLBACK_DRILL_PUBLIC_URL:-http://127.0.0.1:18080}"
 KEEP_STACK="${ROLLBACK_DRILL_KEEP_STACK:-0}"
 
 if [ ! -f "${PREVIOUS_ENV_FILE}" ]; then
@@ -22,6 +21,12 @@ fi
 
 cd "${CODEBASE_DIR}"
 
+env_value() {
+  local env_file="$1"
+  local key="$2"
+  awk -F= -v key="${key}" '$1 == key {print substr($0, length(key) + 2); exit}' "${env_file}"
+}
+
 cleanup() {
   if [ "${KEEP_STACK}" != "1" ]; then
     docker compose \
@@ -33,56 +38,46 @@ cleanup() {
 }
 trap cleanup EXIT
 
-wait_for_url() {
-  local url="$1"
-  local label="$2"
-
+run_smoke() {
   for _ in $(seq 1 60); do
-    if curl -fsS "${url}" >/dev/null; then
+    if DEPLOYMENT_SMOKE_API_BASE_URL="${PUBLIC_URL}" \
+      DEPLOYMENT_SMOKE_FRONTEND_BASE_URL="${PUBLIC_URL}" \
+      "${CODEBASE_DIR}/scripts/core/deployment-smoke.sh" health >/dev/null; then
       return 0
     fi
     sleep 1
   done
 
-  echo "Timed out waiting for ${label}: ${url}" >&2
+  echo "Timed out waiting for rollback drill smoke: ${PUBLIC_URL}" >&2
   return 1
 }
 
-build_images() {
+pull_images() {
   local env_file="$1"
   docker compose \
     --project-name "${PROJECT_NAME}" \
     --env-file "${env_file}" \
     -f docker-compose.production.yml \
-    build backend frontend
+    pull backend frontend
 }
 
 start_runtime() {
   local env_file="$1"
-  docker compose \
-    --project-name "${PROJECT_NAME}" \
-    --env-file "${env_file}" \
-    -f docker-compose.production.yml \
-    up -d db
+  PRODUCTION_ENV_FILE="${env_file}" \
+  PRODUCTION_COMPOSE_PROJECT_NAME="${PROJECT_NAME}" \
+  "${CODEBASE_DIR}/scripts/core/production-migrate.sh"
 
   docker compose \
     --project-name "${PROJECT_NAME}" \
     --env-file "${env_file}" \
     -f docker-compose.production.yml \
-    run --rm migrate
+    up -d --force-recreate backend frontend nginx-proxy
 
-  docker compose \
-    --project-name "${PROJECT_NAME}" \
-    --env-file "${env_file}" \
-    -f docker-compose.production.yml \
-    up -d --force-recreate backend frontend
-
-  wait_for_url "${BACKEND_URL}/readyz" "backend readiness"
-  wait_for_url "${FRONTEND_URL}" "frontend"
+  run_smoke
 }
 
-build_images "${PREVIOUS_ENV_FILE}"
-build_images "${CANDIDATE_ENV_FILE}"
+pull_images "${PREVIOUS_ENV_FILE}"
+pull_images "${CANDIDATE_ENV_FILE}"
 
 start_runtime "${PREVIOUS_ENV_FILE}"
 start_runtime "${CANDIDATE_ENV_FILE}"

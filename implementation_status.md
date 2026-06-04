@@ -1493,19 +1493,19 @@ next deployment maturity decision: select actual secret provider or run real ext
 - MVP pilot production deployment packaging baseline passed on `2026-05-09`:
   - production compose config validation passed;
   - existing dev compose config validation still passed;
-  - `scripts/deployment-smoke.sh` syntax validation passed;
+  - `scripts/core/deployment-smoke.sh` syntax validation passed;
   - production frontend image built through `npm ci` and `npm run build`;
   - production backend image built through `gradle bootJar --no-daemon`;
   - deployment health smoke passed against the running local runtime after sandbox localhost permission was granted;
   - production compose runtime was not started because the existing dev stack already occupied ports `8081` and `5173`.
 - MVP pilot explicit migration command passed on `2026-05-10`:
-  - `scripts/production-migrate.sh` syntax validation passed;
+  - `scripts/core/production-migrate.sh` syntax validation passed;
   - production compose config validation passed with the `migrate` service included;
   - missing env file guard returned a clear failure instead of using `.env.production.example`;
   - isolated migration run under Compose project `salesops-migrate-check` built the backend image, waited for PostgreSQL health, validated 20 migrations and exited successfully;
   - dev runtime readiness and deployment health smoke still passed after the isolated migration verification.
 - MVP pilot backup/restore drill passed on `2026-05-10`:
-  - `scripts/production-backup.sh` and `scripts/production-restore-drill.sh` syntax validation passed;
+  - `scripts/core/production-backup.sh` and `scripts/core/production-restore-drill.sh` syntax validation passed;
   - missing env/backup guard checks returned clear failures;
   - isolated source database under Compose project `salesops-backup-source` applied all 20 migrations;
   - PostgreSQL custom-format dump `/tmp/salesops-backup-source.dump` was produced;
@@ -1524,14 +1524,14 @@ next deployment maturity decision: select actual secret provider or run real ext
   - disposable rollback drill stack and volume were removed;
   - dev runtime readiness and deployment health smoke still passed after cleanup.
 - MVP pilot staging/secrets baseline passed on `2026-05-10`:
-  - `scripts/validate-deploy-env.sh` syntax validation passed;
+  - `scripts/checks/validate-deploy-env.sh` syntax validation passed;
   - `.env.staging.example` and `.env.production.example` correctly failed validation because they contain placeholder secrets;
   - sanitized staging env `/tmp/salesops-staging-valid.env` passed validation;
   - production compose config resolved successfully against the sanitized staging env;
   - tools profile still exposed `db`, `backend`, `frontend` and `migrate`;
   - dev runtime readiness still passed after validation.
 - MVP pilot external staging handoff passed on `2026-05-10`:
-  - `scripts/staging-handoff-check.sh` syntax validation passed;
+  - `scripts/checks/staging-handoff-check.sh` syntax validation passed;
   - required staging handoff files were present;
   - deploy scripts were executable;
   - `.env.staging.example` correctly failed validation because it contains placeholder secrets;
@@ -1540,7 +1540,7 @@ next deployment maturity decision: select actual secret provider or run real ext
   - no handoff-check Compose stack was left running;
   - dev runtime readiness still passed after validation.
 - MVP pilot managed secrets planning passed on `2026-05-10`:
-  - `scripts/validate-managed-secrets-plan.sh` syntax validation passed;
+  - `scripts/checks/validate-managed-secrets-plan.sh` syntax validation passed;
   - `.env.staging.example` correctly failed managed secret validation because mapped `POSTGRES_PASSWORD` is still a placeholder;
   - sanitized staging env `/tmp/salesops-staging-valid.env` passed managed secret mapping validation with one mapped secret;
   - staging handoff check still passed after adding managed secret mapping coverage;
@@ -1552,20 +1552,20 @@ next deployment maturity decision: select actual secret provider or run real ext
   - no runtime verification was required for this documentation-only planning slice.
 - MVP pilot single-node host IaC baseline passed on `2026-05-10`:
   - added `codebase/deploy/SINGLE_NODE_HOST_IAC.md`;
-  - added `codebase/scripts/host-preflight-check.sh`;
+  - added `codebase/scripts/checks/host-preflight-check.sh`;
   - updated staging handoff coverage so the host baseline and preflight script are part of the external package;
   - verified the preflight script through local syntax and host sanity checks with a port-check override because the active dev runtime owns the default pilot ports;
   - dev runtime readiness still passed after validation.
 - MVP pilot reverse proxy/TLS handoff passed on `2026-05-10`:
   - added `codebase/deploy/REVERSE_PROXY_TLS_HANDOFF.md`;
-  - added `codebase/scripts/reverse-proxy-tls-check.sh`;
+  - added `codebase/scripts/checks/reverse-proxy-tls-check.sh`;
   - updated deployment and external staging handoff docs so external route validation is part of acceptance;
   - verified the route check against the active local runtime with `REVERSE_PROXY_TLS_ALLOW_INSECURE=1`;
   - dev runtime readiness still passed after validation.
 - MVP pilot image registry promotion baseline passed on `2026-05-10`:
   - added `codebase/deploy/IMAGE_REGISTRY_PROMOTION.md`;
   - added `codebase/deploy/image-promotion.manifest.example`;
-  - added `codebase/scripts/validate-image-promotion.sh`;
+  - added `codebase/scripts/checks/validate-image-promotion.sh`;
   - updated external staging handoff so image promotion validation runs before migration/startup;
   - validated staging example image refs and local production example image refs with explicit local allowance;
   - staging handoff check still passed after adding image promotion validation;
@@ -1573,28 +1573,28 @@ next deployment maturity decision: select actual secret provider or run real ext
 - MVP pilot CI release automation baseline passed on `2026-05-10`:
   - added `.github/workflows/release-build.yml`;
   - added `codebase/deploy/CI_RELEASE_AUTOMATION.md`;
-  - added `codebase/scripts/ci-release-build.sh`;
+  - added `codebase/scripts/ci/ci-release-build.sh`;
   - release build renders a validation env and image promotion manifest;
   - release build validates deploy env and image refs, resolves production Compose config, builds backend/frontend production images and inspects the resulting image refs;
   - staging handoff check still passed after adding CI release files;
   - dev runtime readiness still passed after validation.
 - MVP pilot registry push automation baseline passed on `2026-05-10`:
   - added `codebase/deploy/REGISTRY_PUSH_AUTOMATION.md`;
-  - added `codebase/scripts/ci-registry-push.sh`;
+  - added `codebase/scripts/ci/ci-registry-push.sh`;
   - updated `.github/workflows/release-build.yml` with a manual `push_images` input and dry-run default;
   - registry push entrypoint validates the image promotion manifest and only pushes when `CI_REGISTRY_PUSH_ENABLED=1`;
   - staging handoff check still passed after adding registry push files;
   - dev runtime readiness still passed after validation.
 - MVP pilot staging manifest consumption passed on `2026-05-10`:
   - added `codebase/deploy/STAGING_MANIFEST_CONSUMPTION.md`;
-  - added `codebase/scripts/render-deploy-env-from-manifest.sh`;
+  - added `codebase/scripts/env/render-deploy-env-from-manifest.sh`;
   - render script preserves protected base env values and replaces only `BACKEND_IMAGE`/`FRONTEND_IMAGE` from the retained release manifest;
   - rendered deploy env passed deploy env, managed secret and image promotion validation;
   - staging handoff check still passed after adding manifest consumption files;
   - dev runtime readiness still passed after validation.
 - MVP pilot staging deploy automation passed on `2026-05-10`:
   - added `codebase/deploy/STAGING_DEPLOY_AUTOMATION.md`;
-  - added `codebase/scripts/staging-deploy.sh`;
+  - added `codebase/scripts/orchestration/staging-deploy.sh`;
   - staging deploy script validates the rendered env, managed secret mapping, image promotion refs and production Compose config;
   - apply mode is explicit through `STAGING_DEPLOY_APPLY=1` and runs host preflight, migration, Compose startup, reverse proxy/TLS check and deployment smoke;
   - dry-run passed against `/tmp/salesops-rendered-staging.env`;
@@ -1602,15 +1602,15 @@ next deployment maturity decision: select actual secret provider or run real ext
   - dev runtime readiness still passed after validation.
 - MVP pilot staging deploy apply drill passed on `2026-05-10`:
   - added `codebase/deploy/STAGING_DEPLOY_APPLY_DRILL.md`;
-  - added `codebase/scripts/staging-deploy-apply-drill.sh`;
-  - drill runs `scripts/staging-deploy.sh` in apply mode against isolated local ports and a disposable Compose project;
+  - added `codebase/scripts/drills/staging-deploy-apply-drill.sh`;
+  - drill runs `scripts/orchestration/staging-deploy.sh` in apply mode against isolated local ports and a disposable Compose project;
   - drill covers host preflight, explicit migration, Compose startup, reverse proxy/TLS route check and deployment health smoke;
   - disposable drill stack is removed after completion;
   - staging handoff check still passed after adding apply drill files;
   - dev runtime readiness still passed after validation.
 - MVP pilot staging post-deploy gates passed on `2026-05-10`:
   - added `codebase/deploy/STAGING_POST_DEPLOY_GATES.md`;
-  - added `codebase/scripts/staging-post-deploy-gates.sh`;
+  - added `codebase/scripts/orchestration/staging-post-deploy-gates.sh`;
   - post-deploy gate script validates deploy env, managed secret mapping, image refs, Compose config and backup target;
   - apply mode is explicit through `STAGING_POST_DEPLOY_APPLY=1` and runs route check, deployment health smoke, backup, restore drill and rollback dry run;
   - dry-run passed against `/tmp/salesops-rendered-staging.env`;
@@ -1618,9 +1618,9 @@ next deployment maturity decision: select actual secret provider or run real ext
   - dev runtime readiness still passed after validation.
 - MVP pilot staging post-deploy apply drill passed on `2026-05-10`:
   - added `codebase/deploy/STAGING_POST_DEPLOY_APPLY_DRILL.md`;
-  - added `codebase/scripts/staging-post-deploy-apply-drill.sh`;
-  - updated `codebase/scripts/staging-post-deploy-gates.sh` so backup output parsing is resilient to Docker Compose progress lines;
-  - updated `codebase/scripts/production-restore-drill.sh` so restore drills tolerate an already-created target database before `pg_restore`;
+  - added `codebase/scripts/drills/staging-post-deploy-apply-drill.sh`;
+  - updated `codebase/scripts/orchestration/staging-post-deploy-gates.sh` so backup output parsing is resilient to Docker Compose progress lines;
+  - updated `codebase/scripts/core/production-restore-drill.sh` so restore drills tolerate an already-created target database before `pg_restore`;
   - drill runs deploy apply mode, route check, deployment health smoke, backup, restore drill and rollback dry run against isolated local projects;
   - disposable staging and restore/rollback drill stacks are cleaned up after completion;
   - staging handoff check still passed after adding post-deploy apply drill files;
@@ -1634,7 +1634,7 @@ next deployment maturity decision: select actual secret provider or run real ext
   - dev runtime readiness still passed after validation.
 - MVP pilot external staging acceptance run passed on `2026-05-10`:
   - added `codebase/deploy/EXTERNAL_STAGING_ACCEPTANCE.md`;
-  - added `codebase/scripts/external-staging-acceptance.sh`;
+  - added `codebase/scripts/orchestration/external-staging-acceptance.sh`;
   - acceptance script runs handoff validation, env validation, managed secret mapping validation, image promotion validation, staging deploy dry-run and post-deploy dry-run;
   - acceptance script writes an acceptance report under `codebase/build/external-staging-acceptance/`;
   - dry-run passed against `/tmp/salesops-rendered-staging.env`;
@@ -1642,7 +1642,7 @@ next deployment maturity decision: select actual secret provider or run real ext
   - dev runtime readiness still passed after validation.
 - MVP pilot secret provider adapter contract passed on `2026-05-10`:
   - added `codebase/deploy/SECRET_PROVIDER_ADAPTERS.md`;
-  - added `codebase/scripts/render-env-from-secret-provider.sh`;
+  - added `codebase/scripts/env/render-env-from-secret-provider.sh`;
   - adapter contract supports `env` and `dotenv` provider output shapes without selecting a cloud/SaaS provider;
   - dotenv adapter rendered a deploy env from `.env.staging.example` and `/tmp/salesops-rendered-staging.env`;
   - env adapter rendered a deploy env from `.env.staging.example` and process environment input;

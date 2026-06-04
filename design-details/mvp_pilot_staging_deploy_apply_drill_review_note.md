@@ -13,11 +13,11 @@ accepted on isolated staging deploy apply drill
 ## Implemented
 
 - Added `codebase/deploy/STAGING_DEPLOY_APPLY_DRILL.md`.
-- Added `codebase/scripts/staging-deploy-apply-drill.sh`.
+- Added `codebase/scripts/drills/staging-deploy-apply-drill.sh`.
 - Updated `codebase/deploy/STAGING_DEPLOY_AUTOMATION.md`.
 - Updated `codebase/deploy/EXTERNAL_STAGING_HANDOFF.md`.
 - Updated `codebase/DEPLOYMENT.md`.
-- Updated `codebase/scripts/staging-handoff-check.sh`.
+- Updated `codebase/scripts/checks/staging-handoff-check.sh`.
 - Updated `codebase/README.md`.
 - Updated `implementation_status.md`.
 - Updated `design_status.md`.
@@ -39,9 +39,9 @@ It does not:
 Expected checks:
 
 ```bash
-bash -n scripts/staging-deploy-apply-drill.sh scripts/staging-deploy.sh
-scripts/staging-deploy-apply-drill.sh
-scripts/staging-handoff-check.sh
+bash -n scripts/drills/staging-deploy-apply-drill.sh scripts/orchestration/staging-deploy.sh
+scripts/drills/staging-deploy-apply-drill.sh
+scripts/checks/staging-handoff-check.sh
 curl -fsS http://127.0.0.1:8081/readyz
 ```
 

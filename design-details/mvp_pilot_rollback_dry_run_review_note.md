@@ -15,7 +15,7 @@ accepted on isolated production Compose rollback dry run
 - Added rollback drill env files:
   - `codebase/deploy/rollback-drill.previous.env`
   - `codebase/deploy/rollback-drill.candidate.env`
-- Added `codebase/scripts/production-rollback-dry-run.sh`.
+- Added `codebase/scripts/core/production-rollback-dry-run.sh`.
 - Updated `codebase/DEPLOYMENT.md` with rollback dry-run usage and override knobs.
 
 ## Verification
@@ -23,12 +23,12 @@ accepted on isolated production Compose rollback dry run
 Passed:
 
 ```bash
-bash -n scripts/production-rollback-dry-run.sh scripts/production-migrate.sh scripts/production-backup.sh scripts/production-restore-drill.sh
+bash -n scripts/core/production-rollback-dry-run.sh scripts/core/production-migrate.sh scripts/core/production-backup.sh scripts/core/production-restore-drill.sh
 docker compose --project-name salesops-rollback-drill --env-file deploy/rollback-drill.previous.env -f docker-compose.production.yml config --quiet
 docker compose --project-name salesops-rollback-drill --env-file deploy/rollback-drill.candidate.env -f docker-compose.production.yml config --quiet
-scripts/production-rollback-dry-run.sh
+scripts/core/production-rollback-dry-run.sh
 curl -fsS http://127.0.0.1:8081/readyz
-scripts/deployment-smoke.sh health
+scripts/core/deployment-smoke.sh health
 ```
 
 The isolated rollback dry run:
