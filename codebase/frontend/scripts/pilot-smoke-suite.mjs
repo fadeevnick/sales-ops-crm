@@ -29,7 +29,7 @@ try {
   if (gates.some((gate) => gate.requiresChrome)) {
     startedChrome = !(await isChromeDebugReady());
     if (startedChrome) {
-      chrome = startChrome();
+      chrome = await startChrome();
       await waitForChromeDebug();
     }
   }
@@ -87,22 +87,21 @@ function runCommand(command, args) {
 }
 
 function startChrome() {
-  const child = spawn(chromeCommand, [
-    "--headless=new",
-    "--remote-debugging-address=127.0.0.1",
-    "--remote-debugging-port=9223",
-    "--disable-gpu",
-    "--no-sandbox",
-    "about:blank",
-  ], {
-    stdio: "ignore",
-  });
+  return new Promise((resolve, reject) => {
+    const child = spawn(chromeCommand, [
+      "--headless=new",
+      "--remote-debugging-address=127.0.0.1",
+      "--remote-debugging-port=9223",
+      "--disable-gpu",
+      "--no-sandbox",
+      "about:blank",
+    ], {
+      stdio: "ignore",
+    });
 
-  child.on("error", (error) => {
-    throw error;
+    child.on("error", reject);
+    child.on("spawn", () => resolve(child));
   });
-
-  return child;
 }
 
 async function waitForChromeDebug() {
