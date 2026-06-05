@@ -6,6 +6,8 @@
 
 Он нужен, чтобы проект сохранял CRM/ERP-specific framing внутри собственной папки и не зависел от внешнего domain catalog для базового понимания.
 
+Он также фиксирует минимальный engineering baseline, на котором этот domain snapshot предполагается жить.
+
 ## Product Category
 
 - CRM / ERP
@@ -19,6 +21,18 @@
 - metadata-driven CRM/ERP model;
 - custom fields, configurable stages and tenant-specific process variation;
 - approvals, sharing rules, reporting, import/export, deduplication and business audit semantics.
+
+## Engineering Baseline Assumptions
+
+- modular monolith backend plus separate SPA frontend;
+- containerized runtime through `docker compose`;
+- PostgreSQL as primary system of record;
+- runtime starts from container images, not host-installed build tools;
+- schema changes go through versioned migrations;
+- backend readiness must fail when critical dependencies are unavailable;
+- backup/restore and rollback-aware changes are first-class concerns;
+- auth and authorization remain server-owned boundaries;
+- secrets stay outside committed source.
 
 ## Key Domain Entities
 

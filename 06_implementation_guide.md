@@ -15,7 +15,7 @@ B2B Sales Operations CRM with approvals
 - зафиксировать `preconditions`, expected changes и `runtime verification`;
 - удержать границу между design decisions и реальным implementation progress.
 
-Реальный прогресс должен фиксироваться только в `implementation_status.md`.
+Реальный прогресс должен фиксироваться в текущих рабочих документах (`CURRENT.md`, `NOTES.md`, `codebase/DEPLOYMENT.md`) и в самом коде, а не в отдельном статусном журнале.
 
 ## 1. Guide Principles
 
@@ -31,7 +31,7 @@ Implementation phases должны следовать таким правила�
 
 - `mvp_roadmap.md` отвечает на вопрос: что входит в MVP и в каком продуктово-логическом порядке.
 - `06_implementation_guide.md` отвечает на вопрос: как превращать этот MVP в последовательные implementation phases.
-- `implementation_status.md` отвечает на вопрос: что реально уже сделано и что проверено runtime.
+- `CURRENT.md`, `NOTES.md` и `codebase/DEPLOYMENT.md` отвечают на вопрос: что реально уже сделано, как это сейчас работает и что проверено runtime.
 
 ## 3. Phase Structure Contract
 
@@ -78,7 +78,6 @@ Implementation phases должны следовать таким правила�
 - согласованы `02_user_journeys.md`
 - согласованы `03_functional_requirements.md`
 - согласованы `04_architecture.md`
-- согласованы `05_tech_stack.md`
 - согласован `mvp_roadmap.md`
 
 ### Schema / env changes
@@ -118,7 +117,7 @@ Implementation phases должны следовать таким правила�
 - codebase split не противоречит принятым module boundaries;
 - migrations применяются;
 - local dev loop reproducible;
-- phase results записаны в `implementation_status.md`.
+- phase results должны отражаться в текущем состоянии кода и текущих рабочих документах.
 
 ## 6. Phase 1 — Tenant, auth, roles, workspace shell
 
@@ -539,13 +538,13 @@ Implementation phases должны следовать таким правила�
 - MVP scope is stable;
 - pilot cut excludes consciously deferred items;
 - core flows are verified in runtime;
-- remaining gaps are explicitly documented in `implementation_status.md`.
+- remaining gaps should be explicitly documented in current working docs.
 
-## 15. Relationship to Local Substrate Reference
+## 15. Relationship to Runtime Baseline
 
 Этот implementation guide описывает продуктовые и доменные фазы.
 
-Operational substrate должен расти вместе с baseline, зафиксированным в `00_substrate_reference.md`:
+Operational substrate должен расти вместе с baseline, зафиксированным в `00_domain_reference.md`, `04_architecture.md` и `codebase/DEPLOYMENT.md`:
 
 - health/readiness;
 - deploy/rollback;
@@ -561,7 +560,7 @@ Operational substrate должен расти вместе с baseline, зафи
 Практическое правило:
 
 - продуктовые фазы из этого документа реализуются в `codebase/`;
-- operational maturity practices применяются по sequencing из `00_substrate_reference.md`;
+- operational maturity practices применяются по sequencing из `codebase/DEPLOYMENT.md`;
 - каждая существенная implementation phase должна завершаться runtime verification не только бизнес-флоу, но и работоспособности runtime-системы.
 
 ## 16. What Should Not Happen
@@ -581,4 +580,4 @@ Operational substrate должен расти вместе с baseline, зафи
 
 - подготовить core flow design / prototypes для самых критичных экранов;
 - затем сделать codebase bootstrap;
-- затем идти по фазам сверху вниз, обновляя `implementation_status.md` только по факту runtime-проверок.
+- затем идти по фазам сверху вниз, обновляя текущие рабочие документы только по факту runtime-проверок.

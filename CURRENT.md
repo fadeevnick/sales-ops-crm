@@ -228,6 +228,11 @@ the correct design-language tokens and have no redundant internal tab strips.
 
 ### Открытые вопросы
 
+- Текущая граница зрелости:
+  - PR/main CI и release CI уже есть;
+  - production images собираются через CI и кладутся в Artifact Registry;
+  - deploy на VM всё ещё manual/operator-driven;
+  - rollback в проде всё ещё manual, хотя rollback drill уже есть.
 - IP ephemeral — при рестарте VM нужно обновлять DuckDNS и перезапускать контейнеры
 - Нет автоматического обновления сертификата (истекает 2026-09-01)
 - Нет мониторинга

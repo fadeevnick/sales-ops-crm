@@ -116,7 +116,30 @@ modular monolith
 - тяжёлые процессы выносятся в background jobs, но не в отдельные продуктовые сервисы по умолчанию;
 - reporting и task queues могут использовать отдельные read projections, но write authority остаётся в transactional core.
 
-## 5. High-Level Component Model
+## 5. Implementation Stack Baseline
+
+Выбранный implementation stack для этой архитектуры:
+
+- Backend: Kotlin + Spring Boot
+- Security: Spring Security
+- Data access: jOOQ
+- Database: PostgreSQL
+- Migrations: Flyway
+- Async jobs: PostgreSQL-backed background workers inside the modular monolith
+- Frontend: React + TypeScript + Vite
+- Client data layer: TanStack Query
+- Forms/validation: React Hook Form + Zod
+- API: REST/JSON
+- Testing: JUnit 5 + Testcontainers + Vitest + Playwright
+
+Почему именно такой baseline:
+
+- он поддерживает domain-heavy modular monolith;
+- он хорошо подходит для metadata, workflow, sharing и reporting pressure;
+- он не тащит слишком рано distributed complexity;
+- он совместим с production-like runtime discipline проекта.
+
+## 6. High-Level Component Model
 
 ```text
 Users
@@ -138,9 +161,9 @@ Application core
 Transactional data store + derived read models + async job execution
 ```
 
-## 6. Module Boundaries
+## 7. Module Boundaries
 
-### 6.1 Tenant Configuration Module
+### 7.1 Tenant Configuration Module
 
 Отвечает за:
 
@@ -163,7 +186,7 @@ Transactional data store + derived read models + async job execution
 - именно он создаёт требования к views, imports, approvals и reports;
 - его изменения должны проходить controlled publish path.
 
-### 6.2 CRM Core Module
+### 7.2 CRM Core Module
 
 Отвечает за:
 
@@ -180,7 +203,7 @@ Transactional data store + derived read models + async job execution
 - stage transition проверяется через business rules;
 - ключевые изменения попадают в audit timeline.
 
-### 6.3 Sharing & Access Module
+### 7.3 Sharing & Access Module
 
 Отвечает за:
 
@@ -195,7 +218,7 @@ Transactional data store + derived read models + async job execution
 - access rules влияют не только на UI, но и на query execution, exports, approvals и dashboards;
 - simple controller-level permission checks здесь недостаточны.
 
-### 6.4 Approval & Policy Module
+### 7.4 Approval & Policy Module
 
 Отвечает за:
 
@@ -211,7 +234,7 @@ Transactional data store + derived read models + async job execution
 - approval request является отдельным доменным объектом;
 - approval state не должен быть просто набором флагов в opportunity.
 
-### 6.5 Views & Query Module
+### 7.5 Views & Query Module
 
 Отвечает за:
 
@@ -226,7 +249,7 @@ Transactional data store + derived read models + async job execution
 - views должны переживать evolution of metadata;
 - query layer должен быть access-aware.
 
-### 6.6 Import/Export & Bulk Jobs Module
+### 7.6 Import/Export & Bulk Jobs Module
 
 Отвечает за:
 
@@ -240,7 +263,7 @@ Transactional data store + derived read models + async job execution
 
 - long-running and high-volume operations не должны выполняться в inline request path.
 
-### 6.7 Deduplication & Merge Module
+### 7.7 Deduplication & Merge Module
 
 Отвечает за:
 
@@ -555,7 +578,7 @@ Reporting в этом продукте нельзя строить как "по�
 1. `Operational telemetry`
 2. `Business audit`
 
-Operational telemetry нужна для production-like runtime, зафиксированного в `00_substrate_reference.md`.
+Operational telemetry нужна для production-like runtime baseline, зафиксированного в `00_domain_reference.md` и operational runbook.
 
 Business audit нужна для продукта и должна отвечать на вопросы:
 
@@ -686,28 +709,15 @@ Business audit нужна для продукта и должна отвечат
 
 Но не approval core и не metadata core на раннем этапе.
 
-## 17. Relationship to Local Substrate And Domain References
+## 17. Relationship to Domain Reference
 
 Этот документ описывает domain architecture.
 
-Production-like substrate для этого проекта локально зафиксирован в `00_substrate_reference.md`:
-
-- health/readiness;
-- deploy/rollback;
-- migrations;
-- backup/restore;
-- PgBouncer;
-- replica;
-- PITR;
-- observability;
-- scaling;
-- Kubernetes/IaC/DR.
-
 Практическая связка:
 
-- этот продукт использует локальный substrate snapshot как operational base;
-- `00_substrate_reference.md` не решает metadata, workflow, sharing, reporting и audit semantics;
-- именно этот документ закрывает domain gap, зафиксированный в `00_domain_reference.md`.
+- `00_domain_reference.md` фиксирует domain pressure и engineering baseline assumptions;
+- этот документ раскладывает их в конкретные module boundaries и architectural decisions;
+- operational runbook живёт отдельно в `codebase/DEPLOYMENT.md`.
 
 ## 18. ADR-Style Decisions
 

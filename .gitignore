@@ -1,3 +1,4 @@
 *.tsbuildinfo
 .playwright-mcp
 .kotlin
+.qoder

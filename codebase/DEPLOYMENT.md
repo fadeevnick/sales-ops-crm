@@ -2,8 +2,6 @@
 
 This file describes the real production path. Source of truth for operational quirks is [NOTES.md](/home/nickf/Documents/sre_projects/standalone-projects/sales-ops-crm/NOTES.md).
 
-If you want the script tree first, read [scripts/README.md](/home/nickf/Documents/sre_projects/standalone-projects/sales-ops-crm/codebase/scripts/README.md).
-
 ## What Matters
 
 - `docker-compose.production.yml` is runtime-only. It runs already-built images from Artifact Registry.
@@ -14,6 +12,52 @@ If you want the script tree first, read [scripts/README.md](/home/nickf/Document
 - `scripts/core/production-backup.sh` creates a PostgreSQL custom-format dump from the running VM stack.
 - `scripts/core/production-restore-drill.sh` verifies that a dump can actually be restored.
 - `scripts/core/production-rollback-dry-run.sh` remains an isolated rollback drill, but now follows the registry-first GCP model.
+
+## Script Map
+
+Read these first:
+
+- `scripts/core/production-migrate.sh`
+- `scripts/core/deployment-smoke.sh`
+- `scripts/core/production-backup.sh`
+- `scripts/core/production-restore-drill.sh`
+- `scripts/core/production-rollback-dry-run.sh`
+
+Folders:
+
+- `scripts/core/`: actual GCP production operations and registry-first rollback verification
+- `scripts/ci/`: CI-only integration checks; not part of the production deploy path
+
+GitHub Actions entrypoints:
+
+- `.github/workflows/pr-main-ci.yml`: verification CI for PRs and `main`
+- `.github/workflows/release-build.yml`: build/push release images to Artifact Registry
+
+## Current Maturity Boundary
+
+What already exists:
+
+- PR / main CI for build, test, compose sanity, and lightweight health smoke;
+- release CI for backend/frontend image build and push to Artifact Registry;
+- registry-first production runtime on the VM;
+- separate migration step before runtime update;
+- post-deploy smoke against the public route;
+- backup, restore drill, and rollback drill.
+
+What is still manual:
+
+- creating the release tag;
+- applying `release.env` image refs to `/home/nickf/.env` on the VM;
+- running the deploy sequence on the VM (`migrate` -> `pull` -> `up -d` -> `smoke`);
+- production rollback execution;
+- DuckDNS update after VM IP change;
+- cert renewal.
+
+What this means:
+
+- release artifact production is automated;
+- production deployment is still operator-driven;
+- this is a controlled middle stage, not full CD.
 
 ## CI And Release Flow
 

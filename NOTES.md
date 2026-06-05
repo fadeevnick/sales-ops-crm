@@ -45,6 +45,7 @@ the real `assignable-owners` endpoint (and `GET /api/accounts/{id}`) come up.
 - `pr-main-ci.yml` держит `main` releaseable через build/test/config/lightweight smoke checks.
 - `release-build.yml` собирает backend/frontend images и пушит их в Artifact Registry.
 - Release metadata публикуется как `release.env` artifact.
+- Это уже automated release artifact flow, но не automated deploy.
 
 **2. Миграции БД (на VM)**
 ```bash
