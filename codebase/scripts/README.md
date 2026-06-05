@@ -11,4 +11,9 @@ Read these first:
 Folders:
 
 - `scripts/core/`: actual GCP production operations and registry-first rollback verification
-- `scripts/ci/`: app CI only; not part of the production deploy path
+- `scripts/ci/`: CI-only integration checks; not part of the production deploy path
+
+GitHub Actions entrypoints:
+
+- `.github/workflows/pr-main-ci.yml`: verification CI for PRs and `main`
+- `.github/workflows/release-build.yml`: build/push release images to Artifact Registry

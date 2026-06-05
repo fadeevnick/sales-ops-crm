@@ -4,27 +4,17 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEBASE_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 FRONTEND_DIR="${CODEBASE_DIR}/frontend"
-ENV_FILE="${CODEBASE_DIR}/.env"
-ENV_BACKUP=""
-HAD_ENV=0
+PROJECT_NAME="${CI_PILOT_SMOKE_PROJECT_NAME:-salesops-ci-smoke}"
+ENV_FILE="$(mktemp /tmp/salesops-ci-smoke.XXXXXX.env)"
+BACKEND_PORT="${CI_PILOT_SMOKE_BACKEND_PORT:-8081}"
+FRONTEND_PORT="${CI_PILOT_SMOKE_FRONTEND_PORT:-5173}"
+COMPOSE=(docker compose --project-name "${PROJECT_NAME}" --env-file "${ENV_FILE}")
 
 cd "${CODEBASE_DIR}"
 
-if [ -f "${ENV_FILE}" ]; then
-  HAD_ENV=1
-  ENV_BACKUP="$(mktemp)"
-  cp "${ENV_FILE}" "${ENV_BACKUP}"
-fi
-
 cleanup() {
-  docker compose down --remove-orphans
-
-  if [ "${HAD_ENV}" -eq 1 ] && [ -n "${ENV_BACKUP}" ] && [ -f "${ENV_BACKUP}" ]; then
-    cp "${ENV_BACKUP}" "${ENV_FILE}"
-    rm -f "${ENV_BACKUP}"
-  elif [ "${HAD_ENV}" -eq 0 ]; then
-    rm -f "${ENV_FILE}"
-  fi
+  "${COMPOSE[@]}" down --remove-orphans -v >/dev/null 2>&1 || true
+  rm -f "${ENV_FILE}"
 }
 trap cleanup EXIT
 
@@ -32,19 +22,18 @@ cat > "${ENV_FILE}" <<'ENV'
 POSTGRES_DB=salesops
 POSTGRES_USER=salesops
 POSTGRES_PASSWORD=salesops
-BACKEND_PORT=8081
-FRONTEND_PORT=5173
 ENV
+printf 'BACKEND_PORT=%s\nFRONTEND_PORT=%s\n' "${BACKEND_PORT}" "${FRONTEND_PORT}" >> "${ENV_FILE}"
 
-docker compose up -d --build
+"${COMPOSE[@]}" up -d db backend frontend
 
 for attempt in $(seq 1 80); do
-  if curl -fsS http://127.0.0.1:8081/readyz >/dev/null; then
+  if curl -fsS "http://127.0.0.1:${BACKEND_PORT}/readyz" >/dev/null; then
     break
   fi
 
   if [ "${attempt}" -eq 80 ]; then
-    docker compose logs backend
+    "${COMPOSE[@]}" logs backend
     exit 1
   fi
 
@@ -52,20 +41,20 @@ for attempt in $(seq 1 80); do
 done
 
 for attempt in $(seq 1 80); do
-  if curl -fsS http://127.0.0.1:5173 >/dev/null; then
+  if curl -fsS "http://127.0.0.1:${FRONTEND_PORT}" >/dev/null; then
     break
   fi
 
   if [ "${attempt}" -eq 80 ]; then
-    docker compose logs frontend
+    "${COMPOSE[@]}" logs frontend
     exit 1
   fi
 
   sleep 2
 done
-
-docker compose exec -T backend gradle compileKotlin --no-daemon
-docker compose exec -T frontend npm run build
 
 cd "${FRONTEND_DIR}"
+npm ci
+RUNTIME_SMOKE_API_BASE_URL="http://127.0.0.1:${BACKEND_PORT}" \
+RUNTIME_SMOKE_FRONTEND_BASE_URL="http://127.0.0.1:${FRONTEND_PORT}" \
 npm run pilot:smoke

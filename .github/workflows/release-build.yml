@@ -1,0 +1,94 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to publish"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: salesops-crm-pilot
+  GCP_REGION: europe-west1
+  GAR_REPOSITORY: salesops-docker
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      release_tag: ${{ steps.meta.outputs.release_tag }}
+      backend_image: ${{ steps.meta.outputs.backend_image }}
+      frontend_image: ${{ steps.meta.outputs.frontend_image }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: meta
+        name: Resolve release metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            release_tag="${{ inputs.release_tag }}"
+          else
+            release_tag="${GITHUB_REF_NAME}"
+          fi
+
+          registry_host="${GCP_REGION}-docker.pkg.dev"
+          registry_prefix="${registry_host}/${GCP_PROJECT_ID}/${GAR_REPOSITORY}"
+          backend_image="${registry_prefix}/salesops-backend:${release_tag}"
+          frontend_image="${registry_prefix}/salesops-frontend:${release_tag}"
+
+          {
+            echo "release_tag=${release_tag}"
+            echo "backend_image=${backend_image}"
+            echo "frontend_image=${frontend_image}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+
+      - name: Build backend image
+        working-directory: codebase
+        run: docker build -t "${{ steps.meta.outputs.backend_image }}" ./backend
+
+      - name: Build frontend image
+        working-directory: codebase
+        run: docker build --build-arg VITE_API_BASE_URL= -t "${{ steps.meta.outputs.frontend_image }}" ./frontend
+
+      - name: Push backend image
+        run: docker push "${{ steps.meta.outputs.backend_image }}"
+
+      - name: Push frontend image
+        run: docker push "${{ steps.meta.outputs.frontend_image }}"
+
+      - name: Write release metadata
+        run: |
+          cat > release.env <<EOF
+          RELEASE_TAG=${{ steps.meta.outputs.release_tag }}
+          BACKEND_IMAGE=${{ steps.meta.outputs.backend_image }}
+          FRONTEND_IMAGE=${{ steps.meta.outputs.frontend_image }}
+          COMMIT_SHA=${GITHUB_SHA}
+          BUILD_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          EOF
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-metadata-${{ steps.meta.outputs.release_tag }}
+          path: release.env
+          if-no-files-found: error

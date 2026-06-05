@@ -7,31 +7,78 @@ If you want the script tree first, read [scripts/README.md](/home/nickf/Document
 ## What Matters
 
 - `docker-compose.production.yml` is runtime-only. It runs already-built images from Artifact Registry.
+- `.github/workflows/pr-main-ci.yml` keeps `main` releaseable.
+- `.github/workflows/release-build.yml` builds and pushes release images to Artifact Registry.
 - `scripts/core/production-migrate.sh` runs migrations on the VM against the remote backend image.
 - `scripts/core/deployment-smoke.sh` runs smoke checks against the deployed URLs.
 - `scripts/core/production-backup.sh` creates a PostgreSQL custom-format dump from the running VM stack.
 - `scripts/core/production-restore-drill.sh` verifies that a dump can actually be restored.
 - `scripts/core/production-rollback-dry-run.sh` remains an isolated rollback drill, but now follows the registry-first GCP model.
 
-## Real Production Flow
+## CI And Release Flow
 
-### 1. Build Images Locally
+### 1. PR / Main CI
 
-From the project root:
+GitHub Actions workflow:
 
-```bash
-docker build -t salesops-backend:pilot ./codebase/backend
-docker build --build-arg VITE_API_BASE_URL= -t salesops-frontend:pilot ./codebase/frontend
+```text
+.github/workflows/pr-main-ci.yml
 ```
 
-### 2. Tag And Push To Artifact Registry
+It runs on:
 
-```bash
-docker tag salesops-backend:pilot europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:pilot
-docker tag salesops-frontend:pilot europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-frontend:pilot
+- pull requests;
+- pushes to `main` / `master`.
 
-docker push europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:pilot
-docker push europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-frontend:pilot
+It verifies:
+
+- backend build and tests;
+- frontend build;
+- production compose config sanity;
+- isolated CI integration smoke through `scripts/ci/ci-pilot-smoke.sh`.
+
+### 2. Release Build
+
+GitHub Actions workflow:
+
+```text
+.github/workflows/release-build.yml
+```
+
+It runs on:
+
+- git tags matching `v*`;
+- manual `workflow_dispatch`.
+
+It does:
+
+- resolve one release tag;
+- build backend and frontend images;
+- push them to Artifact Registry;
+- upload `release.env` metadata artifact with image refs and commit SHA.
+
+Required GitHub secrets:
+
+- `GCP_WORKLOAD_IDENTITY_PROVIDER`
+- `GCP_SERVICE_ACCOUNT`
+
+The artifact is then used to update `/home/nickf/.env` on the VM.
+
+## Real Production Flow
+
+### 1. Produce Release Images In CI
+
+Preferred path: run `release-build.yml` from GitHub Actions.
+
+Manual local build/push remains a fallback only.
+
+### 2. Set Release Images On The VM
+
+Update `/home/nickf/.env` with the release artifact image refs:
+
+```dotenv
+BACKEND_IMAGE=europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:<release-tag>
+FRONTEND_IMAGE=europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-frontend:<release-tag>
 ```
 
 ### 3. Run Migrations On The VM
@@ -86,8 +133,8 @@ The VM runtime env is `/home/nickf/.env` and should contain:
 POSTGRES_PASSWORD=salesops_pilot_2026
 POSTGRES_DB=salesops
 POSTGRES_USER=salesops
-BACKEND_IMAGE=europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:pilot
-FRONTEND_IMAGE=europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-frontend:pilot
+BACKEND_IMAGE=europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:<release-tag>
+FRONTEND_IMAGE=europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-frontend:<release-tag>
 APP_ALLOWED_ORIGIN=https://sales-ops-crm.duckdns.org
 SPRING_FLYWAY_ENABLED=false
 ```

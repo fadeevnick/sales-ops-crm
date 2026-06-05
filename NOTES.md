@@ -41,32 +41,19 @@ the real `assignable-owners` endpoint (and `GET /api/accounts/{id}`) come up.
 
 ### Полный deployment flow
 
-**1. Сборка образов (локально, из корня проекта)**
-```bash
-# Backend
-docker build -t salesops-backend:pilot ./codebase/backend
+**1. Release build (предпочтительно через GitHub Actions)**
+- `pr-main-ci.yml` держит `main` releaseable.
+- `release-build.yml` собирает backend/frontend images и пушит их в Artifact Registry.
+- Release metadata публикуется как `release.env` artifact.
 
-# Frontend — VITE_API_BASE_URL пустой, т.к. nginx-proxy роутит /api/* на бэкенд
-docker build --build-arg VITE_API_BASE_URL= -t salesops-frontend:pilot ./codebase/frontend
-```
-
-**2. Тегирование и пуш в Artifact Registry**
-```bash
-docker tag salesops-backend:pilot europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:pilot
-docker tag salesops-frontend:pilot europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-frontend:pilot
-
-docker push europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:pilot
-docker push europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-frontend:pilot
-```
-
-**3. Миграции БД (на VM)**
+**2. Миграции БД (на VM)**
 ```bash
 gcloud compute ssh salesops-pilot --project=salesops-crm-pilot --zone=europe-west1-b --command="
 cd /home/nickf && docker compose -f docker-compose.production.yml --profile tools run --rm migrate
 "
 ```
 
-**4. Обновление образов и рестарт (на VM)**
+**3. Обновление образов и рестарт (на VM)**
 ```bash
 gcloud compute ssh salesops-pilot --project=salesops-crm-pilot --zone=europe-west1-b --command="
 cd /home/nickf && \
@@ -110,7 +97,7 @@ SPRING_FLYWAY_ENABLED=false
 | oleg@orion.local | oleg2026 | legal |
 
 ### nginx-proxy и сертификат
-- Конфиги: `codebase/nginx/http-only.conf` (временный), `codebase/nginx/https.conf` (рабочий)
+- Конфиги: `codebase/nginx/https.conf` (prod), `codebase/nginx/proxy-http.conf` (isolated rollback drill)
 - Сертификат истекает **2026-09-01** — нужно обновить вручную через certbot
 - Обновление сертификата:
   ```bash

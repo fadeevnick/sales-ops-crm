@@ -216,7 +216,7 @@ the correct design-language tokens and have no redundant internal tab strips.
 - Домен: `sales-ops-crm.duckdns.org` → DuckDNS → `34.76.69.146`
 - nginx-proxy контейнер: SSL termination, роутит `/api/*` → backend, `/*` → frontend
 - Сертификат Let's Encrypt, истекает 2026-09-01
-- Конфиги: `codebase/nginx/http-only.conf`, `codebase/nginx/https.conf`
+- Конфиги: `codebase/nginx/https.conf` (prod), `codebase/nginx/proxy-http.conf` (rollback drill)
 - **Важно:** при смене IP VM нужно обновить DuckDNS вручную
 
 ### Bearer token auth
@@ -231,10 +231,10 @@ the correct design-language tokens and have no redundant internal tab strips.
 - IP ephemeral — при рестарте VM нужно обновлять DuckDNS и перезапускать контейнеры
 - Нет автоматического обновления сертификата (истекает 2026-09-01)
 - Нет мониторинга
-- Нет автоматического деплоя (CI/CD)
+- Нет automated deploy на VM; release images уже стоит собирать через CI
 
 ### Файлы
 
 - `codebase/docker-compose.production.yml` — production конфиг
 - `codebase/nginx/` — конфиги nginx-proxy
-- `codebase/scripts/` — операционные скрипты (разбиты по папкам: ci/, deploy/, post-deploy/, validate/, env/, drills/)
+- `codebase/scripts/` — операционные скрипты (`core/` для production path, `ci/` для CI smoke)
