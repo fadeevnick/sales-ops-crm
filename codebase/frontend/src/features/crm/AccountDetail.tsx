@@ -322,7 +322,6 @@ export function AccountDetail({
       {/* ── Toast ── */}
       {toast ? (
         <div className="rep-toast">
-          <span className="ok">✓</span>
           {toast}
         </div>
       ) : null}
