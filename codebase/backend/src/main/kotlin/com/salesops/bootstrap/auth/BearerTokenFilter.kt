@@ -42,7 +42,10 @@ class BearerTokenFilter(
     }
 
     private fun isPublicPath(path: String): Boolean =
-        path == "/api/auth/login" || path.startsWith("/actuator")
+        path == "/api/auth/login" ||
+            path == "/readyz" ||
+            path == "/healthz" ||
+            path.startsWith("/actuator")
 }
 
 private class InjectUserIdRequestWrapper(
