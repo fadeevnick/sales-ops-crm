@@ -49,6 +49,14 @@ export async function requestJson<T>(path: string, options: RequestOptions = {})
     );
   }
 
+  if (jsonBody === null) {
+    throw new ApiRequestError(
+      response.status,
+      "parse_error",
+      "Response body was empty or contained invalid JSON",
+    );
+  }
+
   return jsonBody as T;
 }
 
