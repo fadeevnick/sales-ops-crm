@@ -1,0 +1,10 @@
+.env
+.env.staging
+.env.production
+deploy/secrets.mapping
+frontend/node_modules
+frontend/dist
+backend/.gradle
+backend/build
+build/
+backups/

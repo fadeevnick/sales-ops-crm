@@ -1,0 +1,27 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: salesops-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/salesops}
+    username: ${SPRING_DATASOURCE_USERNAME:salesops}
+    password: ${SPRING_DATASOURCE_PASSWORD:salesops}
+  flyway:
+    enabled: true
+  jooq:
+    sql-dialect: postgres
+  jackson:
+    serialization:
+      indent-output: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  allowed-origin: ${APP_ALLOWED_ORIGIN:http://localhost:5173}
+  token-secret: ${APP_TOKEN_SECRET:dev-secret-change-in-production}

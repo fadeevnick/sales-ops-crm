@@ -1,0 +1,81 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-salesops}
+      POSTGRES_USER: ${POSTGRES_USER:-salesops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-salesops} -d ${POSTGRES_DB:-salesops}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    image: ${BACKEND_IMAGE:-salesops-backend:local}
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-salesops}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-salesops}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      SPRING_FLYWAY_ENABLED: ${SPRING_FLYWAY_ENABLED:-false}
+      APP_ALLOWED_ORIGIN: ${APP_ALLOWED_ORIGIN:-https://sales-ops-crm.duckdns.org}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8080'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-salesops-frontend:local}
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  nginx-proxy:
+    image: nginx:1.27-alpine
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ${NGINX_CONFIG_FILE:-./nginx/https.conf}:/etc/nginx/conf.d/default.conf:ro
+      - certbot_certs:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    depends_on:
+      - frontend
+      - backend
+
+  certbot:
+    image: certbot/certbot
+    profiles:
+      - tools
+    volumes:
+      - certbot_certs:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+
+  migrate:
+    image: ${BACKEND_IMAGE:-salesops-backend:local}
+    profiles:
+      - tools
+    command:
+      - --spring.main.web-application-type=none
+      - --spring.flyway.enabled=true
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-salesops}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-salesops}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      APP_ALLOWED_ORIGIN: ${APP_ALLOWED_ORIGIN:-https://sales-ops-crm.duckdns.org}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  certbot_certs:
+  certbot_www:
