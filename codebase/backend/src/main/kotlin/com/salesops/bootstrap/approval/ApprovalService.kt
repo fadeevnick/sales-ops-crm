@@ -309,6 +309,20 @@ class ApprovalService(
             requestStatus = detail.request.status,
         )
         assertCanActOnStep(context, activeStep)
+
+        approvalStatePolicy.validateStepTransition(activeStep.status, "sent_back")
+        approvalRepository.updateStepStatus(
+            UpdateApprovalStepStatusCommand(
+                tenantId = context.tenant.tenantId,
+                approvalRequestId = detail.request.id,
+                approvalStepId = activeStep.id,
+                status = "sent_back",
+                activatedAt = null,
+                decidedAt = Instant.now(),
+                dueAt = null,
+            ),
+        )
+
         approvalStatePolicy.validateRequestTransition(detail.request.status, "sent_back")
         approvalRepository.updateRequestStatus(
             UpdateApprovalRequestStatusCommand(
@@ -323,6 +337,14 @@ class ApprovalService(
             context = context,
             request = detail.request,
             step = activeStep,
+            eventType = "sent_back",
+            fromStatus = activeStep.status,
+            toStatus = "sent_back",
+            comment = request.comment,
+        )
+        appendRequestHistory(
+            context = context,
+            request = detail.request,
             eventType = "sent_back",
             fromStatus = detail.request.status,
             toStatus = "sent_back",

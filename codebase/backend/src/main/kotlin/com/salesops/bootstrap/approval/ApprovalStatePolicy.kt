@@ -47,7 +47,7 @@ class ApprovalStatePolicy {
 
         val allowedStepTransitions = mapOf(
             "inactive" to setOf("active", "skipped"),
-            "active" to setOf("approved", "rejected", "expired"),
+            "active" to setOf("approved", "rejected", "expired", "sent_back"),
             "approved" to emptySet(),
             "rejected" to emptySet(),
             "skipped" to emptySet(),
