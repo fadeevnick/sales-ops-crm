@@ -35,7 +35,7 @@ It verifies:
 - backend build and tests;
 - frontend build;
 - production compose config sanity;
-- isolated CI integration smoke through `scripts/ci/ci-pilot-smoke.sh`.
+- isolated lightweight health smoke through `scripts/ci/ci-pilot-smoke.sh`.
 
 ### 2. Release Build
 

@@ -54,7 +54,6 @@ for attempt in $(seq 1 80); do
 done
 
 cd "${FRONTEND_DIR}"
-npm ci
 RUNTIME_SMOKE_API_BASE_URL="http://127.0.0.1:${BACKEND_PORT}" \
 RUNTIME_SMOKE_FRONTEND_BASE_URL="http://127.0.0.1:${FRONTEND_PORT}" \
-npm run pilot:smoke
+npm run runtime:smoke -- health

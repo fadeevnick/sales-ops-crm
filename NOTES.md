@@ -42,7 +42,7 @@ the real `assignable-owners` endpoint (and `GET /api/accounts/{id}`) come up.
 ### Полный deployment flow
 
 **1. Release build (предпочтительно через GitHub Actions)**
-- `pr-main-ci.yml` держит `main` releaseable.
+- `pr-main-ci.yml` держит `main` releaseable через build/test/config/lightweight smoke checks.
 - `release-build.yml` собирает backend/frontend images и пушит их в Artifact Registry.
 - Release metadata публикуется как `release.env` artifact.
 
