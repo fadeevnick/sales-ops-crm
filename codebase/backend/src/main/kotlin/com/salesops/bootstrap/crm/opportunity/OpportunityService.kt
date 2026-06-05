@@ -409,6 +409,7 @@ class OpportunityService(
         )
     }
 
+    @Transactional
     fun moveStage(
         context: CurrentUserContext,
         opportunityId: String,
