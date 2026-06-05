@@ -113,6 +113,68 @@ class AccountRepository(
             .orElse(null)
     }
 
+    fun upsertCustomFieldValues(commands: List<UpsertAccountCustomFieldValueCommand>) {
+        commands.forEach { command ->
+            jdbcClient.sql(
+                """
+                INSERT INTO metadata_custom_field_values (
+                    id,
+                    tenant_id,
+                    entity_type,
+                    entity_record_id,
+                    field_key,
+                    field_type,
+                    value_text,
+                    value_number,
+                    value_date,
+                    value_boolean,
+                    published_version_number,
+                    created_by_user_id,
+                    updated_by_user_id
+                ) VALUES (
+                    :id,
+                    :tenantId,
+                    'account',
+                    :accountId,
+                    :fieldKey,
+                    :fieldType,
+                    :valueText,
+                    :valueNumber,
+                    :valueDate,
+                    :valueBoolean,
+                    :publishedVersionNumber,
+                    :createdByUserId,
+                    :updatedByUserId
+                )
+                ON CONFLICT (tenant_id, entity_type, entity_record_id, field_key)
+                DO UPDATE SET
+                    field_type = EXCLUDED.field_type,
+                    value_text = EXCLUDED.value_text,
+                    value_number = EXCLUDED.value_number,
+                    value_date = EXCLUDED.value_date,
+                    value_boolean = EXCLUDED.value_boolean,
+                    value_json = '{}'::jsonb,
+                    published_version_number = EXCLUDED.published_version_number,
+                    updated_at = NOW(),
+                    updated_by_user_id = EXCLUDED.updated_by_user_id
+                """.trimIndent(),
+            )
+                .param("id", command.id)
+                .param("tenantId", command.tenantId)
+                .param("accountId", command.accountId)
+                .param("fieldKey", command.fieldKey)
+                .param("fieldType", command.fieldType)
+                .param("valueText", command.valueText)
+                .param("valueNumber", command.valueNumber)
+                .param("valueDate", command.valueDate)
+                .param("valueBoolean", command.valueBoolean)
+                .param("publishedVersionNumber", command.publishedVersionNumber)
+                .param("createdByUserId", command.createdByUserId)
+                .param("updatedByUserId", command.updatedByUserId)
+                .update()
+        }
+    }
+
     private fun selectSql(filter: AccountListFilter): String =
         """
         SELECT
@@ -337,3 +399,18 @@ private fun java.sql.ResultSet.toVisibleAccountRecord(): VisibleAccountRecord =
         name = getString("name"),
         ownerUserId = getString("owner_user_id"),
     )
+
+data class UpsertAccountCustomFieldValueCommand(
+    val id: String,
+    val tenantId: String,
+    val accountId: String,
+    val fieldKey: String,
+    val fieldType: String,
+    val valueText: String?,
+    val valueNumber: java.math.BigDecimal?,
+    val valueDate: java.time.LocalDate?,
+    val valueBoolean: Boolean?,
+    val publishedVersionNumber: Int,
+    val createdByUserId: String,
+    val updatedByUserId: String,
+)
