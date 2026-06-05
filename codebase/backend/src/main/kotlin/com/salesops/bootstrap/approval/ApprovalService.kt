@@ -126,7 +126,7 @@ class ApprovalService(
                     approvalStepId = activeStep.id,
                     actorUserId = context.userId,
                     eventType = "step_activated",
-                    fromStatus = "inactive",
+                    fromStatus = null,
                     toStatus = "active",
                     comment = null,
                     decisionPayloadJson = "{}",
