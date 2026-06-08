@@ -200,8 +200,8 @@ the correct design-language tokens and have no redundant internal tab strips.
 
 - GCP проект: `salesops-crm-pilot`
 - Billing account: `01B783-DB5F57-874E7E`
-- Region: `europe-west1` (Бельгия)
-- Artifact Registry: `europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker`
+- Region: `europe-west3` (managed target region)
+- Artifact Registry: `europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker`
   - `salesops-backend:pilot`
   - `salesops-frontend:pilot`
 - GCE VM: `salesops-pilot`, zone `europe-west1-b`, `e2-medium`, 20GB disk

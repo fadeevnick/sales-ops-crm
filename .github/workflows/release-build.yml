@@ -17,7 +17,7 @@ permissions:
 
 env:
   GCP_PROJECT_ID: salesops-crm-pilot
-  GCP_REGION: europe-west1
+  GCP_REGION: europe-west3
   GAR_REPOSITORY: salesops-docker
 
 jobs:
@@ -27,7 +27,6 @@ jobs:
     outputs:
       release_tag: ${{ steps.meta.outputs.release_tag }}
       backend_image: ${{ steps.meta.outputs.backend_image }}
-      frontend_image: ${{ steps.meta.outputs.frontend_image }}
     steps:
       - uses: actions/checkout@v4
 
@@ -45,12 +44,10 @@ jobs:
           registry_host="${GCP_REGION}-docker.pkg.dev"
           registry_prefix="${registry_host}/${GCP_PROJECT_ID}/${GAR_REPOSITORY}"
           backend_image="${registry_prefix}/salesops-backend:${release_tag}"
-          frontend_image="${registry_prefix}/salesops-frontend:${release_tag}"
 
           {
             echo "release_tag=${release_tag}"
             echo "backend_image=${backend_image}"
-            echo "frontend_image=${frontend_image}"
           } >> "${GITHUB_OUTPUT}"
 
       - uses: google-github-actions/auth@v2
@@ -66,28 +63,27 @@ jobs:
         working-directory: codebase
         run: docker build -t "${{ steps.meta.outputs.backend_image }}" ./backend
 
-      - name: Build frontend image
-        working-directory: codebase
-        run: docker build --build-arg VITE_API_BASE_URL= -t "${{ steps.meta.outputs.frontend_image }}" ./frontend
-
       - name: Push backend image
         run: docker push "${{ steps.meta.outputs.backend_image }}"
 
-      - name: Push frontend image
-        run: docker push "${{ steps.meta.outputs.frontend_image }}"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: codebase/frontend/package-lock.json
 
-      - name: Write release metadata
-        run: |
-          cat > release.env <<EOF
-          RELEASE_TAG=${{ steps.meta.outputs.release_tag }}
-          BACKEND_IMAGE=${{ steps.meta.outputs.backend_image }}
-          FRONTEND_IMAGE=${{ steps.meta.outputs.frontend_image }}
-          COMMIT_SHA=${GITHUB_SHA}
-          BUILD_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          EOF
+      - name: Install frontend dependencies
+        working-directory: codebase/frontend
+        run: npm ci
+
+      - name: Build frontend static release
+        working-directory: codebase/frontend
+        env:
+          VITE_API_BASE_URL: ${{ vars.API_BASE_URL }}
+        run: npm run build
 
       - uses: actions/upload-artifact@v4
         with:
-          name: release-metadata-${{ steps.meta.outputs.release_tag }}
-          path: release.env
+          name: frontend-dist-${{ steps.meta.outputs.release_tag }}
+          path: codebase/frontend/dist
           if-no-files-found: error

@@ -35,7 +35,7 @@ the real `assignable-owners` endpoint (and `GET /api/accounts/{id}`) come up.
 - **VM:** `salesops-pilot`, zone `europe-west1-b`, `e2-medium`, 20GB disk
 - **IP:** ephemeral — меняется при каждом рестарте VM
 - **Реестр образов:** GCP Artifact Registry
-  `europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/`
+  `europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker/`
 - **Домен:** `sales-ops-crm.duckdns.org` (DuckDNS, бесплатный динамический DNS)
 - **HTTPS:** nginx-proxy контейнер + Let's Encrypt сертификат (certbot)
 
@@ -43,11 +43,16 @@ the real `assignable-owners` endpoint (and `GET /api/accounts/{id}`) come up.
 
 **1. Release build (основной путь — через GitHub Actions)**
 - `pr-main-ci.yml` держит `main` releaseable через build/test/config checks.
-- `release-build.yml` собирает backend/frontend images и пушит их в Artifact Registry.
-- Release metadata публикуется как `release.env` artifact.
+- `release-build.yml` собирает backend image и пушит его в Artifact Registry.
+- `release-build.yml` собирает frontend `dist/` и публикует его как artifact `frontend-dist-<tag>`.
+- `deploy-backend-cloudrun.yml` — ручной workflow для target managed path: migration job + backend deploy.
 - Standard release anchor: semver git tag (`v0.1.0`, `v0.1.1`, ...).
 - Local build/push считается fallback, а не основным production path.
 - Для быстрого старта release CI использует один GitHub secret: `GCP_SERVICE_ACCOUNT_KEY`.
+- Для frontend build-time API URL используется GitHub variable `API_BASE_URL`.
+- Для backend Cloud Run deploy workflow нужны GitHub variables:
+  - `CLOUD_RUN_MIGRATION_JOB`
+  - `CLOUD_RUN_SERVICE`
 
 Пример release cut:
 ```bash
@@ -57,9 +62,9 @@ git push origin v0.1.0
 
 Дальше:
 - дождаться успешного `release-build.yml`;
-- скачать `release.env`;
-- взять из него `BACKEND_IMAGE` и `FRONTEND_IMAGE`;
-- применить их на VM.
+- использовать backend image tag `europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:<release-tag>` на VM;
+- помнить, что frontend `dist/` artifact уже относится к target managed path, а не к текущему VM runtime path;
+- для текущего VM runtime frontend image path остаётся legacy и требует отдельной поддержки.
 
 **2. Миграции БД (на VM)**
 ```bash
@@ -88,7 +93,7 @@ docker compose --env-file /home/nickf/.env -f docker-compose.production.yml up -
 
 ### Первичная авторизация Docker на VM (один раз)
 ```bash
-gcloud compute ssh salesops-pilot ... --command="gcloud auth configure-docker europe-west1-docker.pkg.dev"
+gcloud compute ssh salesops-pilot ... --command="gcloud auth configure-docker europe-west3-docker.pkg.dev"
 ```
 
 ### Переменные окружения на VM (`/home/nickf/.env`)
@@ -96,11 +101,13 @@ gcloud compute ssh salesops-pilot ... --command="gcloud auth configure-docker eu
 POSTGRES_PASSWORD=salesops_pilot_2026
 POSTGRES_DB=salesops
 POSTGRES_USER=salesops
-BACKEND_IMAGE=europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:v0.1.0
-FRONTEND_IMAGE=europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-frontend:v0.1.0
+BACKEND_IMAGE=europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:v0.1.0
+FRONTEND_IMAGE=europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-frontend:v0.1.0
 APP_ALLOWED_ORIGIN=https://sales-ops-crm.duckdns.org
 SPRING_FLYWAY_ENABLED=false
 ```
+
+`FRONTEND_IMAGE` здесь нужен только для текущего legacy VM runtime path.
 
 ### Пользователи для входа
 | Email | Пароль | Роль |

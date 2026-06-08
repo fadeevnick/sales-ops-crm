@@ -6,7 +6,7 @@ This file describes the real production path. Source of truth for operational qu
 
 - `docker-compose.production.yml` is runtime-only. It runs already-built images from Artifact Registry.
 - `.github/workflows/pr-main-ci.yml` keeps `main` releaseable.
-- `.github/workflows/release-build.yml` builds and pushes release images to Artifact Registry.
+- `.github/workflows/release-build.yml` builds and pushes the backend release image and uploads the frontend static release artifact.
 - `scripts/core/production-migrate.sh` runs migrations on the VM against the remote backend image.
 - `scripts/core/deployment-smoke.sh` runs smoke checks against the deployed URLs.
 - `scripts/core/production-backup.sh` creates a PostgreSQL custom-format dump from the running VM stack.
@@ -31,14 +31,15 @@ Folders:
 GitHub Actions entrypoints:
 
 - `.github/workflows/pr-main-ci.yml`: verification CI for PRs and `main`
-- `.github/workflows/release-build.yml`: build/push release images to Artifact Registry
+- `.github/workflows/release-build.yml`: build/push backend release image and upload frontend static release artifact
+- `.github/workflows/deploy-backend-cloudrun.yml`: manual backend deploy for the target managed path
 
 ## Current Maturity Boundary
 
 What already exists:
 
 - PR / main CI for build, test, and compose sanity;
-- release CI for backend/frontend image build and push to Artifact Registry;
+- release CI for backend image build/push plus frontend static release artifact;
 - registry-first production runtime on the VM;
 - separate migration step before runtime update;
 - post-deploy smoke against the public route;
@@ -47,7 +48,7 @@ What already exists:
 What is still manual:
 
 - creating the release tag;
-- applying `release.env` image refs to `/home/nickf/.env` on the VM;
+- maintaining the legacy VM frontend image path while release CI already produces frontend static artifacts for the target managed path;
 - running the deploy sequence on the VM (`migrate` -> `pull` -> `up -d` -> `smoke`);
 - production rollback execution;
 - DuckDNS update after VM IP change;
@@ -96,15 +97,18 @@ It runs on:
 It does:
 
 - resolve one release tag;
-- build backend and frontend images;
-- push them to Artifact Registry;
-- upload `release.env` metadata artifact with image refs and commit SHA.
+- build backend image;
+- push backend image to Artifact Registry;
+- build frontend `dist/` with build-time API URL;
+- upload frontend `dist/` as a release artifact.
 
 Required GitHub secrets:
 
 - `GCP_SERVICE_ACCOUNT_KEY`
 
-The artifact is then used to update `/home/nickf/.env` on the VM.
+Required GitHub variable:
+
+- `API_BASE_URL`
 
 Quick-start auth model:
 
@@ -113,13 +117,34 @@ Quick-start auth model:
 - generate one JSON key for that service account;
 - store that JSON as GitHub secret `GCP_SERVICE_ACCOUNT_KEY`.
 
-### 3. Release Standard
+### 3. Target Backend Deploy Workflow
+
+GitHub Actions workflow:
+
+```text
+.github/workflows/deploy-backend-cloudrun.yml
+```
+
+It is a manual workflow for the target managed path.
+
+It:
+
+- takes `release_tag`;
+- resolves backend image from Artifact Registry;
+- runs the Cloud Run migration job on that image;
+- deploys the backend Cloud Run service on that image.
+
+Required GitHub variables:
+
+- `CLOUD_RUN_MIGRATION_JOB`
+- `CLOUD_RUN_SERVICE`
+
+### 4. Release Standard
 
 Current standard:
 
-- release images are produced by `release-build.yml`;
+- backend image and frontend static build are produced by `release-build.yml`;
 - semver git tags such as `v0.1.0` are the release anchor;
-- `release.env` is the release metadata source of truth;
 - local build/push is fallback only, not the default production path.
 
 ## Real Production Flow
@@ -140,17 +165,28 @@ git push origin v0.1.0
 Then:
 
 1. wait for `release-build.yml` to finish;
-2. download `release.env` artifact;
-3. use `BACKEND_IMAGE` and `FRONTEND_IMAGE` from that artifact on the VM.
+2. use backend image tag `europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:<release-tag>` on the VM;
+3. treat uploaded `frontend-dist-<release-tag>` as the frontend release artifact for the target managed path.
 
 ### 2. Set Release Images On The VM
 
-Update `/home/nickf/.env` with the release artifact image refs:
+Current VM runtime still expects image refs:
 
 ```dotenv
-BACKEND_IMAGE=europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:<release-tag>
-FRONTEND_IMAGE=europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-frontend:<release-tag>
+BACKEND_IMAGE=europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:<release-tag>
+FRONTEND_IMAGE=europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-frontend:<release-tag>
 ```
+
+Important:
+
+- backend image is still produced by the current release CI;
+- frontend `dist/` artifact is produced for the target managed path;
+- until the frontend hosting migration is implemented, the VM path still requires a separate legacy frontend image strategy.
+
+Practical meaning:
+
+- current release CI is already aligned with the target managed architecture;
+- current VM runtime is now only partially aligned with that release model.
 
 ### 3. Run Migrations On The VM
 
@@ -196,11 +232,15 @@ The VM runtime env is `/home/nickf/.env` and should contain:
 POSTGRES_PASSWORD=salesops_pilot_2026
 POSTGRES_DB=salesops
 POSTGRES_USER=salesops
-BACKEND_IMAGE=europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:<release-tag>
-FRONTEND_IMAGE=europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-frontend:<release-tag>
+BACKEND_IMAGE=europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:<release-tag>
+FRONTEND_IMAGE=europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-frontend:<release-tag>
 APP_ALLOWED_ORIGIN=https://sales-ops-crm.duckdns.org
 SPRING_FLYWAY_ENABLED=false
 ```
+
+Note:
+
+- `FRONTEND_IMAGE` remains part of the legacy VM runtime contract only.
 
 ## Backup And Restore
 
@@ -254,7 +294,7 @@ They must point to real Artifact Registry tags before the drill is meaningful.
 - VM: `salesops-pilot`
 - project: `salesops-crm-pilot`
 - zone: `europe-west1-b`
-- registry: `europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/`
+- registry: `europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker/`
 - public domain: `https://sales-ops-crm.duckdns.org`
 
 After VM restart:
