@@ -1,6 +1,6 @@
 import type { ApiError, AuthLoginResponse, CurrentUser } from "../types/session";
 
-const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+const apiBase = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080").replace(/\/$/, "");
 
 let activeToken: string | null = null;
 

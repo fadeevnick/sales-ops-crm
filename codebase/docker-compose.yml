@@ -19,7 +19,7 @@ services:
     command: gradle bootRun --no-daemon
     restart: on-failure
     environment:
-      SERVER_PORT: ${BACKEND_PORT:-8080}
+      PORT: ${BACKEND_PORT:-8080}
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-salesops}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-salesops}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-salesops}

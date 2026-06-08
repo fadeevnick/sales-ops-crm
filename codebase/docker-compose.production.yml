@@ -16,7 +16,7 @@ services:
   backend:
     image: ${BACKEND_IMAGE:-salesops-backend:local}
     environment:
-      SERVER_PORT: 8080
+      PORT: 8080
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-salesops}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-salesops}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
@@ -66,7 +66,7 @@ services:
       - --spring.main.web-application-type=none
       - --spring.flyway.enabled=true
     environment:
-      SERVER_PORT: 8080
+      PORT: 8080
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-salesops}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-salesops}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
