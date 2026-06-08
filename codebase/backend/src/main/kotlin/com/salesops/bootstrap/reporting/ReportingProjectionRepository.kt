@@ -334,7 +334,8 @@ class ReportingProjectionRepository(
         )
             .param("tenantId", tenantId)
             .query { rs, _ -> rs.getDouble(1).takeIf { !rs.wasNull() } }
-            .single()
+            .optional()
+            .orElse(null)
 
         val queueBreakdown = buildQueueBreakdown(tenantId)
         val exceptionBreakdown = buildExceptionBreakdown(tenantId)

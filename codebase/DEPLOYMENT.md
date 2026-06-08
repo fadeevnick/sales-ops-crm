@@ -37,7 +37,7 @@ GitHub Actions entrypoints:
 
 What already exists:
 
-- PR / main CI for build, test, compose sanity, and lightweight health smoke;
+- PR / main CI for build, test, and compose sanity;
 - release CI for backend/frontend image build and push to Artifact Registry;
 - registry-first production runtime on the VM;
 - separate migration step before runtime update;
@@ -55,7 +55,7 @@ What is still manual:
 
 What this means:
 
-- release artifact production is automated;
+- CI release artifact production is the primary release path;
 - production deployment is still operator-driven;
 - this is a controlled middle stage, not full CD.
 
@@ -78,8 +78,7 @@ It verifies:
 
 - backend build and tests;
 - frontend build;
-- production compose config sanity;
-- isolated lightweight health smoke through `scripts/ci/ci-pilot-smoke.sh`.
+- production compose config sanity.
 
 ### 2. Release Build
 
@@ -103,10 +102,25 @@ It does:
 
 Required GitHub secrets:
 
-- `GCP_WORKLOAD_IDENTITY_PROVIDER`
-- `GCP_SERVICE_ACCOUNT`
+- `GCP_SERVICE_ACCOUNT_KEY`
 
 The artifact is then used to update `/home/nickf/.env` on the VM.
+
+Quick-start auth model:
+
+- create one GCP service account for release builds;
+- grant it Artifact Registry push permissions;
+- generate one JSON key for that service account;
+- store that JSON as GitHub secret `GCP_SERVICE_ACCOUNT_KEY`.
+
+### 3. Release Standard
+
+Current standard:
+
+- release images are produced by `release-build.yml`;
+- semver git tags such as `v0.1.0` are the release anchor;
+- `release.env` is the release metadata source of truth;
+- local build/push is fallback only, not the default production path.
 
 ## Real Production Flow
 
@@ -115,6 +129,19 @@ The artifact is then used to update `/home/nickf/.env` on the VM.
 Preferred path: run `release-build.yml` from GitHub Actions.
 
 Manual local build/push remains a fallback only.
+
+Standard release cut:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Then:
+
+1. wait for `release-build.yml` to finish;
+2. download `release.env` artifact;
+3. use `BACKEND_IMAGE` and `FRONTEND_IMAGE` from that artifact on the VM.
 
 ### 2. Set Release Images On The VM
 
@@ -159,14 +186,6 @@ Override URLs when needed:
 DEPLOYMENT_SMOKE_API_BASE_URL=https://sales-ops-crm.duckdns.org \
 DEPLOYMENT_SMOKE_FRONTEND_BASE_URL=https://sales-ops-crm.duckdns.org \
 scripts/core/deployment-smoke.sh health
-```
-
-Run the full pilot suite:
-
-```bash
-DEPLOYMENT_SMOKE_API_BASE_URL=https://sales-ops-crm.duckdns.org \
-DEPLOYMENT_SMOKE_FRONTEND_BASE_URL=https://sales-ops-crm.duckdns.org \
-scripts/core/deployment-smoke.sh pilot
 ```
 
 ## VM Env File

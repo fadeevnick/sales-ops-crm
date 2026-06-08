@@ -41,16 +41,30 @@ the real `assignable-owners` endpoint (and `GET /api/accounts/{id}`) come up.
 
 ### Полный deployment flow
 
-**1. Release build (предпочтительно через GitHub Actions)**
-- `pr-main-ci.yml` держит `main` releaseable через build/test/config/lightweight smoke checks.
+**1. Release build (основной путь — через GitHub Actions)**
+- `pr-main-ci.yml` держит `main` releaseable через build/test/config checks.
 - `release-build.yml` собирает backend/frontend images и пушит их в Artifact Registry.
 - Release metadata публикуется как `release.env` artifact.
-- Это уже automated release artifact flow, но не automated deploy.
+- Standard release anchor: semver git tag (`v0.1.0`, `v0.1.1`, ...).
+- Local build/push считается fallback, а не основным production path.
+- Для быстрого старта release CI использует один GitHub secret: `GCP_SERVICE_ACCOUNT_KEY`.
+
+Пример release cut:
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Дальше:
+- дождаться успешного `release-build.yml`;
+- скачать `release.env`;
+- взять из него `BACKEND_IMAGE` и `FRONTEND_IMAGE`;
+- применить их на VM.
 
 **2. Миграции БД (на VM)**
 ```bash
 gcloud compute ssh salesops-pilot --project=salesops-crm-pilot --zone=europe-west1-b --command="
-cd /home/nickf && docker compose -f docker-compose.production.yml --profile tools run --rm migrate
+cd /home/nickf && scripts/core/production-migrate.sh
 "
 ```
 
@@ -58,8 +72,8 @@ cd /home/nickf && docker compose -f docker-compose.production.yml --profile tool
 ```bash
 gcloud compute ssh salesops-pilot --project=salesops-crm-pilot --zone=europe-west1-b --command="
 cd /home/nickf && \
-docker compose -f docker-compose.production.yml pull backend frontend && \
-docker compose -f docker-compose.production.yml up -d
+docker compose --env-file /home/nickf/.env -f docker-compose.production.yml pull backend frontend && \
+docker compose --env-file /home/nickf/.env -f docker-compose.production.yml up -d backend frontend nginx-proxy
 "
 ```
 
@@ -82,8 +96,8 @@ gcloud compute ssh salesops-pilot ... --command="gcloud auth configure-docker eu
 POSTGRES_PASSWORD=salesops_pilot_2026
 POSTGRES_DB=salesops
 POSTGRES_USER=salesops
-BACKEND_IMAGE=europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:pilot
-FRONTEND_IMAGE=europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-frontend:pilot
+BACKEND_IMAGE=europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:v0.1.0
+FRONTEND_IMAGE=europe-west1-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-frontend:v0.1.0
 APP_ALLOWED_ORIGIN=https://sales-ops-crm.duckdns.org
 SPRING_FLYWAY_ENABLED=false
 ```
