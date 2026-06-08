@@ -16,6 +16,11 @@ env:
   GCP_PROJECT_ID: salesops-crm-pilot
   GCP_REGION: europe-west3
   GAR_REPOSITORY: salesops-docker
+  CLOUD_SQL_CONNECTION_NAME: salesops-crm-pilot:europe-west3:salesops-postgres
+  CLOUD_SQL_DATABASE: salesops
+  CLOUD_SQL_USERNAME: salesops
+  CLOUD_RUN_SERVICE_ACCOUNT: salesops-backend-sa@salesops-crm-pilot.iam.gserviceaccount.com
+  APP_ALLOWED_ORIGIN: https://sales-ops-crm.duckdns.org
 
 jobs:
   deploy-backend:
@@ -49,6 +54,14 @@ jobs:
         run: |
           gcloud run jobs deploy "${{ vars.CLOUD_RUN_MIGRATION_JOB }}" \
             --image "${{ steps.meta.outputs.backend_image }}" \
+            --service-account "${CLOUD_RUN_SERVICE_ACCOUNT}" \
+            --add-cloudsql-instances "${CLOUD_SQL_CONNECTION_NAME}" \
+            --set-env-vars "SPRING_DATASOURCE_URL=jdbc:postgresql:///${CLOUD_SQL_DATABASE}?socketFactory=com.google.cloud.sql.postgres.SocketFactory&cloudSqlInstance=${CLOUD_SQL_CONNECTION_NAME}&ipTypes=PUBLIC&cloudSqlRefreshStrategy=lazy,SPRING_DATASOURCE_USERNAME=${CLOUD_SQL_USERNAME},APP_ALLOWED_ORIGIN=${APP_ALLOWED_ORIGIN}" \
+            --set-secrets "SPRING_DATASOURCE_PASSWORD=salesops-db-password:latest,APP_TOKEN_SECRET=salesops-app-token-secret:latest" \
+            --max-retries 0 \
+            --tasks 1 \
+            --command java \
+            --args=-jar,/app/salesops-backend.jar,--spring.main.web-application-type=none,--spring.flyway.enabled=true,--app.mode=migrate \
             --region "${GCP_REGION}" \
             --project "${GCP_PROJECT_ID}" \
             --execute-now \
@@ -58,6 +71,11 @@ jobs:
         run: |
           gcloud run deploy "${{ vars.CLOUD_RUN_SERVICE }}" \
             --image "${{ steps.meta.outputs.backend_image }}" \
+            --service-account "${CLOUD_RUN_SERVICE_ACCOUNT}" \
+            --add-cloudsql-instances "${CLOUD_SQL_CONNECTION_NAME}" \
+            --set-env-vars "SPRING_DATASOURCE_URL=jdbc:postgresql:///${CLOUD_SQL_DATABASE}?socketFactory=com.google.cloud.sql.postgres.SocketFactory&cloudSqlInstance=${CLOUD_SQL_CONNECTION_NAME}&ipTypes=PUBLIC&cloudSqlRefreshStrategy=lazy,SPRING_DATASOURCE_USERNAME=${CLOUD_SQL_USERNAME},SPRING_FLYWAY_ENABLED=false,APP_ALLOWED_ORIGIN=${APP_ALLOWED_ORIGIN}" \
+            --set-secrets "SPRING_DATASOURCE_PASSWORD=salesops-db-password:latest,APP_TOKEN_SECRET=salesops-app-token-secret:latest" \
+            --allow-unauthenticated \
             --region "${GCP_REGION}" \
             --project "${GCP_PROJECT_ID}" \
             --quiet
