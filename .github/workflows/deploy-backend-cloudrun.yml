@@ -55,7 +55,7 @@ jobs:
           gcloud run jobs deploy "${{ vars.CLOUD_RUN_MIGRATION_JOB }}" \
             --image "${{ steps.meta.outputs.backend_image }}" \
             --service-account "${CLOUD_RUN_SERVICE_ACCOUNT}" \
-            --add-cloudsql-instances "${CLOUD_SQL_CONNECTION_NAME}" \
+            --set-cloudsql-instances "${CLOUD_SQL_CONNECTION_NAME}" \
             --set-env-vars "SPRING_DATASOURCE_URL=jdbc:postgresql:///${CLOUD_SQL_DATABASE}?socketFactory=com.google.cloud.sql.postgres.SocketFactory&cloudSqlInstance=${CLOUD_SQL_CONNECTION_NAME}&ipTypes=PUBLIC&cloudSqlRefreshStrategy=lazy,SPRING_DATASOURCE_USERNAME=${CLOUD_SQL_USERNAME},APP_ALLOWED_ORIGIN=${APP_ALLOWED_ORIGIN}" \
             --set-secrets "SPRING_DATASOURCE_PASSWORD=salesops-db-password:latest,APP_TOKEN_SECRET=salesops-app-token-secret:latest" \
             --max-retries 0 \
@@ -72,7 +72,7 @@ jobs:
           gcloud run deploy "${{ vars.CLOUD_RUN_SERVICE }}" \
             --image "${{ steps.meta.outputs.backend_image }}" \
             --service-account "${CLOUD_RUN_SERVICE_ACCOUNT}" \
-            --add-cloudsql-instances "${CLOUD_SQL_CONNECTION_NAME}" \
+            --set-cloudsql-instances "${CLOUD_SQL_CONNECTION_NAME}" \
             --set-env-vars "SPRING_DATASOURCE_URL=jdbc:postgresql:///${CLOUD_SQL_DATABASE}?socketFactory=com.google.cloud.sql.postgres.SocketFactory&cloudSqlInstance=${CLOUD_SQL_CONNECTION_NAME}&ipTypes=PUBLIC&cloudSqlRefreshStrategy=lazy,SPRING_DATASOURCE_USERNAME=${CLOUD_SQL_USERNAME},SPRING_FLYWAY_ENABLED=false,APP_ALLOWED_ORIGIN=${APP_ALLOWED_ORIGIN}" \
             --set-secrets "SPRING_DATASOURCE_PASSWORD=salesops-db-password:latest,APP_TOKEN_SECRET=salesops-app-token-secret:latest" \
             --allow-unauthenticated \
