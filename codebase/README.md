@@ -7,9 +7,7 @@ This codebase is no longer a Phase 0 shell. It is the current implementation of 
 - `backend/` — Kotlin + Spring Boot application
 - `frontend/` — React + Vite application
 - `docker-compose.yml` — local development runtime
-- `docker-compose.production.yml` — GCP production runtime
 - `DEPLOYMENT.md` — current production runbook
-- `scripts/core/` — production operations
 - `scripts/ci/` — CI-only smoke helpers
 
 ## Current Reality
@@ -22,7 +20,7 @@ Implemented at a meaningful level:
 - import/export and duplicate handling baseline;
 - executive visibility baseline;
 - pilot hardening slices;
-- production deploy, migrate, backup, restore, and rollback drill mechanics.
+- managed GCP production path.
 
 ## Source Of Truth
 
@@ -51,10 +49,11 @@ Default local URLs:
 
 Production now follows a concrete GCP flow:
 
-- release images are built and pushed through GitHub Actions;
-- the VM pulls images from Artifact Registry;
-- migrations run through `scripts/core/production-migrate.sh`;
-- runtime smoke runs through `scripts/core/deployment-smoke.sh`;
-- backup/restore use `scripts/core/production-backup.sh` and `scripts/core/production-restore-drill.sh`.
+- release artifacts are built through GitHub Actions;
+- backend runs on Cloud Run;
+- migrations run through Cloud Run job;
+- frontend is served from Cloud Storage + CDN;
+- Cloud SQL is the production PostgreSQL runtime;
+- Secret Manager stores runtime secrets.
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for the actual runbook.

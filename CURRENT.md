@@ -192,54 +192,28 @@ the correct design-language tokens and have no redundant internal tab strips.
 
 ---
 
-## GCP Pilot Deployment
+## GCP Runtime
 
-**Статус:** приложение запущено, доступно по `https://sales-ops-crm.duckdns.org`
+**Статус:** новая production-схема работает на `https://sales-ops-crm.duckdns.org`
 
-### Что сделано
+### Current production path
 
 - GCP проект: `salesops-crm-pilot`
-- Billing account: `01B783-DB5F57-874E7E`
-- Region: `europe-west3` (managed target region)
+- Region: `europe-west3`
 - Artifact Registry: `europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker`
-  - `salesops-backend:pilot`
-  - `salesops-frontend:pilot`
-- GCE VM: `salesops-pilot`, zone `europe-west1-b`, `e2-medium`, 20GB disk
-- External IP: `34.76.69.146` (ephemeral, меняется при рестарте VM)
-- Firewall: порты 80, 443, 8081, 5173 открыты (rule: `salesops-allow-http`)
-- Docker установлен на VM (v29.5.2)
-- Деплой: `docker-compose.production.yml` + `.env` на VM
-- Миграции применены (V1–V23)
+- Backend runtime: Cloud Run service `salesops-backend`
+- Migration runtime: Cloud Run job `salesops-backend-migrate`
+- Database: Cloud SQL PostgreSQL instance `salesops-postgres`
+- Runtime secrets: Secret Manager
+  - `salesops-db-password`
+  - `salesops-app-token-secret`
+- Frontend hosting: Cloud Storage bucket + backend bucket + Cloud CDN
+- Public ingress: external HTTPS load balancer
+  - `/` -> frontend static hosting
+  - `/api/*` -> backend Cloud Run
+- HTTPS certificate: managed GCP certificate
 
-### HTTPS
+### Legacy path
 
-- Домен: `sales-ops-crm.duckdns.org` → DuckDNS → `34.76.69.146`
-- nginx-proxy контейнер: SSL termination, роутит `/api/*` → backend, `/*` → frontend
-- Сертификат Let's Encrypt, истекает 2026-09-01
-- Конфиги: `codebase/nginx/https.conf` (prod), `codebase/nginx/proxy-http.conf` (rollback drill)
-- **Важно:** при смене IP VM нужно обновить DuckDNS вручную
-
-### Bearer token auth
-
-- Логин: `POST /api/auth/login` → JWT-подобный токен (HMAC-SHA256, 7 дней)
-- Пользователи: `anna@orion.local/anna2026`, `michael@orion.local/michael2026` и др.
-- `BearerTokenFilter` инжектирует `X-Demo-User-Id` через `HttpServletRequestWrapper`
-- Секрет: `APP_TOKEN_SECRET` в `.env` (дефолт: `dev-secret-change-in-production`)
-
-### Открытые вопросы
-
-- Текущая граница зрелости:
-  - PR/main CI и release CI уже есть;
-  - production images собираются через CI и кладутся в Artifact Registry;
-  - deploy на VM всё ещё manual/operator-driven;
-  - rollback в проде всё ещё manual, хотя rollback drill уже есть.
-- IP ephemeral — при рестарте VM нужно обновлять DuckDNS и перезапускать контейнеры
-- Нет автоматического обновления сертификата (истекает 2026-09-01)
-- Нет мониторинга
-- Нет automated deploy на VM; release images уже стоит собирать через CI
-
-### Файлы
-
-- `codebase/docker-compose.production.yml` — production конфиг
-- `codebase/nginx/` — конфиги nginx-proxy
-- `codebase/scripts/` — операционные скрипты (`core/` для production path, `ci/` для CI smoke)
+- GCE VM: `salesops-pilot`, zone `europe-west1-b`
+- old VM compose/nginx path remains legacy only and is no longer the primary production truth

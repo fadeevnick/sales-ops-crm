@@ -32,22 +32,26 @@ the real `assignable-owners` endpoint (and `GET /api/accounts/{id}`) come up.
 ### Инфраструктура
 - **Провайдер:** Google Cloud Platform
 - **Проект:** `salesops-crm-pilot`
-- **VM:** `salesops-pilot`, zone `europe-west1-b`, `e2-medium`, 20GB disk
-- **IP:** ephemeral — меняется при каждом рестарте VM
-- **Реестр образов:** GCP Artifact Registry
-  `europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker/`
-- **Домен:** `sales-ops-crm.duckdns.org` (DuckDNS, бесплатный динамический DNS)
-- **HTTPS:** nginx-proxy контейнер + Let's Encrypt сертификат (certbot)
+- **Region:** `europe-west3`
+- **Artifact Registry:** `europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker/`
+- **Backend runtime:** Cloud Run service `salesops-backend`
+- **Migration runtime:** Cloud Run job `salesops-backend-migrate`
+- **Database:** Cloud SQL `salesops-postgres`
+- **Secrets:** Secret Manager
+  - `salesops-db-password`
+  - `salesops-app-token-secret`
+- **Frontend hosting:** Cloud Storage + backend bucket + Cloud CDN
+- **Ingress:** external HTTPS load balancer
+- **Домен:** `sales-ops-crm.duckdns.org`
 
 ### Полный deployment flow
 
-**1. Release build (основной путь — через GitHub Actions)**
+**1. Release build**
 - `pr-main-ci.yml` держит `main` releaseable через build/test/config checks.
 - `release-build.yml` собирает backend image и пушит его в Artifact Registry.
 - `release-build.yml` собирает frontend `dist/` и публикует его как artifact `frontend-dist-<tag>`.
-- `deploy-backend-cloudrun.yml` — ручной workflow для target managed path: migration job + backend deploy.
+- `deploy-backend-cloudrun.yml` — ручной workflow для backend Cloud Run path: migration job + backend deploy.
 - Standard release anchor: semver git tag (`v0.1.0`, `v0.1.1`, ...).
-- Local build/push считается fallback, а не основным production path.
 - Для быстрого старта release CI использует один GitHub secret: `GCP_SERVICE_ACCOUNT_KEY`.
 - Для frontend build-time API URL используется GitHub variable `API_BASE_URL`.
 - Для backend Cloud Run deploy workflow нужны GitHub variables:
@@ -62,52 +66,11 @@ git push origin v0.1.0
 
 Дальше:
 - дождаться успешного `release-build.yml`;
-- использовать backend image tag `europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:<release-tag>` на VM;
-- помнить, что frontend `dist/` artifact уже относится к target managed path, а не к текущему VM runtime path;
-- для текущего VM runtime frontend image path остаётся legacy и требует отдельной поддержки.
-
-**2. Миграции БД (на VM)**
-```bash
-gcloud compute ssh salesops-pilot --project=salesops-crm-pilot --zone=europe-west1-b --command="
-cd /home/nickf && scripts/core/production-migrate.sh
-"
-```
-
-**3. Обновление образов и рестарт (на VM)**
-```bash
-gcloud compute ssh salesops-pilot --project=salesops-crm-pilot --zone=europe-west1-b --command="
-cd /home/nickf && \
-docker compose --env-file /home/nickf/.env -f docker-compose.production.yml pull backend frontend && \
-docker compose --env-file /home/nickf/.env -f docker-compose.production.yml up -d backend frontend nginx-proxy
-"
-```
-
-### При рестарте VM (IP меняется)
-1. Узнать новый IP:
-   ```bash
-   gcloud compute instances describe salesops-pilot --project=salesops-crm-pilot --zone=europe-west1-b --format='get(networkInterfaces[0].accessConfigs[0].natIP)'
-   ```
-2. Обновить DuckDNS: `https://www.duckdns.org/update?domains=sales-ops-crm&token=TOKEN&ip=NEW_IP`
-3. На VM обновить `.env` (`nano /home/nickf/.env`) — только если меняли переменные
-4. Поднять контейнеры: `docker compose -f docker-compose.production.yml up -d`
-
-### Первичная авторизация Docker на VM (один раз)
-```bash
-gcloud compute ssh salesops-pilot ... --command="gcloud auth configure-docker europe-west3-docker.pkg.dev"
-```
-
-### Переменные окружения на VM (`/home/nickf/.env`)
-```
-POSTGRES_PASSWORD=salesops_pilot_2026
-POSTGRES_DB=salesops
-POSTGRES_USER=salesops
-BACKEND_IMAGE=europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-backend:v0.1.0
-FRONTEND_IMAGE=europe-west3-docker.pkg.dev/salesops-crm-pilot/salesops-docker/salesops-frontend:v0.1.0
-APP_ALLOWED_ORIGIN=https://sales-ops-crm.duckdns.org
-SPRING_FLYWAY_ENABLED=false
-```
-
-`FRONTEND_IMAGE` здесь нужен только для текущего legacy VM runtime path.
+- backend deploy идёт через `deploy-backend-cloudrun.yml`;
+- frontend `dist/` публикуется в frontend bucket;
+- публичный домен уже обслуживается через новый HTTPS load balancer;
+- `/api/*` идёт в backend Cloud Run;
+- `/` идёт во frontend static hosting.
 
 ### Пользователи для входа
 | Email | Пароль | Роль |
@@ -118,14 +81,8 @@ SPRING_FLYWAY_ENABLED=false
 | daria@orion.local | daria2026 | finance |
 | oleg@orion.local | oleg2026 | legal |
 
-### nginx-proxy и сертификат
-- Конфиги: `codebase/nginx/https.conf` (prod), `codebase/nginx/proxy-http.conf` (isolated rollback drill)
-- Сертификат истекает **2026-09-01** — нужно обновить вручную через certbot
-- Обновление сертификата:
-  ```bash
-  docker compose -f docker-compose.production.yml --profile tools run --rm certbot renew
-  docker compose -f docker-compose.production.yml exec nginx-proxy nginx -s reload
-  ```
+### Legacy VM path
+- VM `salesops-pilot` больше не является primary production contract.
 
 ## Frontend verify (no running stack needed)
 ```
